@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,12 +16,16 @@ public class Entries {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Entries.class);
 
 
-    public interface OnEntriesLoadedListener {
+    public interface OnEntriesLoaded {
         void onEntriesLoaded(EntryTree entries);
+    }
+    public interface OnTopicChanged {
+        void onTopicChanged(Entry topic);
     }
 
     private static Entries instance = new Entries();
-    private static OnEntriesLoadedListener listener;
+    private static OnEntriesLoaded listener;
+    private static Map<String, OnTopicChanged> topicListener = new ConcurrentHashMap<>();
     private static EntryTree entryTree = new EntryTree();
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -48,8 +53,30 @@ public class Entries {
 
     /* LOAD ENTRIES ASYNC */
 
-    public static void setOnEntriesLoadedListener(OnEntriesLoadedListener listener) {
+    public static void setOnEntriesLoadedListener(OnEntriesLoaded listener) {
         Entries.listener = listener;
+    }
+
+    // allow trigger topic change by button click (Fragment1)
+    //  as well as back-navigation (top-menu), back-button (MainActivity)
+    //  and update mainActivity title as well as Fragment Buttons
+    public static void setOnTopicChangedListener(String clientKey, OnTopicChanged listener) {
+        // allow multiple listeners - map by clientKey / allow replacing or removing
+        if (null == listener) {
+            Entries.topicListener.remove(clientKey);
+        } else {
+            Entries.topicListener.put( clientKey, listener);
+        }
+    }
+
+    public static void callTopicChangedListeners(Entry topic) {
+
+        if (topicListener != null && null != topic) {
+            for (OnTopicChanged listener : topicListener.values()) {
+                if (listener != null)
+                    listener.onTopicChanged(topic);
+            }
+        }
     }
 
     public static void load(EntryTree entries){
@@ -66,6 +93,7 @@ public class Entries {
         }
         logger.info("Entries loaded async ({} entries)", entries.size());
         // new DataStorageLocal().saveEntries(entries);
+        callTopicChangedListeners(currentTopicEntry);
         if (listener != null) {
             listener.onEntriesLoaded(entries);
         }
@@ -105,6 +133,10 @@ public class Entries {
             return entry;
     }
 
+
+    public static boolean isValidTopic(Entry entry) {
+        return entryTree.entries.containsKey(entry.getFullPath());
+    }
 
     public static void removeEntry(Entry entry) {
          entry.content += DELETION_SUFFIX; //mark as deleted
@@ -166,7 +198,7 @@ public class Entries {
         if (currentTopicEntry != null) {
             String parentTopic = Entry.getTopicFromFullPath(currentTopicEntry.getTopic());
             entry = getEntryOrNew(parentTopic);
-            currentTopicEntry = entry;
+            setTopicEntry(entry);
         }
         return entry;
     }
@@ -196,11 +228,20 @@ public class Entries {
         return currentTopicEntry;
     }
 
-    public static void setTopicEntry(Entry topic) {
-        if (currentTopicEntry != null && !currentTopicEntry.equals(topic)) {
-            recentEntries.add(currentTopicEntry);
+    public static boolean setTopicEntry(Entry topic) {
+        // check if entry is topic or leaf or not allowed
+        boolean valid = isValidTopic(topic);
+        if  (valid){
+            if (currentTopicEntry != null && !currentTopicEntry.equals(topic)) {
+                recentEntries.add(currentTopicEntry);
+            }
+            currentTopicEntry = topic;
+            currentEntry = null; // reset current entry when topic changes
+            callTopicChangedListeners(topic);
+        } else {
+            logger.warn("Skipped to set leaf/invalid topic entry: {}", topic.getFullPath());
         }
-        currentTopicEntry = topic;
+        return valid;
     }
 
     public static List<Entry> getRecentEntries() {

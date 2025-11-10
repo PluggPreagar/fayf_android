@@ -52,6 +52,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                  */
 
+                // add Entry for current topic
+                // FIXME TODO  - create new Entry and set as currentEntry
+                // FIXME TODO   InputFragment will complete the entry with content
+                // FIXME TODO   allow Back navigation to FirstFragment
+
                 NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment_content_main);
 
@@ -61,6 +66,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         });
+
+        Entries.setOnTopicChangedListener( "MainActivity", currentTopicEntry -> {
+            runOnUiThread(() -> {
+                logger.info("Topic changed listener triggered for currentTopicEntry: {}", currentTopicEntry.getTopic());
+                updateActionBarTitle(currentTopicEntry);
+            });
+        });
+
 
         /* added for scrollview */
 
@@ -105,18 +118,40 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public boolean onSupportNavigateUp() {
+        /* does not update FirstFragment properly  -- need to force update
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        Entry entry = Entries.moveUpOneTopicLevel();
-        logger.info("Navigating up from topic: {}", entry.getTopic());
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
+
+         */
+        /* Kill switch to FirstFragment and refresh
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment_content_main);
+
+        if (navHostFragment != null) {
+            NavController navController = navHostFragment.getNavController();
+            navController.navigate(R.id.action_FirstFragment_to_FirstFragment);
+        }
+         */
+        // force refresh of FirstFragment
+        //onBackPressed();
+
+        String topicBefore = Entries.getCurrentTopicString();
+        Entry entry = Entries.moveUpOneTopicLevel();
+        String topic = entry.getTopic();
+        logger.info("Navigating up topic: {} (from {})", topic, topicBefore);
+
+
+        return true;
     }
 
 
     @Override
     public void onBackPressed() {
+        String topicBefore = Entries.getCurrentTopicString();
         Entry entry = Entries.moveUpOneTopicLevel();
         String topic = entry.getTopic();
+        logger.info("Navigating up topic: {} (from {})", topic, topicBefore);
         // String topic = Entry.getTopicFromFullPath(this.topic); // get parent topic
         if (null==topic){
             super.onBackPressed();
@@ -248,20 +283,27 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         Entries.setCurrentEntry(null);
         Entries.setOffset(0);
 
+        // update title in menu bar
+        updateActionBarTitle(entry);
+
+        return topic;
+    }
+
+    public void updateActionBarTitle( Entry currentTopicEntry) {
         // update title in action bar
         if (getSupportActionBar() != null) {
-            logger.info("Updating action bar title for topic: {}", topic);
             String newTitle = "FayF";
-            if (null != entry && null != entry.topic && Util.isFilled(entry.content)) { // may have DUMMY entry here
-                newTitle += " - " + Util.shortenString(entry.content, 30);
+            boolean isRootTopic = currentTopicEntry != null && (currentTopicEntry.getFullPath().equals("/") || currentTopicEntry.getTopic().isEmpty());
+            logger.info("Updating action bar title for topic: \"{}\" {}"
+                    , null == currentTopicEntry ? "" : currentTopicEntry.getContent()
+                    , isRootTopic ? "(root topic)" : "(enable back button)");
+            if (null != currentTopicEntry && null != currentTopicEntry.topic && Util.isFilled(currentTopicEntry.content)) { // may have DUMMY currentTopicEntry here
+                newTitle += " - " + Util.shortenString(currentTopicEntry.content, 30);
             }
             getSupportActionBar().setTitle(newTitle);
             // enable back button in action bar
-            getSupportActionBar().setDisplayHomeAsUpEnabled(!entry.getTopic().equals("/")); // show back button if not root
+            getSupportActionBar().setDisplayHomeAsUpEnabled(!isRootTopic); // show back button if not root
         }
-        // update title in menu bar
-
-        return topic;
     }
 
 

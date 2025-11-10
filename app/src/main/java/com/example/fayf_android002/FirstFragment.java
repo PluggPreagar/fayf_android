@@ -30,7 +30,6 @@ public class FirstFragment extends Fragment {
     ) {
 
         binding = FragmentFirstBinding.inflate(inflater, container, false);
-
         logger.info("FirstFragment onCreateView() called");
 
         if (0 == Entries.getInstance().getEntryTree().size()) {
@@ -47,6 +46,10 @@ public class FirstFragment extends Fragment {
         }
 
         //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
+        Entries.setOnTopicChangedListener("FirstFragment", entry -> {
+            logger.info("Topic changed callback received: {}", entry.getFullPath());
+            updateButtonsUIThread();
+        });
 
         return binding.getRoot();
 
@@ -93,8 +96,8 @@ public class FirstFragment extends Fragment {
 
 
     public void setTopic(Entry entry) {
-        Entries.setTopicEntry(entry);
-        updateButtons();
+        Entries.setTopicEntry(entry); // e.g. not valid for leaf entries
+        // button will be updated via listener
     }
 
     public void updateButtonsUIThread() {
@@ -197,6 +200,7 @@ public class FirstFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        Entries.setOnTopicChangedListener("FirstFragment", null); // remove listener
     }
 
 

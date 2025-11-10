@@ -34,25 +34,6 @@ public class InputFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (getArguments() != null) {
-            String entryFullPath = getArguments().getString("entryFullPath", "");
-
-            if (getArguments().getString("FORWARD_REFRESH") != null) {
-                logger.info("InputFragment received FORWARD_REFRESH signal");
-                // Handle the FORWARD_REFRESH signal as needed
-                // FIXME WORKAROUND: just go back to FirstFragment -- force to refresh FirstFragment!!!
-                /*
-                NavHostFragment.findNavController(InputFragment.this)
-                        .navigate(R.id.action_SecondFragment_to_FirstFragment, getArguments());
-                */
-                NavHostFragment.findNavController(InputFragment.this)
-                        .navigate(R.id.action_FirstFragment_to_FirstFragment, getArguments());
-                return;
-            }
-
-        } else  {
-            logger.info("No arguments provided to InputFragment");
-        }
 
         //binding.buttonCancel.setOnClickListener(v -> backToFirstFragment() );
         binding.buttonSecond.setOnClickListener(v -> backToFirstFragment() );
