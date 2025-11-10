@@ -5,11 +5,11 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".SecondFragment">
+        tools:context=".InputFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:padding="16dp">
 
         <Button
@@ -17,20 +17,71 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/previous"
-                app:layout_constraintBottom_toTopOf="@id/textview_second"
+                app:layout_constraintBottom_toTopOf="@id/editext_second"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
+                app:layout_constraintTop_toTopOf="parent"
+                />
 
-        <TextView
-                android:id="@+id/textview_second"
+        <EditText
+                android:id="@+id/editext_second"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/lorem_ipsum"
+                android:layout_marginTop="32dp"
+                android:autofillHints="Enter text"
+                android:text="@string/lorem_ipsumShort"
+                android:inputType="text"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/button_second"/>
+
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/editext_second"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="32dp">
+
+            <ImageButton
+                    android:id="@+id/button_delete"
+                    android:src="@android:drawable/ic_menu_delete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:layout_weight="1"/>
+
+            <ImageButton
+                    android:id="@+id/button_star"
+                    android:src="@android:drawable/star_off"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:layout_weight="1"/>
+
+            <ImageButton
+                    android:id="@+id/button_send"
+                    android:src="@android:drawable/ic_menu_send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:layout_weight="1"/>
+        </LinearLayout>
+
+        <TextView
+                android:id="@+id/textView_hidden"
+                android:text=""
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:layout_editor_absoluteY="394dp"
+                tools:layout_editor_absoluteX="187dp"
+                tools:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>
