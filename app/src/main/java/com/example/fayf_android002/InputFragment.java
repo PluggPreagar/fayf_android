@@ -2,11 +2,13 @@ package com.example.fayf_android002;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -48,6 +50,7 @@ public class InputFragment extends Fragment {
         }, 100);
         */
         Entry entry = Entries.getCurrentEntry();
+
         binding.editextSecond.setText( null == entry ? "" : entry.content);
         binding.editextSecond.setSelection( binding.editextSecond.getText().length() );
         binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
@@ -68,6 +71,16 @@ public class InputFragment extends Fragment {
                 imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
             }
         }, 200);
+
+
+        binding.editextSecond.setOnEditorActionListener((v, actionId, event) -> {
+            if (event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                onSendEntry(); // Trigger send action
+                return true; // Consume the event
+            }
+            return false; // Pass the event to other listeners
+        });
+
     }
 
     public void  backToFirstFragment(){
@@ -77,24 +90,20 @@ public class InputFragment extends Fragment {
 
 
     public void onSendEntry(){
-        String topic = binding.textViewHidden.getText().toString();
         String newContent = binding.editextSecond.getText().toString();
         Entry entry = Entries.getCurrentEntry();
         Entries.setContent(entry, newContent);
         logger.info("Entry updated: {}", entry.getFullPath());
+        Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
         backToFirstFragment();
     }
 
     public void onDelete(){
-        String topic = binding.textViewHidden.getText().toString();
-        String newContent = binding.editextSecond.getText().toString();
         Entry entry = Entries.getCurrentEntry();
         logger.info("Entry deleting: {}", entry.getFullPath());
         Entries.removeEntry(entry);
         backToFirstFragment();
     }
-
-
 
 
     @Override

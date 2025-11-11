@@ -2,10 +2,10 @@
     <string name="app_name">fayf_android002</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">Browse Entry</string>
+    <string name="first_fragment_label">FayF</string>
     <string name="second_fragment_label">Edit Entry</string>
     <string name="next">Next</string>
-    <string name="previous">Previous</string>
+    <string name="previous">Back</string>
 
     <string name="lorem_ipsumShort">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris volutpat, dolor id
@@ -43,4 +43,9 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus vestibulum. Fusce
         dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+    <string name="action_test">Test</string>
+    <string name="action_about">About</string>
+    <string name="action_about_msg">" FayF Android App\\nVersion 0.0.1\\n(c)"</string>
+    <string name="action_refresh">RefreshUI</string>
+    <string name="send_toast">Entry saved.</string>
 </resources>

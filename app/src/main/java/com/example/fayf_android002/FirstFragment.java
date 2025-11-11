@@ -32,6 +32,9 @@ public class FirstFragment extends Fragment {
         binding = FragmentFirstBinding.inflate(inflater, container, false);
         logger.info("FirstFragment onCreateView() called");
 
+        // Navigating from SecondFragment to FirstFragment will not show the Topic Title
+        getMainActivity().updateActionBarTitle(null);
+
         if (0 == Entries.getInstance().getEntryTree().size()) {
 
             /* get Data */
@@ -187,12 +190,9 @@ public class FirstFragment extends Fragment {
 
 
     public void navigateToEdit(Entry entry) {
-        Bundle args = new Bundle();
-        args.putString("entryFullPath", null == entry ? "/" : entry.getFullPath());
-        args.putString("METHOD", "EDIT");
-        //
+        Entries.setCurrentEntry(entry);
         NavHostFragment.findNavController(FirstFragment.this)
-                .navigate(R.id.action_FirstFragment_to_SecondFragment, args);
+                .navigate(R.id.action_FirstFragment_to_SecondFragment);
     }
 
 

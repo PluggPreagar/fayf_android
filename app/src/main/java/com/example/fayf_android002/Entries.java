@@ -133,6 +133,14 @@ public class Entries {
             return entry;
     }
 
+    public static Entry createNewChildEntry(Entry parentEntry, String content) {
+         String nodeId = String.valueOf(System.currentTimeMillis());
+         Entry entry = new Entry(parentEntry.getFullPath(), nodeId, content);
+         logger.info("New entry created: {}", entry.getFullPath());
+         return entry;
+    }
+
+
 
     public static boolean isValidTopic(Entry entry) {
         return entryTree.entries.containsKey(entry.getFullPath());

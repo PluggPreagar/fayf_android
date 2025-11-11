@@ -3,6 +3,7 @@ package com.example.fayf_android002;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
+import android.widget.Toast;
 import androidx.core.widget.NestedScrollView;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +35,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        logger.info("MainActivity onCreate() called");
+
         setSupportActionBar(binding.toolbar);
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -56,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 // FIXME TODO  - create new Entry and set as currentEntry
                 // FIXME TODO   InputFragment will complete the entry with content
                 // FIXME TODO   allow Back navigation to FirstFragment
+
+                Entries.setCurrentEntry( Entries.createNewChildEntry( Entries.getCurrentTopicEntry(), "") ); // empty content for now
 
                 NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment_content_main);
@@ -100,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
+        // items defined in res/menu/menu_main.xml
         logger.info("Menu item selected: {}", item.getTitle());
 
         //noinspection SimplifiableIfStatement
@@ -110,6 +116,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             } else {
                 setTopic("/_/config");
             }
+            return true;
+        } else if (id == R.id.action_about) {
+            logger.info("About menu item selected");
+            Toast.makeText(this, R.string.action_about_msg, Toast.LENGTH_LONG).show();
+            return true;
+        } else if (id == R.id.action_test) {
+            logger.info("Runtime tests menu item selected");
+            RuntimeTest runtimeTest = new RuntimeTest();
+            // runtimeTest.runTests( getSupportFragmentManager() ); // does not find FirstFragment properly
+            runtimeTest.runTests( getSupportFragmentManager() );
+            return true;
+        } else if (id == R.id.action_refresh) {
+            logger.info("Refresh UI");
+            // force refresh of FirstFragment
+            Entries.callTopicChangedListeners( Entries.getCurrentTopicEntry() );
             return true;
         }
 
@@ -289,7 +310,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return topic;
     }
 
-    public void updateActionBarTitle( Entry currentTopicEntry) {
+    public void updateActionBarTitle( Entry currentTopicEntry) { // allow to handover already known currentTopicEntry
+        if (null == currentTopicEntry) {
+            currentTopicEntry = Entries.getCurrentTopicEntry();
+        }
         // update title in action bar
         if (getSupportActionBar() != null) {
             String newTitle = "FayF";
