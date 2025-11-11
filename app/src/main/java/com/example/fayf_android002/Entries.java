@@ -1,12 +1,15 @@
 package com.example.fayf_android002;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import android.content.Context;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static com.example.fayf_android002.Entry.DELETION_SUFFIX;
 
@@ -79,30 +82,73 @@ public class Entries {
         }
     }
 
-    public static void load(EntryTree entries){
-        List<String> strings = new DataStorageWeb().readData();
-        for (String line : strings) {
-            Entry entry = Entry.build(line);
-            if (entry != null) {
-                if (entry.content.endsWith(DELETION_SUFFIX)) {
-                    entries.removeEntry(entry);
-                } else {
-                    entries.addEntry(entry.topic, entry);
-                }
-            }
+
+    // Serialize the EntryTree to a file
+    public static void saveToFile(TreeMap<String, TreeMap<String, Entry>> entries, String filePath, Context context)  {
+        if (entries == null || entries.isEmpty()) {
+            logger.warn("No entries to save to file: {}", filePath);
+            return;
         }
-        logger.info("Entries loaded async ({} entries)", entries.size());
-        // new DataStorageLocal().saveEntries(entries);
-        callTopicChangedListeners(currentTopicEntry);
-        if (listener != null) {
-            listener.onEntriesLoaded(entries);
+        // check if filePath is valid
+        if (filePath == null || filePath.isEmpty()) {
+            logger.error("Invalid file path for saving entries: {}", filePath);
+            return;
+        }
+        try (ObjectOutputStream oos = new ObjectOutputStream(
+                new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
+            oos.writeObject(entries);
+            logger.info("Entries saved to file: {} ({} entries)", filePath, EntryTree.size(entries));
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Error saving entries to file: {}", filePath, e);
         }
     }
 
-    public static void load_async(){
+    // Deserialize the EntryTree from a file
+    public static TreeMap<String, TreeMap<String, Entry>> loadFromFile(String filePath, Context context)  {
+        TreeMap<String, TreeMap<String, Entry>> entries = new TreeMap<>();
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new GZIPInputStream( context.openFileInput( filePath)))) {
+            entries = (TreeMap<String, TreeMap<String, Entry>>) ois.readObject();
+            logger.info("Entries loaded from file: {} ({} entries)", filePath, EntryTree.size(entries));
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Error saving entries to file: {}", filePath, e);
+        }
+        return entries;
+    }
+
+    public static void load(EntryTree entryTree, Context context){
+        entryTree.entries = loadFromFile("entries.dat", context);
+        if (null == entryTree.entries || entryTree.entries.isEmpty()) {
+            List<String> strings = new DataStorageWeb().readData();
+            if (null == entryTree.entries) {
+                entryTree.entries = new TreeMap<>();
+            }
+            for (String line : strings) {
+                Entry entry = Entry.build(line);
+                if (entry != null) {
+                    if (entry.content.endsWith(DELETION_SUFFIX)) {
+                        entryTree.removeEntry(entry);
+                    } else {
+                        entryTree.addEntry(entry.topic, entry);
+                    }
+                }
+            }
+            logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
+            saveToFile(entryTree.entries, "entries.dat", context);
+        }
+        // new DataStorageLocal().saveEntries(entries);
+        callTopicChangedListeners(currentTopicEntry);
+        if (listener != null) {
+            listener.onEntriesLoaded(entryTree);
+        }
+    }
+
+    public static void load_async(Context context){
         executorService.execute(() -> {
             try {
-                load(entryTree);
+                load(entryTree, context);
                 //logger.info("Entries loaded async ({} entries)", entries.size());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -164,7 +210,11 @@ public class Entries {
     private static void persistEntry(Entry entry) {
         executorService.execute(() -> {
             try {
-                new DataStorageWeb().saveEntry(entry);
+                if (!entry.getTopic().startsWith("/_/")) {
+                    new DataStorageWeb().saveEntry(entry);
+                } else {
+                    logger.info("Skipped uploading Settings: {}", entry.getFullPath());
+                }
                 //logger.info("Entries loaded async ({} entries)", entries.size());
             } catch (Exception e) {
                 e.printStackTrace();

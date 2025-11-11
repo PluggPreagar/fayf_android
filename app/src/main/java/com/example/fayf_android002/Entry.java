@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
-public class Entry {
+public class Entry implements java.io.Serializable {
 
     public static final Logger logger = LoggerFactory.getLogger(Entry.class);
 

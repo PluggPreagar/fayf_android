@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
@@ -32,6 +34,8 @@ public class FirstFragment extends Fragment {
         binding = FragmentFirstBinding.inflate(inflater, container, false);
         logger.info("FirstFragment onCreateView() called");
 
+        // initializeButtons(); // to early here ?
+
         // Navigating from SecondFragment to FirstFragment will not show the Topic Title
         getMainActivity().updateActionBarTitle(null);
 
@@ -43,7 +47,7 @@ public class FirstFragment extends Fragment {
                         updateButtons( ); // update buttons after entries loaded
                     }
             ));
-            Entries.load_async(); // async load entries
+            Entries.load_async(requireContext()); // async load entries
         } else {
             updateButtons( ); // update buttons if entries already loaded
         }
@@ -97,6 +101,63 @@ public class FirstFragment extends Fragment {
     }
 
 
+    // add 10 Buttons dynamically to ButtonList
+    public void initializeButtons() {
+        ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
+        // TODO -
+        if (buttonList == null) {
+            logger.error("ButtonList ViewGroup not found in MainActivity");
+            return;
+        }
+        logger.info("Initializing buttons in ButtonList {} ", buttonList.getChildCount());
+        //buttonList.removeAllViews(); // clear existing buttons
+        /*
+                app:layout_constraintTop_toBottomOf="@id/button2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+         */
+        int uniqueIdBase = 1000; // base for unique IDs
+        for (int i = buttonList.getChildCount(); i < 20 ; i++) {
+            Button button = (Button) LayoutInflater.from(requireContext()).inflate(R.layout.button_clone, null);
+            buttonList.addView(button);
+            /*
+            Button button = new Button(getActivity());
+            button.setId(uniqueIdBase + i); // set unique ID
+            button.setLayoutParams(new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
+            buttonList.addView(button);
+
+             */
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone((ConstraintLayout) buttonList);
+            if (i == 0) {
+                constraintSet.connect(button.getId(), ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, 16);
+            } else {
+                constraintSet.connect(button.getId(), ConstraintSet.TOP, buttonList.getChildAt(i - 1).getId(), ConstraintSet.BOTTOM, 16);
+            }
+            constraintSet.connect(button.getId(), ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 16);
+            constraintSet.connect(button.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 16);
+            constraintSet.applyTo((ConstraintLayout) buttonList);
+
+
+            //
+            button.setText("Button " + (i + 1));
+        }
+
+        for (int i = 0; i < buttonList.getChildCount(); i++) {
+            View button = buttonList.getChildAt(i);
+            if (button instanceof Button) {
+
+            }
+        }
+
+        logger.info("Initialized buttons in ButtonList, total count: {} ", buttonList.getChildCount());
+    }
+
 
     public void setTopic(Entry entry) {
         Entries.setTopicEntry(entry); // e.g. not valid for leaf entries
@@ -105,6 +166,7 @@ public class FirstFragment extends Fragment {
 
     public void updateButtonsUIThread() {
         requireActivity().runOnUiThread(() -> {
+            initializeButtons();
             logger.info("Render in UI-Thread ({} entries)", Entries.getInstance().getEntryTree().size());
             updateButtons(); // update buttons after entries loaded
         });
@@ -120,7 +182,7 @@ public class FirstFragment extends Fragment {
             logger.error("ButtonList ViewGroup not found in MainActivity");
             return;
         }
-        int limit = buttonList.getChildCount();
+        int limit = 20; // buttonList.getChildCount();
         logger.info("Updating buttons for topic: {}, offset: {}, limit: {}", topic, offset, limit);
         Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator(topic, offset);
         if (!entriesIterator.hasNext()) {
@@ -169,6 +231,10 @@ public class FirstFragment extends Fragment {
         }
 
         while (limit > 0) {
+            if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
+                logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
+                break;
+            }
             buttonList.getChildAt(idx).setVisibility(View.GONE);
             logger.info("No more entries (hiding button at index {} - content {})"
                     , idx, buttonList.getChildAt(idx).toString());

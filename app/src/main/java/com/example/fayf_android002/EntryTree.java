@@ -5,8 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 @Serializable
@@ -132,23 +130,21 @@ public class EntryTree implements  java.io.Serializable {
 
      */
 
-    private static class EntryComparator implements java.util.Comparator<String> {
-        @Override
-        public int compare(String o1, String o2) {
-            return o1.compareTo(o2);
-        }
-    }
-
     /*
       HELPER
      */
 
-    public int size() {
+
+    public static int size(TreeMap<String, TreeMap<String, Entry>> entries) {
         int size = 0;
         for (Map.Entry<String, TreeMap<String, Entry>> e : entries.entrySet()) {
             size += e.getValue().size();
         }
         return size;
+    }
+
+    public int size() {
+        return size(entries);
     }
 
 }
