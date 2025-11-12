@@ -1,5 +1,7 @@
 package com.example.fayf_android002;
 
+import android.view.View;
+import android.widget.Button;
 import androidx.fragment.app.FragmentManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,45 @@ public class RuntimeTest {
 
     public void runTests(FragmentManager fragmentManager) {
         // Placeholder for runtime test logic
+
+        RuntimeTester runtimeTester = new RuntimeTester(fragmentManager);
+        logger.info("Running runtime tests...");
+
+        RuntimeTester.FragmentInfo firstFragmentInfo = runtimeTester.getRegisteredFragment("FirstFragment");
+        logger.info("Is FirstFragment visible? " + (null == firstFragmentInfo ? "unkown" : firstFragmentInfo.fragment.isVisible()));
+
+        Button btn = (Button) firstFragmentInfo.view.findViewById(R.id.button1);
+        // apply click on button in 1 second
+        logger.info("Button1 text: " + btn.getText().toString());
+        new android.os.Handler().postDelayed(() -> btn.performClick(), 1000);
+
+
+        // check if btn1 text changed in 2 seconds
+        new android.os.Handler().postDelayed(() -> {
+            logger.info("Button1 text after click: " + btn.getText().toString());
+        }, 2000);
+
+        // long press button in 3 seconds
+        new android.os.Handler().postDelayed(() -> {
+            btn.performLongClick();
+            logger.info("Button1 long clicked.");
+        }, 3000);
+
+
+
+        // check if InputFragment is visible
+        RuntimeTester.FragmentInfo inputFragmentInfo = runtimeTester.getRegisteredFragment("InputFragment");
+        logger.info("Is InputFragment visible? " + (null == inputFragmentInfo ? "unkown" : inputFragmentInfo.fragment.isVisible()));
+        // check again in 2 seconds
+        new android.os.Handler().postDelayed(() -> {
+            RuntimeTester.FragmentInfo inputFragmentInfo2 = runtimeTester.getRegisteredFragment("InputFragment");
+            logger.info("Is InputFragment visible? " + (null == inputFragmentInfo2 ? "unkown" : inputFragmentInfo2.fragment.isVisible()));
+        }, 4000);
+
+
+    }
+
+    public void runTests2(FragmentManager fragmentManager) {
 
         RuntimeTester runtimeTester = new RuntimeTester(fragmentManager);
         logger.info("Running runtime tests...");

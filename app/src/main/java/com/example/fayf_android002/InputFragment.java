@@ -29,6 +29,7 @@ public class InputFragment extends Fragment {
     ) {
 
         binding = FragmentSecondBinding.inflate(inflater, container, false);
+        RuntimeTester.registerFragment("InputFragment", this, binding.getRoot());
         return binding.getRoot();
 
     }

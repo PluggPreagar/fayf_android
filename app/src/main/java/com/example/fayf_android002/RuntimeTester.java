@@ -4,19 +4,44 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.IdRes;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.ObjectOutputStream;
 
 public class RuntimeTester {
 
     private static final Logger logger = LoggerFactory.getLogger(RuntimeTester.class);
     private final FragmentManager fragmentManager;
 
+    private static java.util.Map<String, FragmentInfo> fragments = new java.util.HashMap<>();
+
+    public static class FragmentInfo {
+        public final Fragment fragment;
+        public final View view;
+
+        public FragmentInfo(Fragment fragment, View view) {
+            this.fragment = fragment;
+            this.view = view;
+        }
+    }
+
     public RuntimeTester(FragmentManager fragmentManager) {
         this.fragmentManager = fragmentManager;
     }
+
+    public static void registerFragment(String name, Fragment fragment, View view) {
+        fragments.put(String.valueOf(fragment.getId()), new FragmentInfo(fragment, view)); // allow lookup by ID as well
+        fragments.put(name, new FragmentInfo(fragment, view));
+    }
+
+    public FragmentInfo getRegisteredFragment(String name) {
+        return fragments.get(name);
+    }
+
 
 
     public Fragment findFragment(int fragmentId) {
