@@ -14,6 +14,7 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
+import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,114 +233,38 @@ public class FirstFragment extends Fragment {
                 // Apply the updated LayoutParams back to the button
                 button.setLayoutParams(params);
                 */
+                // make button height larger
+                MaterialButton btn_m = (MaterialButton) button;
+                btn_m.setInsetTop( 0);
+                btn_m.setInsetBottom(0);
+                // compensate with margins
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) button.getLayoutParams();
+                params.topMargin = 10;
+                params.bottomMargin = 10;
+                button.setLayoutParams(params);
 
 
-                btn.setOnTouchListener(new OnSwipeTouchListener() {
+/*
 
-                    MotionEvent firstEvent = null;
-                    int x_start = 0;
-                    // store initial width and height
-                    private ViewGroup.MarginLayoutParams params_initial = null;
-
-
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event){
-                        super.onTouch(v, event);
-                        // move btn to left
-                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                            firstEvent = event;
-                            x_start = (int) event.getX(); // as event has no fixed values
-                            // fixate button size
-                            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-                            params_initial = params;
-                            params.height = btn.getHeight(); // keep height - even if it is wrap content on shrink
-                            v.setLayoutParams(params);
-                        } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                            if (firstEvent != null) {
-                                float deltaX = event.getX() - x_start;
-                                logger.info("Button move deltaX: {}", deltaX);
-                                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-                                params.leftMargin = deltaX > 0 ? (int) deltaX : 0 ;
-                                params.rightMargin = deltaX < 0 ? (int) -deltaX : 0 ;
-                                v.setLayoutParams(params);
-                                firstEvent = event; // update for next move
-                            }
-                        } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                            if (firstEvent != null) {
-                                float deltaX = event.getX() - x_start;
-                                if (deltaX < -20) {
-                                    onSwipeLeft();
-                                } else if (deltaX > 20) {
-                                    onSwipeRight();
-                                } else {
-                                    // check if long press was performed
-                                    if (event.getEventTime() - event.getDownTime() > 500) {
-                                        btn.performLongClick(); // treat as long click
-                                    } else {
-                                        btn.performClick(); // treat as click
-                                    }
-                                }
-                            } else {
-                                btn.performClick(); // treat as click
-                            }
-                            resetPosition();
-                            firstEvent = null; // reset
-                        } else {
-                            resetPosition();
-                        }
-                        //return false; // allow other events like onClick to be processed
-                        return true; // consume event
-                    }
-
-
+                btn.setOnTouchListener(new OnSwipeTouchListener(this) {
                     public void onSwipeRight() {
                         Toast.makeText(getActivity(), "Swiped right on entry: " + entry.content, Toast.LENGTH_SHORT).show();
                         //Entries.setTopicEntry(entry); // set topic to this entry
-                        resetPosition();
                     }
                     public void onSwipeLeft() {
                         Toast.makeText(getActivity(), "Swiped left on entry: " + entry.content, Toast.LENGTH_SHORT).show();
                         //navigateToEdit(entry); // navigate to edit this entry
-                        resetPosition();
                     }
-
-                    public void resetPosition(){
-                        // reset button position
-                        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) btn.getLayoutParams();
-                        if (params.leftMargin>0) params.leftMargin = Math.max(params.leftMargin/2, 5) - 5;
-                        if (params.rightMargin>0) params.rightMargin = Math.max(params.rightMargin/2 , 5) - 5;
-                        btn.setLayoutParams(params);
-                        // if margins > 0 -> delayed reset
-                        if (params.leftMargin>10 || params.rightMargin>10){
-                            new android.os.Handler().postDelayed(() -> {
-                                requireActivity().runOnUiThread(() -> {
-                                    resetPosition();
-                                });
-                            }, 16);
-                        } else if (params_initial != null) {
-                                btn.setLayoutParams(params_initial);
-                        }
-                    }
-
-
-
 
                 });
+
+ */
             }
 
             limit--;
             idx++;
         }
-        // for testing ...
-        if (false && limit>0){
-            //limit --;
-            Button button = (Button) buttonList.getChildAt(1);
-            // set current timestamp
-            button.setText("" + System.currentTimeMillis());
-            button.setOnClickListener(v -> {
-                button.setText("" + System.currentTimeMillis());
-            });
-        }
+
 
         while (limit > 0) {
             if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {

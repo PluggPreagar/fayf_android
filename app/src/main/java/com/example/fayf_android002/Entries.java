@@ -252,9 +252,14 @@ public class Entries {
     }
 
     public static Entry moveUpOneTopicLevel() {
-        Entry entry = null;
-        if (currentTopicEntry != null) {
-            String parentTopic = Entry.getTopicFromFullPath(currentTopicEntry.getTopic());
+        Entry entry = currentTopicEntry;
+        // might be init -> got to "/" - main
+        // might be regular topic -> go to parent
+        // might be root "/" -> stay at "/"
+        // might be hidden topic -> do not move to hidden-base-root /_/
+        String currentPath = entry != null ? entry.getFullPath() : "/";
+        String parentTopic = Entry.getTopicFromFullPath(currentPath);
+        if (!parentTopic.equals(currentPath) && ! parentTopic.equals("/_/")) {
             entry = getEntryOrNew(parentTopic);
             setTopicEntry(entry);
         }

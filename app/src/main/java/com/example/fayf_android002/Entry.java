@@ -11,7 +11,7 @@ public class Entry implements java.io.Serializable {
 
     protected static final String DELETION_SUFFIX = "--";
 
-    public String topic; // might be empty
+    public String topic = ""; // might be empty
     public String nodeId;
     public String content;
 
