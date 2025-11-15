@@ -9,23 +9,24 @@
         android:id="@+id/ButtonScrollView">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/ButtonList"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
             android:paddingTop="50dp"
             android:paddingBottom="50dp"
-            android:id="@+id/ButtonList">
+            >  <!-- padding seams not to work on my phone -->
 
         <Button
+                app:layout_constraintTop_toTopOf="parent"
                 android:id="@+id/button1"
                 android:layout_width="0dp"
                 android:layout_weight=".80"
                 android:layout_height="wrap_content"
-                android:text="aaa"
-                app:layout_constraintEnd_toEndOf="parent"
+                android:text="aaaK"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 />
 
         <Button

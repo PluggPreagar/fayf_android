@@ -1,6 +1,5 @@
 package com.example.fayf_android002;
 
-import android.content.ContentProviderClient;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,9 +7,9 @@ import androidx.fragment.app.Fragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OnSwipeTouchListener implements View.OnTouchListener {
+public class OnTouchListener implements View.OnTouchListener {
 
-    Logger logger = LoggerFactory.getLogger(OnSwipeTouchListener.class);
+    Logger logger = LoggerFactory.getLogger(OnTouchListener.class);
 
     private static final int MOVE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
@@ -20,17 +19,17 @@ public class OnSwipeTouchListener implements View.OnTouchListener {
     private int x_start;
 
     private final Fragment fragment;
-    private boolean longPressDetected = false;
+    protected boolean longPressDetected = false;
     private float deltaX = 0;
     private float deltaY = 0;
     private float velocityX = 0;
     private float velocityY = 0;
-    private float swipeVelocity = 0;
-    private boolean isDirectionX = false;
-    private boolean isMoveStarted = false;
+    protected float swipeVelocity = 0;
+    protected boolean isDirectionX = false;
+    protected boolean isMoveStarted = false;
     private ViewGroup.MarginLayoutParams params = null;
 
-    public OnSwipeTouchListener(Fragment ma) {
+    public OnTouchListener(Fragment ma) {
         this.fragment = ma;
     }
 
@@ -79,8 +78,20 @@ public class OnSwipeTouchListener implements View.OnTouchListener {
                 swipeVelocity = velocityAbs;
             }
         }
-        logger.info("Move detected: deltaX={}, deltaY={}, velocity={}, isDirectionX={}", deltaX, deltaY, swipeVelocity, isDirectionX);
+        logger.info("Move detected: .deltaX={}, .deltaY={}, velocity={}, isDirectionX={}", deltaX, deltaY, swipeVelocity, isDirectionX);
     }
+
+    private void calculateAbsoluteDelta(MotionEvent e2){
+        float deltaX = e2.getX() - firstEvent.getX();
+        float deltaY = e2.getY() - firstEvent.getY();
+        if (Math.abs(deltaX) > MOVE_THRESHOLD ) {
+            this.deltaX = deltaX;
+        }
+        if (Math.abs(deltaY) > MOVE_THRESHOLD ) {
+            this.deltaY = deltaY;
+        }
+    }
+
 
     // calculate if initial touch was long press
     private void calculateLongPress(MotionEvent e){
@@ -121,7 +132,7 @@ public class OnSwipeTouchListener implements View.OnTouchListener {
             lastEvent = MotionEvent.obtain(event); // store last event as copy
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             calculateLongPress(event); // check for long press on release, if moved it already was checked
-            float deltaX = event.getX() - x_start;
+            calculateAbsoluteDelta(event);
             if (swipeVelocity > 0) {
                 if (isDirectionX) {
                     if (deltaX < 0) {

@@ -33,9 +33,9 @@ public class FirstFragment extends Fragment {
             Bundle savedInstanceState
     ) {
 
+        logger.info("FirstFragment onCreateView() called");
         binding = FragmentFirstBinding.inflate(inflater, container, false);
         RuntimeTester.registerFragment("FirstFragment", this, binding.getRoot());
-        logger.info("FirstFragment onCreateView() called");
 
         // initializeButtons(); // to early here ?
 
@@ -66,9 +66,9 @@ public class FirstFragment extends Fragment {
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
 
-        logger.info("FirstFragment onViewCreated() called");
 
         binding.button1.setOnClickListener(v ->
                 NavHostFragment.findNavController(FirstFragment.this)
@@ -91,8 +91,94 @@ public class FirstFragment extends Fragment {
 
     }
 
+    public void onResume() {
+        logger.info("FirstFragment onResume() called");
+        super.onResume();
+        // called when getting from InputFragment back to FirstFragment
+        updateButtonsUIThread(); // in case entries changed while in background
+    }
 
+    public void onPause() {
+        logger.info("FirstFragment onPause() called");
+        super.onPause();
+    }
 
+    public void onStart() {
+        logger.info("FirstFragment onStart() called");
+        super.onStart();
+    }
+
+    public void onStop() {
+        logger.info("FirstFragment onStop() called");
+        super.onStop();
+    }
+
+    public void onDestroy() {
+        logger.info("FirstFragment onDestroy() called");
+        super.onDestroy();
+    }
+
+    public void onDetach() {
+        logger.info("FirstFragment onDetach() called");
+        super.onDetach();
+    }
+
+    public void onAttach(@NonNull android.content.Context context) {
+        logger.info("FirstFragment onAttach() called");
+        super.onAttach(context);
+    }
+
+    /*
+        Fragment Called when the fragment's activity has been created and this fragment's view hierarchy instantiated.
+        It can be used to do final initialization once these pieces are in place, such as retrieving views or restoring
+        state. It is also useful for fragments that use setRetainInstance(boolean) to retain their instance, as this
+        callback tells the fragment when it is fully associated with the new activity instance. This is called after
+        onCreateView and before onViewStateRestored(Bundle).
+     */
+    public void onActivityCreated(Bundle savedInstanceState) {
+        logger.info("FirstFragment onActivityCreated() called");
+        super.onActivityCreated(savedInstanceState);
+    }
+
+    public void onViewStateRestored(Bundle savedInstanceState) {
+        logger.info("FirstFragment onViewStateRestored() called");
+        super.onViewStateRestored(savedInstanceState);
+    }
+
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        logger.info("FirstFragment onSaveInstanceState() called");
+        super.onSaveInstanceState(outState);
+    }
+
+    public void onLowMemory() {
+        logger.info("FirstFragment onLowMemory() called");
+        super.onLowMemory();
+    }
+
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
+        logger.info("FirstFragment onConfigurationChanged() called");
+        super.onConfigurationChanged(newConfig);
+    }
+
+    public void onHiddenChanged(boolean hidden) {
+        logger.info("FirstFragment onHiddenChanged() called, hidden: {}", hidden);
+        super.onHiddenChanged(hidden);
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
+        logger.info("FirstFragment onCreate() called");
+        super.onCreate(savedInstanceState);
+    }
+
+    public void onInflate(@NonNull android.content.Context context, @NonNull android.util.AttributeSet attrs, Bundle savedInstanceState) {
+        logger.info("FirstFragment onInflate() called");
+        super.onInflate(context, attrs, savedInstanceState);
+    }
+
+    public void onViewCreated(View view, Bundle savedInstanceState, android.content.res.Configuration newConfig) {
+        logger.info("FirstFragment onViewCreated() called with newConfig");
+        super.onViewCreated(view, savedInstanceState);
+    }
 
 
     /*

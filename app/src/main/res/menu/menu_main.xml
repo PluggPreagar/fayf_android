@@ -22,4 +22,9 @@
             android:title="@string/action_refresh"
             android:orderInCategory="100"
             app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_load_from_web"
+            android:title="@string/action_load_from_web"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
 </menu>

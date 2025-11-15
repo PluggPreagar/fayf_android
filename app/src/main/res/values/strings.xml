@@ -47,5 +47,6 @@
     <string name="action_about">About</string>
     <string name="action_about_msg">" FayF Android App\\nVersion 0.0.1\\n(c)"</string>
     <string name="action_refresh">RefreshUI</string>
+    <string name="action_load_from_web">Download Data</string>
     <string name="send_toast">Entry saved.</string>
 </resources>

@@ -60,13 +60,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 // FIXME TODO   InputFragment will complete the entry with content
                 // FIXME TODO   allow Back navigation to FirstFragment
 
-                Entries.setCurrentEntry( Entries.createNewChildEntry( Entries.getCurrentTopicEntry(), "") ); // empty content for now
 
                 NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment_content_main);
-
-                if (navHostFragment != null) {
-                    NavController navController = navHostFragment.getNavController();
+                NavController navController = navHostFragment.getNavController();
+                // firstFragment -add-> opens SecondFragment (to add new child to current topic)
+                // secondFragment -add-> stays in SecondFragment (add new child to current entry - nested entry)
+                if (navController.getCurrentDestination() != null &&
+                        navController.getCurrentDestination().getId() == R.id.SecondFragment) {
+                    // already in SecondFragment - just create new child entry
+                    Entry currentEntry = Entries.getCurrentEntry();
+                    // TODO make robust -- check for "in update of entry" state, not in "add an entry" state
+                    if (currentEntry.content.isEmpty()) {
+                        Toast.makeText(MainActivity.this, "Please complete the current entry before adding a new one.", Toast.LENGTH_LONG).show();
+                        logger.info("FAB clicked in SecondFragment - but current entry is not completed yet");
+                        return;
+                    } else {
+                        Entries.setCurrentEntry( Entries.createNewChildEntry( Entries.getCurrentEntry(), "") ); // empty content for now
+                        // stay in SecondFragment
+                        navController.navigate(R.id.action_SecondFragment_to_SecondFragment);
+                        logger.info("FAB clicked in SecondFragment - creating new child entry to entry");
+                    }
+                } else if (navHostFragment != null) {
+                    // only valid from FirstFragment
+                    Entries.setCurrentEntry( Entries.createNewChildEntry( Entries.getCurrentTopicEntry(), "") ); // empty content for now
                     navController.navigate(R.id.action_FirstFragment_to_SecondFragment);
                 }
             }
@@ -87,6 +104,31 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         scrollView.getViewTreeObserver().addOnScrollChangedListener(this);
 
     }
+
+    @Override
+    public void onDestroy() {
+        logger.info("MainActivity onDestroy() called");
+        Entries.save( getApplicationContext());
+        super.onDestroy();
+    }
+
+    @Override
+    public void onStop() {
+        logger.info("MainActivity onStop() called");
+        Entries.save( getApplicationContext());
+        super.onStop();
+    }
+
+    // which function is called on closing application
+
+
+
+    /*
+
+
+
+     */
+
 
     public FloatingActionButton getFab(){
         return binding.fab;
@@ -131,6 +173,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             logger.info("Refresh UI");
             // force refresh of FirstFragment
             Entries.callTopicChangedListeners( Entries.getCurrentTopicEntry() );
+            return true;
+        } else if (id == R.id.action_load_from_web) {
+            logger.info("action_load_from_web");
+            Entries.setTopicEntry( Entries.getEntry("/") );
+            Entries.load_async( getApplicationContext());
             return true;
         }
 

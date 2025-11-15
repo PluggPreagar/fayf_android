@@ -101,11 +101,35 @@ public class EntryTree implements  java.io.Serializable {
 
 
 
-    public Entry addEntry(String path, Entry entry) {
+    public void addEntry(String path, Entry entry) {
         entries.putIfAbsent(path, new TreeMap<>(new EntryComparator()));
         entries.get(path).put(entry.nodeId, entry);
-        return entry;
     }
+
+
+    public void addEntryIfNew(Entry entry) {
+        TreeMap<String, Entry> topicEntry = entries.get(entry.getTopic());
+        if (null == topicEntry) {
+            // first child to parent entry -> create parent entry map
+            // proof that parent entry must exist before child entries
+            if (entries.containsKey( Entry.getParent(entry.getTopic()))) {
+                entries.put(entry.getTopic(), new TreeMap<>(new EntryComparator()));
+                topicEntry = entries.get(entry.getTopic());
+                logger.info("Parent entry found, created new topic for entry: {}", entry.getFullPath());
+            } else {
+                logger.warn("Parent entry not found for entry: {}", entry.getFullPath());
+            }
+        }
+        if (null != topicEntry) {
+            if (topicEntry.containsKey(entry.nodeId)) {
+                logger.info("Entry updated: {}", entry.getFullPath());
+            } else {
+                logger.info("Entry added: {}", entry.getFullPath());
+            }
+            topicEntry.putIfAbsent(entry.nodeId, entry);
+        }
+    }
+
 
     public void removeEntry(Entry entry) {
         String path = entry.getTopic();

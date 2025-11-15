@@ -19,6 +19,7 @@ public class Entries {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Entries.class);
 
 
+
     public interface OnEntriesLoaded {
         void onEntriesLoaded(EntryTree entries);
     }
@@ -83,43 +84,15 @@ public class Entries {
     }
 
 
-    // Serialize the EntryTree to a file
-    public static void saveToFile(TreeMap<String, TreeMap<String, Entry>> entries, String filePath, Context context)  {
-        if (entries == null || entries.isEmpty()) {
-            logger.warn("No entries to save to file: {}", filePath);
-            return;
-        }
-        // check if filePath is valid
-        if (filePath == null || filePath.isEmpty()) {
-            logger.error("Invalid file path for saving entries: {}", filePath);
-            return;
-        }
-        try (ObjectOutputStream oos = new ObjectOutputStream(
-                new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
-            oos.writeObject(entries);
-            logger.info("Entries saved to file: {} ({} entries)", filePath, EntryTree.size(entries));
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Error saving entries to file: {}", filePath, e);
-        }
-    }
+    /*
+        LOAD / SAVE ENTRIES
+     */
 
-    // Deserialize the EntryTree from a file
-    public static TreeMap<String, TreeMap<String, Entry>> loadFromFile(String filePath, Context context)  {
-        TreeMap<String, TreeMap<String, Entry>> entries = new TreeMap<>();
-        try (ObjectInputStream ois = new ObjectInputStream(
-                new GZIPInputStream( context.openFileInput( filePath)))) {
-            entries = (TreeMap<String, TreeMap<String, Entry>>) ois.readObject();
-            logger.info("Entries loaded from file: {} ({} entries)", filePath, EntryTree.size(entries));
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Error saving entries to file: {}", filePath, e);
-        }
-        return entries;
-    }
+
+
 
     public static void load(EntryTree entryTree, Context context){
-        entryTree.entries = loadFromFile("entries.dat", context);
+        entryTree.entries = DataStorageLocal.loadEntries( context);
         if (null == entryTree.entries || entryTree.entries.isEmpty()) {
             List<String> strings = new DataStorageWeb().readData();
             if (null == entryTree.entries) {
@@ -136,7 +109,7 @@ public class Entries {
                 }
             }
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
-            saveToFile(entryTree.entries, "entries.dat", context);
+            DataStorageLocal.saveEntries(entryTree.entries,  context);
         }
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(currentTopicEntry);
@@ -156,6 +129,21 @@ public class Entries {
             }
         });
     }
+
+
+    public static void save(Context context) {
+        executorService.execute(() -> {
+            try {
+                DataStorageLocal.saveEntries(entryTree.entries, context);
+                logger.info("Entries saved async ({} entries)", entryTree.entries.size());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Error saving entries asynchronously", e);
+            }
+        });
+    }
+
+
 
     /*
         HELPER
@@ -208,21 +196,23 @@ public class Entries {
     }
 
     private static void persistEntry(Entry entry) {
-        executorService.execute(() -> {
-            try {
-                if (!entry.getTopic().startsWith("/_/")) {
+        //logger.info("Entries loaded async ({} entries)", entries.size());
+        // new Entries not in tree yet -> update before returning to first fragment
+        entryTree.addEntryIfNew(entry);
+        //
+        if (!entry.getTopic().startsWith("/_/")) {
+            executorService.execute(() -> {
+                try {
                     new DataStorageWeb().saveEntry(entry);
-                } else {
-                    logger.info("Skipped uploading Settings: {}", entry.getFullPath());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.error("Error persisting entry asynchronously: {}", entry.getFullPath(), e);
                 }
-                //logger.info("Entries loaded async ({} entries)", entries.size());
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Error persisting entry asynchronously: {}", entry.getFullPath(), e);
-            }
-        });
-
-    }
+            });
+        } else {
+            logger.info("Skipped uploading Settings: {}", entry.getFullPath());
+        }
+   }
 
     private static boolean evaluateEntryUpdate(Entry entry, String newContent) {
         // TODO implement check or keeping prefix etc.
