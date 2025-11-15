@@ -171,4 +171,9 @@ public class EntryTree implements  java.io.Serializable {
         return size(entries);
     }
 
+    public int size(Entry topic) {
+        // return size of entries under topic - will be maximum of child entries, to be paginated later
+        TreeMap<String, Entry> entryTree = entries.get(topic.getFullPath());
+        return null == entryTree ? 0 : entryTree.size();
+    }
 }

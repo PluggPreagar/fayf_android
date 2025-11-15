@@ -16,6 +16,8 @@ import com.example.fayf_android002.databinding.FragmentSecondBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
 public class InputFragment extends Fragment {
 
     Logger logger = LoggerFactory.getLogger(InputFragment.class);
@@ -111,6 +113,21 @@ public class InputFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        logger.info("InputFragment resumed");
+        if (binding != null) {
+            binding.editextSecond.requestFocus();
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(binding.editextSecond, InputMethodManager.SHOW_IMPLICIT);
+            }
+        } else {
+            logger.warn("Binding is null in onResume - unable to focus editextSecond");
+        }
     }
 
 }

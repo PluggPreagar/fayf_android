@@ -2,14 +2,10 @@ package com.example.fayf_android002;
 
 import android.content.Context;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import static com.example.fayf_android002.Entry.DELETION_SUFFIX;
 
@@ -17,7 +13,6 @@ import static com.example.fayf_android002.Entry.DELETION_SUFFIX;
 public class Entries {
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Entries.class);
-
 
 
     public interface OnEntriesLoaded {
@@ -42,7 +37,9 @@ public class Entries {
 
     private static List<Entry> recentEntries = new ArrayList<>();
     private static int offset = 0;
+    private static int currentTopicEntryCount;
 
+    static final int PAGE_SIZE_MIN = 5;
 
 
 
@@ -91,8 +88,13 @@ public class Entries {
 
 
 
-    public static void load(EntryTree entryTree, Context context){
-        entryTree.entries = DataStorageLocal.loadEntries( context);
+    public static void load(EntryTree entryTree, Context context, boolean forceWeb) {
+        if (forceWeb) {
+            logger.info("Forcing entries reload from web");
+            entryTree.entries = null; // force reload from web
+        } else  {
+            entryTree.entries = DataStorageLocal.loadEntries( context);
+        }
         if (null == entryTree.entries || entryTree.entries.isEmpty()) {
             List<String> strings = new DataStorageWeb().readData();
             if (null == entryTree.entries) {
@@ -118,16 +120,20 @@ public class Entries {
         }
     }
 
-    public static void load_async(Context context){
+    public static void load_async(Context context , boolean forceWeb) {
         executorService.execute(() -> {
             try {
-                load(entryTree, context);
+                load(entryTree, context, forceWeb);
                 //logger.info("Entries loaded async ({} entries)", entries.size());
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.error("Error loading entries asynchronously", e);
             }
         });
+    }
+
+    public static void load_async(Context contextm ) {
+        load_async( contextm, false);
     }
 
 
@@ -290,6 +296,7 @@ public class Entries {
             }
             currentTopicEntry = topic;
             currentEntry = null; // reset current entry when topic changes
+            currentTopicEntryCount = entryTree.size(currentTopicEntry);
             callTopicChangedListeners(topic);
         } else {
             logger.warn("Skipped to set leaf/invalid topic entry: {}", topic.getFullPath());
@@ -317,5 +324,16 @@ public class Entries {
             return "/";
         }
     }
+
+
+    public static boolean incrementOffset(int i) {
+        // check if more entries exist with current
+        int offsetOld = offset;
+        offset += i;
+        offset = Math.min(offset, currentTopicEntryCount - PAGE_SIZE_MIN);
+        offset = Math.max(0, offset);
+        return offsetOld != offset;
+    }
+
 
 }

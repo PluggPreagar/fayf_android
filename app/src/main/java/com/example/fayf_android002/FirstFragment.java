@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
@@ -61,6 +62,31 @@ public class FirstFragment extends Fragment {
             updateButtonsUIThread();
         });
 
+        // on overscroll the bottom of button list
+        // then top entries are out of reach
+
+        // get ButtomList.onOverScrolledListener
+        binding.ButtonScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            View view = binding.ButtonScrollView.getChildAt(binding.ButtonScrollView.getChildCount() - 1);
+            int diff = (view.getBottom() - (binding.ButtonScrollView.getHeight() + binding.ButtonScrollView.getScrollY()));
+            if (diff == 0) {
+                // we are at the bottom
+                logger.info("ScrollView reached bottom");
+                if (true) {
+                    logger.info("Scrolling load more entries skipped - TEST");
+                }
+                if (Entries.incrementOffset(20)){
+                    // load next 20 entries
+                    updateButtonsUIThread();
+                };
+            }
+        });
+        // try to fix the top-out-of-reach--after--scrolling-botton issue
+        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
+        // scroll to see first button
+        // binding.button1.
+
         return binding.getRoot();
 
     }
@@ -69,7 +95,7 @@ public class FirstFragment extends Fragment {
         logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
 
-
+/*
         binding.button1.setOnClickListener(v ->
                 NavHostFragment.findNavController(FirstFragment.this)
                         .navigate(R.id.action_FirstFragment_to_SecondFragment)
@@ -88,7 +114,7 @@ public class FirstFragment extends Fragment {
             logger.info("Entries already loaded ({} entries), updating buttons", Entries.getInstance().getEntryTree().size());
             updateButtonsUIThread();
         }
-
+*/
     }
 
     public void onResume() {
@@ -198,6 +224,11 @@ public class FirstFragment extends Fragment {
             logger.error("ButtonList ViewGroup not found in MainActivity");
             return;
         }
+        if (true) {
+            logger.info("initializeButtons() skipped - already initialized");
+            binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+            return;
+        }
         logger.info("Initializing buttons in ButtonList {} ", buttonList.getChildCount());
         //buttonList.removeAllViews(); // clear existing buttons
         /*
@@ -243,7 +274,7 @@ public class FirstFragment extends Fragment {
 
             }
         }
-
+        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
         logger.info("Initialized buttons in ButtonList, total count: {} ", buttonList.getChildCount());
     }
 
@@ -269,6 +300,10 @@ public class FirstFragment extends Fragment {
         ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
         if (buttonList == null) {
             logger.error("ButtonList ViewGroup not found in MainActivity");
+            return;
+        }
+        if (true) {
+            logger.info("updateButtons() skipped - TEST");
             return;
         }
         int limit = 20; // buttonList.getChildCount();
@@ -365,6 +400,7 @@ public class FirstFragment extends Fragment {
         }
         //
         // getMainActivity().getSupportActionBar().setTitle("FAYF - " + topic);
+        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
     }
 
 

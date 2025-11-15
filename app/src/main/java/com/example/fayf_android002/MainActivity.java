@@ -177,7 +177,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         } else if (id == R.id.action_load_from_web) {
             logger.info("action_load_from_web");
             Entries.setTopicEntry( Entries.getEntry("/") );
-            Entries.load_async( getApplicationContext());
+            Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
+            Entries.load_async( getApplicationContext(), true);
             return true;
         }
 

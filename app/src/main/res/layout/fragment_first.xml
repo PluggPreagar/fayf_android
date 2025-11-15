@@ -4,14 +4,26 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:overScrollMode="always"
         tools:context=".FirstFragment"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:clipToPadding="false"
+        android:paddingTop="400dp"
+        android:paddingBottom="400dp"
         android:id="@+id/ButtonScrollView">
-
+    <!--
+        // even wore - skipp 5 buttons
+        android:clipToPadding="false"
+        android:paddingTop="?actionBarSize"
+        // even wore - skipp 6 buttons
+        android:paddingTop="?actionBarSize"
+        // - remove both - skipp 6 buttons
+    -->
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/ButtonList"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
+            android:layout_height="wrap_content"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
             android:paddingTop="50dp"
