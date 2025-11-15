@@ -2,7 +2,6 @@ package com.example.fayf_android002;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -27,6 +26,8 @@ public class FirstFragment extends Fragment {
     Logger logger = LoggerFactory.getLogger(FirstFragment.class);
 
     private FragmentFirstBinding binding;
+
+    private boolean blockRekursiveScroll = true;
 
     @Override
     public View onCreateView(
@@ -66,7 +67,15 @@ public class FirstFragment extends Fragment {
         // then top entries are out of reach
 
         // get ButtomList.onOverScrolledListener
+        /*
         binding.ButtonScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if (scrollY == oldScrollY) {
+                return; // no scroll // may happen while WO top-out-of-reach issue
+            }
+            if (blockRekursiveScroll && 0 == scrollY) {
+                blockRekursiveScroll = false;
+                return; // skip first call after programmatic scroll
+            }
             View view = binding.ButtonScrollView.getChildAt(binding.ButtonScrollView.getChildCount() - 1);
             int diff = (view.getBottom() - (binding.ButtonScrollView.getHeight() + binding.ButtonScrollView.getScrollY()));
             if (diff == 0) {
@@ -75,17 +84,42 @@ public class FirstFragment extends Fragment {
                 if (true) {
                     logger.info("Scrolling load more entries skipped - TEST");
                 }
-                if (Entries.incrementOffset(20)){
+                if (Entries.changeOffsetBy(5)){
                     // load next 20 entries
+                    logger.info("Loading next entries after overscroll at bottom");
                     updateButtonsUIThread();
-                };
+                } else {
+                    logger.info("No more entries to load after overscroll at bottom");
+                }
+            }
+            // if on overscroll at top
+            if (binding.ButtonScrollView.getScrollY() == 0) {
+                logger.info("ScrollView reached top");
+                // we are at the top
+                if (Entries.changeOffsetBy(-5)){
+                    // load previous 20 entries
+                    updateButtonsUIThread();
+                    logger.info("Loading previous entries after overscroll at top");
+                } else {
+                    logger.info("No previous entries to load after overscroll at top");
+                }
+                // try to fix the top-out-of-reach--after--scrolling-bottom issue
+                if (scrollX>0) {
+                    binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+                    binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
+                    // scroll to see first button
+                    binding.button1.requestFocus();
+                }
             }
         });
-        // try to fix the top-out-of-reach--after--scrolling-botton issue
-        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
-        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
+        */
+
+
+        // try to fix the top-out-of-reach--after--scrolling-bottom issue
+        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
         // scroll to see first button
-        // binding.button1.
+        //binding.button1.requestFocus();
 
         return binding.getRoot();
 
@@ -115,6 +149,7 @@ public class FirstFragment extends Fragment {
             updateButtonsUIThread();
         }
 */
+       // binding.button1.requestFocus();
     }
 
     public void onResume() {
@@ -224,7 +259,7 @@ public class FirstFragment extends Fragment {
             logger.error("ButtonList ViewGroup not found in MainActivity");
             return;
         }
-        if (true) {
+        if (false) {
             logger.info("initializeButtons() skipped - already initialized");
             binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
             return;
@@ -302,7 +337,7 @@ public class FirstFragment extends Fragment {
             logger.error("ButtonList ViewGroup not found in MainActivity");
             return;
         }
-        if (true) {
+        if (false) {
             logger.info("updateButtons() skipped - TEST");
             return;
         }
@@ -329,6 +364,7 @@ public class FirstFragment extends Fragment {
                 Button btn = (Button) button;
                 btn.setText(entry.content);
                 btn.setVisibility(View.VISIBLE);
+                /*
                 btn.setOnClickListener(v -> {
                     this.setTopic(entry);
                 });
@@ -338,6 +374,8 @@ public class FirstFragment extends Fragment {
                     navigateToEdit(entry);
                     return true;
                 });
+
+                 */
 
                 /*
                 // move button 1px left
@@ -365,21 +403,36 @@ public class FirstFragment extends Fragment {
                 button.setLayoutParams(params);
 
 
-/*
 
-                btn.setOnTouchListener(new OnSwipeTouchListener(this) {
+
+                btn.setOnTouchListener(new OnTouchListener(this) {
+
+                    @Override
+                    public void onClick() {
+                        Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
+                        Entries.setTopicEntry(entry); // set topic to this entry
+                    }
+                    @Override
+                    public void onLongClick() {
+                        Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
+                        navigateToEdit(entry); // navigate to edit this entry
+                    }
+
+                    @Override
                     public void onSwipeRight() {
                         Toast.makeText(getActivity(), "Swiped right on entry: " + entry.content, Toast.LENGTH_SHORT).show();
                         //Entries.setTopicEntry(entry); // set topic to this entry
                     }
+                    @Override
                     public void onSwipeLeft() {
                         Toast.makeText(getActivity(), "Swiped left on entry: " + entry.content, Toast.LENGTH_SHORT).show();
                         //navigateToEdit(entry); // navigate to edit this entry
                     }
 
+
                 });
 
- */
+
             }
 
             limit--;
@@ -400,7 +453,9 @@ public class FirstFragment extends Fragment {
         }
         //
         // getMainActivity().getSupportActionBar().setTitle("FAYF - " + topic);
-        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+        if (null != binding.ButtonScrollView){
+            binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+        }
     }
 
 

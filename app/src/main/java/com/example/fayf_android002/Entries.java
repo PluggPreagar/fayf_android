@@ -1,6 +1,7 @@
 package com.example.fayf_android002;
 
 import android.content.Context;
+import android.view.View;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +51,27 @@ public class Entries {
     public static Entries getInstance() {
         return instance;
     }
+
+
+    /*    TODO move to ViewModel ? */
+
+    private static View viewTouchedInProgress = null;
+
+    public static void settingTouchInProgress(View v) {
+        logger.debug("settingTouchInProgress: {} ", v.getId());
+        viewTouchedInProgress = v;
+    }
+    public static void settingTouchInProgressReset(View v) {
+        logger.debug("settingTouchInProgress: {} reset ", v.getId());
+        viewTouchedInProgress = null;
+    }
+    public static View getViewTouchedInProgress() {
+        return viewTouchedInProgress;
+    }
+
+
+
+
 
 
     /* LOAD ENTRIES ASYNC */
@@ -326,7 +348,7 @@ public class Entries {
     }
 
 
-    public static boolean incrementOffset(int i) {
+    public static boolean changeOffsetBy(int i) {
         // check if more entries exist with current
         int offsetOld = offset;
         offset += i;

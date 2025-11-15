@@ -11,7 +11,11 @@ public class OnTouchListener implements View.OnTouchListener {
 
     Logger logger = LoggerFactory.getLogger(OnTouchListener.class);
 
-    private static final int MOVE_THRESHOLD = 100;
+    private static final int MOVE_THRESHOLD_START = 100;
+    private static final int MOVE_THRESHOLD_MOVING = 5;
+
+    private static final int MOVE_TRIGGER_THRESHOLD = 100;
+
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
     private MotionEvent firstEvent;
     private MotionEvent lastEvent;
@@ -35,7 +39,7 @@ public class OnTouchListener implements View.OnTouchListener {
 
     public boolean onTouch_(View v, MotionEvent event) {
 
-        logger.info("onTouch event: {}", event.toString());
+        logger.info("OnTouchListener onTouch event: {}", event.toString());
 
         /*
         @Override
@@ -63,9 +67,8 @@ public class OnTouchListener implements View.OnTouchListener {
         float deltaX = e2.getX() - e1.getX();
         float deltaY = e2.getY() - e1.getY();
         float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
-        if (absDeltaMax < MOVE_THRESHOLD) {
-            logger.info("no move: {} < {}", absDeltaMax , MOVE_THRESHOLD);
-            swipeVelocity = 0;
+        if (absDeltaMax < (isMoveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
+            logger.info("move no: .delta*={} < {}", absDeltaMax , MOVE_THRESHOLD_START);
         } else {
             if (!isMoveStarted) {
                 calculateLongPress(e1); // check for long press before move started
@@ -77,17 +80,24 @@ public class OnTouchListener implements View.OnTouchListener {
             if (velocityAbs > swipeVelocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
                 swipeVelocity = velocityAbs;
             }
+            logger.info("moved  : .deltaX={}, .deltaY={}, velocity={}, isDirectionX={} (action={})"
+                    , deltaX, deltaY, swipeVelocity, isDirectionX
+                    // lookup MotionEvent action names
+                    , e2.getAction() == MotionEvent.ACTION_DOWN ? "DOWN"     // 0
+                            : e2.getAction() == MotionEvent.ACTION_UP ? "UP"     // 1
+                            : e2.getAction() == MotionEvent.ACTION_MOVE ? "MOVE" // 2
+                            : "OTHER"
+            );
         }
-        logger.info("Move detected: .deltaX={}, .deltaY={}, velocity={}, isDirectionX={}", deltaX, deltaY, swipeVelocity, isDirectionX);
     }
 
     private void calculateAbsoluteDelta(MotionEvent e2){
         float deltaX = e2.getX() - firstEvent.getX();
         float deltaY = e2.getY() - firstEvent.getY();
-        if (Math.abs(deltaX) > MOVE_THRESHOLD ) {
+        if (Math.abs(deltaX) > MOVE_THRESHOLD_START) {
             this.deltaX = deltaX;
         }
-        if (Math.abs(deltaY) > MOVE_THRESHOLD ) {
+        if (Math.abs(deltaY) > MOVE_THRESHOLD_START) {
             this.deltaY = deltaY;
         }
     }
@@ -107,11 +117,33 @@ public class OnTouchListener implements View.OnTouchListener {
         }
     }
 
+    private void checkLongPressByTimeout(OnTouchListener listener){
+        if (!listener.isMoveStarted && !listener.longPressDetected & null !=listener.firstEvent) {
+            // make sure no move happened
+            // and still in touch
+            listener.longPressDetected = true;
+            fragment.requireActivity().runOnUiThread(() -> {
+                listener.onLongClick();
+            });
+        }
+    }
 
+    private void initLongPressCheckByTimeout(View v){
+        fragment.requireActivity().runOnUiThread(() -> {
+            new android.os.Handler().postDelayed(() -> {
+                fragment.requireActivity().runOnUiThread(() -> {
+                    checkLongPressByTimeout(this);
+                });
+            }, 2000);
+        });
+    }
 
     public boolean onTouch(View v, MotionEvent event){
         // move btn to left
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            logger.info("Action Down detected {}", event.toString());
+            Entries.settingTouchInProgress(v);
+            swipeVelocity = 0;
             firstEvent = MotionEvent.obtain(event); // store initial event as copy
             x_start = (int) event.getX(); // as event has no fixed values -- REMOVE ??
             lastEvent = firstEvent; // store last event as copy
@@ -120,6 +152,7 @@ public class OnTouchListener implements View.OnTouchListener {
             params_initial = new ViewGroup.MarginLayoutParams(params); // store copy of initial params
             params.height = v.getHeight(); // keep height - even if it is wrap content on shrink
             v.setLayoutParams(params);
+            initLongPressCheckByTimeout(v);
         } else if (null == firstEvent) {
             logger.warn("First event is null on move/up action");
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -128,10 +161,25 @@ public class OnTouchListener implements View.OnTouchListener {
             float deltaX = event.getX() - firstEvent.getX();
             params.leftMargin = deltaX > 0 ? (int) deltaX : 0 ;
             params.rightMargin = deltaX < 0 ? (int) -deltaX : 0 ;
+            // change color of button if moved more than threshold
+            if (isDirectionX && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START )) {
+                v.setBackgroundColor(
+                        deltaX < 0 ?
+                                (MOVE_TRIGGER_THRESHOLD < -deltaX ?
+                                        fragment.requireContext().getColor(R.color.red) :
+                                        fragment.requireContext().getColor(R.color.orange_orange))
+                                : (MOVE_TRIGGER_THRESHOLD < deltaX ?
+                                    fragment.requireContext().getColor(R.color.teal_700) :
+                                    fragment.requireContext().getColor(R.color.teal_200))
+                );
+            };
+
+            v.setLayoutParams(params);
             // iterate
             lastEvent = MotionEvent.obtain(event); // store last event as copy
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             calculateLongPress(event); // check for long press on release, if moved it already was checked
+            calculateVelocityAndDirection(lastEvent, event);
             calculateAbsoluteDelta(event);
             if (swipeVelocity > 0) {
                 if (isDirectionX) {
@@ -168,13 +216,20 @@ public class OnTouchListener implements View.OnTouchListener {
             } else {
                 onClick();
             }
+            Entries.settingTouchInProgressReset(v); // reset
             resetPosition(v);
             firstEvent = null; // reset
+        } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+            logger.info("Action Cancel detected {} .. wait vor dispatched events", event.toString());
         } else {
+            logger.warn("Unknown action detected: {}", event.toString());
+            Entries.settingTouchInProgressReset(v); // reset
             resetPosition(v);
+            firstEvent = null; // reset
         }
+        return isDirectionX; // consume event if moved in X direction
         //return false; // allow other events like onClick to be processed
-        return true; // consume event
+        //return true; // consume event
     }
 
     public void resetPosition(View v){
@@ -184,15 +239,18 @@ public class OnTouchListener implements View.OnTouchListener {
         if (params.rightMargin>0) params.rightMargin = Math.max(params.rightMargin/2 , 5) - 5;
         v.setLayoutParams(params);
         // if margins > 0 -> delayed reset
+
         if (params.leftMargin>10 || params.rightMargin>10){
             new android.os.Handler().postDelayed(() -> {
                   fragment.requireActivity().runOnUiThread(() -> {
-                    resetPosition(v);
+                  resetPosition(v);
                 });
             }, 50);
-        } else if (params_initial != null) {
+        } /* else if (params_initial != null) {
             v.setLayoutParams(params_initial);
         }
+        */
+
     }
 
 

@@ -28,6 +28,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     NestedScrollView scrollView;
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -148,11 +150,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         // items defined in res/menu/menu_main.xml
-        logger.info("Menu item selected: {}", item.getTitle());
+        logger.info("Settings Menu item selected: {} (id: {})", item.getTitle(), id);
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            logger.info("Settings menu item selected");
+            logger.info("Action menu item selected");
             if (Entries.getCurrentTopicString().startsWith("/_")) {
                 setTopic("/");
             } else {
@@ -179,6 +181,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Entries.setTopicEntry( Entries.getEntry("/") );
             Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
             Entries.load_async( getApplicationContext(), true);
+            return true;
+        } else if (null == item.getTitle() || id == R.id.menu_main) {
+            logger.info("back-menu-button pressed");
+            // check if in InputFragment, then go back to FirstFragment
+            onBackPressed();
             return true;
         }
 
@@ -331,7 +338,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        Log.d(TAG, "onTouch: " + event.toString());
+        // forward touch event to child views
+        View viewTouchedInProgress = Entries.getViewTouchedInProgress();
+        if (viewTouchedInProgress != null ) {
+            viewTouchedInProgress.dispatchTouchEvent(event);
+        } else {
+            Log.d(TAG, "MainActivity onTouch: " + event.toString());
+        }
         return false;
     }
 
