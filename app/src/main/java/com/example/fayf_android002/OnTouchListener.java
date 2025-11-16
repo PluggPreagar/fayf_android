@@ -69,14 +69,16 @@ public class OnTouchListener implements View.OnTouchListener {
     }
 
     // calculate velocity and direction
-    private void calculateVelocityAndDirection(MotionEvent e1, MotionEvent e2){
+    private boolean calculateVelocityAndDirection(MotionEvent e1, MotionEvent e2){
         float deltaXcur = e2.getX() - e1.getX();
         float deltaYcur = e2.getY() - e1.getY();
         deltaX += deltaXcur;
         deltaY += deltaYcur;
-        float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+        // float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+        float absDeltaMax = Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur));
         if (absDeltaMax < (isMoveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
             logger.info("move no: .delta*={} < {}", absDeltaMax , MOVE_THRESHOLD_START);
+            return false; // debounce move detection
         } else {
             if (!isMoveStarted) {
                 calculateLongPress(e1); // check for long press before move started
@@ -102,6 +104,8 @@ public class OnTouchListener implements View.OnTouchListener {
                             : "OTHER"
             );
         }
+        // debounce move detection
+        return Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur)) >= MOVE_THRESHOLD_MOVING;
     }
 
     private void calculateAbsoluteDelta(MotionEvent e2){
@@ -182,28 +186,31 @@ public class OnTouchListener implements View.OnTouchListener {
         } else if (null == firstEvent) {
             logger.warn("First event is null on move/up action");
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            calculateVelocityAndDirection(lastEvent, event);
-            // move button according to deltaX - absolute
-            if (isDirectionX){
-                params.leftMargin = deltaX > 0 ? (int) deltaX : 0 ;
-                params.rightMargin = deltaX < 0 ? (int) -deltaX : 0 ;
-            }
-            // change color of button if moved more than threshold
-            if (isDirectionX && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START )) {
-                v.setBackgroundColor(
-                        deltaX < 0 ?
-                                (MOVE_TRIGGER_THRESHOLD < -deltaX ?
-                                        fragment.requireContext().getColor(R.color.red) :
-                                        fragment.requireContext().getColor(R.color.orange_orange))
-                                : (MOVE_TRIGGER_THRESHOLD < deltaX ?
+            if (calculateVelocityAndDirection(lastEvent, event)) {
+                // debounce
+                lastEvent = MotionEvent.obtain(event); // store last event as copy
+                // move button according to deltaX - absolute
+                if (isDirectionX) {
+                    params.leftMargin = deltaX > 0 ? (int) deltaX : 0;
+                    params.rightMargin = deltaX < 0 ? (int) -deltaX : 0;
+                }
+                // change color of button if moved more than threshold
+                if (isDirectionX && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START)) {
+                    v.setBackgroundColor(
+                            deltaX < 0 ?
+                                    (MOVE_TRIGGER_THRESHOLD < -deltaX ?
+                                            fragment.requireContext().getColor(R.color.red) :
+                                            fragment.requireContext().getColor(R.color.orange_orange))
+                                    : (MOVE_TRIGGER_THRESHOLD < deltaX ?
                                     fragment.requireContext().getColor(R.color.teal_700) :
                                     fragment.requireContext().getColor(R.color.teal_200))
-                );
-            };
+                    );
+                }
+                ;
 
-            v.setLayoutParams(params);
+                v.setLayoutParams(params);
+            }
             // iterate
-            lastEvent = MotionEvent.obtain(event); // store last event as copy
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             logger.info("Action Up detected {}", event.toString());
             touching = false;
@@ -314,7 +321,7 @@ public class OnTouchListener implements View.OnTouchListener {
 
     public void onClick() {
         // Override this method in your fragment or activity
-        logger.info("Click detected");
+        logger.info(TextViewAppender.appendLog("Click detected"));
     }
 
     public void onLongClickDuringMove() {

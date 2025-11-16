@@ -29,6 +29,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+/*
+    packagingOptions {
+        exclude("META-INF/INDEX.LIST")
+    }
+*/
 }
 
 dependencies {
@@ -42,6 +47,10 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     // allow formatted logging
-    implementation("org.slf4j:slf4j-api:2.0.9")
-    implementation("org.slf4j:slf4j-simple:2.0.9") // Simple implementation for testing
+    implementation("org.slf4j:slf4j-api:1.7.36")
+    //implementation("org.slf4j:slf4j-simple:2.0.9") // Simple implementation for testing
+    // clone logging to textview
+    implementation("ch.qos.logback:logback-classic:1.2.11")
+    implementation("ch.qos.logback:logback-core:1.2.11")
+
 }

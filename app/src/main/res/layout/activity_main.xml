@@ -38,4 +38,25 @@
             android:layout_marginBottom="16dp"
             app:srcCompat="@android:drawable/ic_input_add"/>
 
+    <!-- Other UI components -->
+
+    <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="16dp"
+            android:background="#EEEEEE"
+            android:layout_gravity="bottom|end"
+            >
+
+        <TextView
+                android:id="@+id/logTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:textColor="#000000"
+                android:textSize="9sp"
+                android:text="logger"
+                android:scrollbars="vertical" />
+    </ScrollView>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

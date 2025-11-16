@@ -3,6 +3,7 @@ package com.example.fayf_android002;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.widget.NestedScrollView;
 import androidx.navigation.fragment.NavHostFragment;
@@ -37,7 +38,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        logger.info("MainActivity onCreate() called");
+        TextView logTextView = findViewById(R.id.logTextView);
+        TextViewAppender.initialize(logTextView);
+        TextViewAppender.setupSLF4J();
+
+        logger.info( TextViewAppender.appendLog( "MainActivity onCreate() called" ) );
 
         setSupportActionBar(binding.toolbar);
 
