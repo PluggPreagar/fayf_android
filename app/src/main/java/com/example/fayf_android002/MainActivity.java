@@ -341,7 +341,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // forward touch event to child views
         View viewTouchedInProgress = Entries.getViewTouchedInProgress();
         if (viewTouchedInProgress != null ) {
-            viewTouchedInProgress.dispatchTouchEvent(event);
+            // prevent scrolling once Direction is Set
+            // true to consume event here -> prevent scrollview from scrolling
+            boolean b = viewTouchedInProgress.dispatchTouchEvent(event);
+            // TODO KLUDGE - check direction
+            boolean b2 = OnTouchListener.isDirectionX;
+            Log.d(TAG, "MainActivity onTouch: forwarded, returned: " + b +" is:" + b2 + " event: " + event.toString());
+            return b2;
         } else {
             Log.d(TAG, "MainActivity onTouch: " + event.toString());
         }

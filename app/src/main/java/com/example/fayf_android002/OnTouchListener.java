@@ -33,7 +33,7 @@ public class OnTouchListener implements View.OnTouchListener {
     private float velocityX = 0;
     private float velocityY = 0;
     protected float swipeVelocity = 0;
-    protected boolean isDirectionX = false;
+    protected static boolean isDirectionX = false; // need MainActivity to get direction
     protected boolean isMoveStarted = false;
     private ViewGroup.MarginLayoutParams params = null;
     private int LONG_PRESS_RELEASE_AUTO_TIMEOUT;
@@ -83,7 +83,12 @@ public class OnTouchListener implements View.OnTouchListener {
                 isMoveStarted = true;
             }
             long deltaTime = e2.getEventTime() - e1.getEventTime();
-            isDirectionX = Math.abs(deltaXcur) > Math.abs(deltaYcur);
+            if (!isDirectionX) {
+                isDirectionX = Math.abs(deltaX) > Math.abs(deltaY);
+                if (isDirectionX){
+                    logger.info("fix direction once set - prevent scrolling");
+                }
+            }
             float velocityAbs = Math.abs(isDirectionX ? deltaYcur : deltaXcur) / deltaTime * 1000;
             if (velocityAbs > swipeVelocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
                 swipeVelocity = velocityAbs;
@@ -163,6 +168,7 @@ public class OnTouchListener implements View.OnTouchListener {
             swipeVelocity = 0;
             view = v;
             sla_initial = null;
+            isDirectionX = false; // reset direction
             touching = true;
             firstEvent = MotionEvent.obtain(event); // store initial event as copy
             x_start = (int) event.getX(); // as event has no fixed values -- REMOVE ??
@@ -178,9 +184,10 @@ public class OnTouchListener implements View.OnTouchListener {
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             calculateVelocityAndDirection(lastEvent, event);
             // move button according to deltaX - absolute
-            float deltaX = event.getX() - firstEvent.getX();
-            params.leftMargin = deltaX > 0 ? (int) deltaX : 0 ;
-            params.rightMargin = deltaX < 0 ? (int) -deltaX : 0 ;
+            if (isDirectionX){
+                params.leftMargin = deltaX > 0 ? (int) deltaX : 0 ;
+                params.rightMargin = deltaX < 0 ? (int) -deltaX : 0 ;
+            }
             // change color of button if moved more than threshold
             if (isDirectionX && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START )) {
                 v.setBackgroundColor(
@@ -344,6 +351,8 @@ public class OnTouchListener implements View.OnTouchListener {
             view.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_500));
         }
     }
+
+
 
 
 }
