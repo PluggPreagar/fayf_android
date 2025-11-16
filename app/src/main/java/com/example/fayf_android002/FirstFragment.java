@@ -470,8 +470,13 @@ public class FirstFragment extends Fragment {
 
     public void navigateToEdit(Entry entry) {
         Entries.setCurrentEntry(entry);
-        NavHostFragment.findNavController(FirstFragment.this)
-                .navigate(R.id.action_FirstFragment_to_SecondFragment);
+        try {
+            NavHostFragment.findNavController(FirstFragment.this)
+                    .navigate(R.id.action_FirstFragment_to_SecondFragment);
+        } catch (Exception ex) {
+            // needed due to timing issues
+            logger.error("Navigation to SecondFragment failed: {}", ex.getMessage());
+        }
     }
 
 

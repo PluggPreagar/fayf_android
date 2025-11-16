@@ -228,7 +228,7 @@ public class Entries {
         // new Entries not in tree yet -> update before returning to first fragment
         entryTree.addEntryIfNew(entry);
         //
-        if (!entry.getTopic().startsWith("/_/")) {
+        if (!entry.getTopic().startsWith(Entry.HIDDEN_ENTRY_PATH+Entry.PATH_SEPARATOR)) {
             executorService.execute(() -> {
                 try {
                     new DataStorageWeb().saveEntry(entry);
@@ -277,7 +277,7 @@ public class Entries {
         // might be hidden topic -> do not move to hidden-base-root /_/
         String currentPath = entry != null ? entry.getFullPath() : "/";
         String parentTopic = Entry.getTopicFromFullPath(currentPath);
-        if (!parentTopic.equals(currentPath) && ! parentTopic.equals("/_/")) {
+        if (!parentTopic.equals(currentPath) && ! parentTopic.equals(Entry.HIDDEN_ENTRY_PATH+Entry.PATH_SEPARATOR)) {
             entry = getEntryOrNew(parentTopic);
             setTopicEntry(entry);
         }
@@ -329,6 +329,18 @@ public class Entries {
     public static List<Entry> getRecentEntries() {
         return recentEntries;
     }
+
+    public static String getTenant(){
+        String tenantName = "";
+        Entry entry = entryTree.getEntry(Entry.TENANT_ENTRY_PATH);
+        if (entry == null || EntryTree.NULL_ENTRY.equals(entry)) {
+            tenantName = DataStorageWeb.TID_DEFAULT;
+        } else {
+            tenantName = entry.getContent();
+        }        
+        return tenantName;
+    }
+
 
     public static int getOffset() {
         return offset;

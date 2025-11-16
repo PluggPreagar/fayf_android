@@ -1,5 +1,6 @@
 package com.example.fayf_android002;
 
+import android.animation.StateListAnimator;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class OnTouchListener implements View.OnTouchListener {
 
+    private final int LONG_PRESS_DURATION = 500;
     Logger logger = LoggerFactory.getLogger(OnTouchListener.class);
 
     private static final int MOVE_THRESHOLD_START = 100;
@@ -19,10 +21,12 @@ public class OnTouchListener implements View.OnTouchListener {
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
     private MotionEvent firstEvent;
     private MotionEvent lastEvent;
-    private ViewGroup.MarginLayoutParams params_initial;
+    private ViewGroup.MarginLayoutParams params_initial = null ;
+    private StateListAnimator sla_initial = null;
     private int x_start;
 
     private final Fragment fragment;
+    private View  view;
     protected boolean longPressDetected = false;
     private float deltaX = 0;
     private float deltaY = 0;
@@ -32,6 +36,8 @@ public class OnTouchListener implements View.OnTouchListener {
     protected boolean isDirectionX = false;
     protected boolean isMoveStarted = false;
     private ViewGroup.MarginLayoutParams params = null;
+    private int LONG_PRESS_RELEASE_AUTO_TIMEOUT;
+    private boolean touching;
 
     public OnTouchListener(Fragment ma) {
         this.fragment = ma;
@@ -64,8 +70,10 @@ public class OnTouchListener implements View.OnTouchListener {
 
     // calculate velocity and direction
     private void calculateVelocityAndDirection(MotionEvent e1, MotionEvent e2){
-        float deltaX = e2.getX() - e1.getX();
-        float deltaY = e2.getY() - e1.getY();
+        float deltaXcur = e2.getX() - e1.getX();
+        float deltaYcur = e2.getY() - e1.getY();
+        deltaX += deltaXcur;
+        deltaY += deltaYcur;
         float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
         if (absDeltaMax < (isMoveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
             logger.info("move no: .delta*={} < {}", absDeltaMax , MOVE_THRESHOLD_START);
@@ -75,13 +83,13 @@ public class OnTouchListener implements View.OnTouchListener {
                 isMoveStarted = true;
             }
             long deltaTime = e2.getEventTime() - e1.getEventTime();
-            isDirectionX = Math.abs(deltaX) > Math.abs(deltaY);
-            float velocityAbs = Math.abs(isDirectionX ? deltaY : deltaX) / deltaTime * 1000;
+            isDirectionX = Math.abs(deltaXcur) > Math.abs(deltaYcur);
+            float velocityAbs = Math.abs(isDirectionX ? deltaYcur : deltaXcur) / deltaTime * 1000;
             if (velocityAbs > swipeVelocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
                 swipeVelocity = velocityAbs;
             }
-            logger.info("moved  : .deltaX={}, .deltaY={}, velocity={}, isDirectionX={} (action={})"
-                    , deltaX, deltaY, swipeVelocity, isDirectionX
+            logger.info("moved  : .deltaXcur={}, .deltaYcur={}, velocity={}, isDirectionX={} (action={})"
+                    , deltaXcur, deltaYcur, swipeVelocity, isDirectionX
                     // lookup MotionEvent action names
                     , e2.getAction() == MotionEvent.ACTION_DOWN ? "DOWN"     // 0
                             : e2.getAction() == MotionEvent.ACTION_UP ? "UP"     // 1
@@ -92,14 +100,13 @@ public class OnTouchListener implements View.OnTouchListener {
     }
 
     private void calculateAbsoluteDelta(MotionEvent e2){
-        float deltaX = e2.getX() - firstEvent.getX();
-        float deltaY = e2.getY() - firstEvent.getY();
-        if (Math.abs(deltaX) > MOVE_THRESHOLD_START) {
-            this.deltaX = deltaX;
+        if (Math.abs(deltaX) < MOVE_THRESHOLD_START) {
+            deltaX = 0;
         }
-        if (Math.abs(deltaY) > MOVE_THRESHOLD_START) {
-            this.deltaY = deltaY;
+        if (Math.abs(deltaY) < MOVE_THRESHOLD_START) {
+            deltaY = 0;
         }
+        logger.info("absolute delta calculated: .deltaX={}, .deltaY={}", this.deltaX, this.deltaY);
     }
 
 
@@ -107,7 +114,7 @@ public class OnTouchListener implements View.OnTouchListener {
     private void calculateLongPress(MotionEvent e){
         if (!isMoveStarted && !longPressDetected) {
             long pressDuration = e.getEventTime() - e.getDownTime();
-            if (pressDuration > 500) {
+            if (pressDuration > LONG_PRESS_DURATION) {
                 longPressDetected = true;
                 logger.info("Long press detected, duration: {} ms", pressDuration);
                 if (e.getAction() == MotionEvent.ACTION_MOVE) {
@@ -129,13 +136,19 @@ public class OnTouchListener implements View.OnTouchListener {
     }
 
     private void initLongPressCheckByTimeout(View v){
-        fragment.requireActivity().runOnUiThread(() -> {
-            new android.os.Handler().postDelayed(() -> {
-                fragment.requireActivity().runOnUiThread(() -> {
-                    checkLongPressByTimeout(this);
-                });
-            }, 2000);
-        });
+        LONG_PRESS_RELEASE_AUTO_TIMEOUT = 2000;
+        new android.os.Handler().postDelayed(() -> {
+            fragment.requireActivity().runOnUiThread(() -> {
+                checkLongPressByTimeout(this);
+            });
+        }, LONG_PRESS_RELEASE_AUTO_TIMEOUT);
+        new android.os.Handler().postDelayed(() -> {
+            fragment.requireActivity().runOnUiThread(() -> {
+                if (touching) { // only if not yet released - that would have triggered onLongClick already
+                    onLongPressDelayReached();
+                }
+            });
+        }, LONG_PRESS_DURATION);
     }
 
     public boolean onTouch(View v, MotionEvent event){
@@ -144,6 +157,9 @@ public class OnTouchListener implements View.OnTouchListener {
             logger.info("Action Down detected {}", event.toString());
             Entries.settingTouchInProgress(v);
             swipeVelocity = 0;
+            view = v;
+            sla_initial = null;
+            touching = true;
             firstEvent = MotionEvent.obtain(event); // store initial event as copy
             x_start = (int) event.getX(); // as event has no fixed values -- REMOVE ??
             lastEvent = firstEvent; // store last event as copy
@@ -178,6 +194,8 @@ public class OnTouchListener implements View.OnTouchListener {
             // iterate
             lastEvent = MotionEvent.obtain(event); // store last event as copy
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            logger.info("Action Up detected {}", event.toString());
+            touching = false;
             calculateLongPress(event); // check for long press on release, if moved it already was checked
             calculateVelocityAndDirection(lastEvent, event);
             calculateAbsoluteDelta(event);
@@ -223,6 +241,7 @@ public class OnTouchListener implements View.OnTouchListener {
             logger.info("Action Cancel detected {} .. wait vor dispatched events", event.toString());
         } else {
             logger.warn("Unknown action detected: {}", event.toString());
+            touching = false;
             Entries.settingTouchInProgressReset(v); // reset
             resetPosition(v);
             firstEvent = null; // reset
@@ -240,16 +259,19 @@ public class OnTouchListener implements View.OnTouchListener {
         v.setLayoutParams(params);
         // if margins > 0 -> delayed reset
 
-        if (params.leftMargin>10 || params.rightMargin>10){
+        if (params.leftMargin>0 || params.rightMargin>0){
             new android.os.Handler().postDelayed(() -> {
                   fragment.requireActivity().runOnUiThread(() -> {
                   resetPosition(v);
                 });
             }, 50);
-        } /* else if (params_initial != null) {
-            v.setLayoutParams(params_initial);
+        }  else if (params_initial != null) {
+            v.setStateListAnimator(sla_initial); // restore elevation change on touch
+            // or keep color change until next render ?
+            //v.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_200)); // will be reset by next render, after aktion
+            // v.setLayoutParams(params_initial);
         }
-        */
+
 
     }
 
@@ -307,6 +329,16 @@ public class OnTouchListener implements View.OnTouchListener {
     public void onLongPressAndSwipeBottom() {
         // Override this method in your fragment or activity
         logger.info("Long Press and Swipe Bottom detected");
+    }
+
+    public void onLongPressDelayReached() {
+        // Override this method in your fragment or activity
+        logger.info("Long Press Delay Reached detected");
+        if (null == sla_initial) {
+            sla_initial = view.getStateListAnimator();
+            view.setStateListAnimator(null); // disable elevation change on touch
+            view.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_500));
+        }
     }
 
 

@@ -10,8 +10,6 @@
         android:background="@android:color/holo_orange_light"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
         android:id="@+id/ButtonScrollView"
-        android:layout_gravity="top"
-
         >
     <!--
         // even wore - skipp 5 buttons
@@ -20,6 +18,18 @@
         // even wore - skipp 6 buttons
         android:paddingTop="?actionBarSize"
         // - remove both - skipp 6 buttons
+
+        // - remove gravity
+        //      shift padding from ConstraintLayout to NestedScrollView - skipp 3 buttons
+        afterScroll: AppBarLayout is hidden part of padding is visible
+
+        // material bar - set to "noScroll" - skipp 3
+        //   tabbar invisible
+
+            // material bar removed collapse-attr - skipp 3 buttons
+
+
+
     -->
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/ButtonList"
@@ -27,8 +37,6 @@
             android:layout_height="wrap_content"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:paddingTop="100dp"
-            android:paddingBottom="50dp"
             android:background="@android:color/holo_blue_light"
             >  <!-- padding seams not to work on my phone -->
 
@@ -37,7 +45,7 @@
                 android:id="@+id/button1"
                 android:layout_width="0dp"
                 android:layout_weight=".80"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
                 android:text="aaaK"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

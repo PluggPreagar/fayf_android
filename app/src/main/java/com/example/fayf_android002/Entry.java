@@ -11,6 +11,12 @@ public class Entry implements java.io.Serializable {
 
     protected static final String DELETION_SUFFIX = "--";
 
+    protected static final String TENANT_ENTRY_PATH = "/_/tenants";
+
+    protected static final String HIDDEN_ENTRY_PATH = "/_";
+
+    protected static final String PATH_SEPARATOR = "/";
+
     public String topic = ""; // might be empty
     public String nodeId;
     public String content;
@@ -65,6 +71,12 @@ public class Entry implements java.io.Serializable {
         }
         return path;
     }
+
+
+    public boolean isRootTopic() {
+        return this.getFullPath().equals("/");
+    }
+
 
     /*
 
@@ -123,7 +135,7 @@ public class Entry implements java.io.Serializable {
                 topic = topic.substring(0, topic.length() - 1);
             }
         }
-        return topic;
+        return topic; // allow "/" , "/parent", "/parent/node"
     }
 
     public static String fixNodeAndWarn(String nodeId) {

@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             logger.info("Action menu item selected");
-            if (Entries.getCurrentTopicString().startsWith("/_")) {
+            if (Entries.getCurrentTopicString().startsWith(Entry.HIDDEN_ENTRY_PATH+Entry.PATH_SEPARATOR)) {
                 setTopic("/");
             } else {
                 setTopic("/_/config");
@@ -378,11 +378,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // update title in action bar
         if (getSupportActionBar() != null) {
             String newTitle = "FayF";
-            boolean isRootTopic = currentTopicEntry != null && (currentTopicEntry.getFullPath().equals("/") || currentTopicEntry.getTopic().isEmpty());
+            boolean isRootTopic = currentTopicEntry != null && (currentTopicEntry.isRootTopic() || currentTopicEntry.getTopic().isEmpty());
             logger.info("Updating action bar title for topic: \"{}\" {}"
                     , null == currentTopicEntry ? "" : currentTopicEntry.getContent()
                     , isRootTopic ? "(root topic)" : "(enable back button)");
-            if (null != currentTopicEntry && null != currentTopicEntry.topic && Util.isFilled(currentTopicEntry.content)) { // may have DUMMY currentTopicEntry here
+            if (isRootTopic) {
+                newTitle += " of " + Entries.getTenant();
+            } else if (null != currentTopicEntry && null != currentTopicEntry.topic && Util.isFilled(currentTopicEntry.content)) { // may have DUMMY currentTopicEntry here
                 newTitle += " - " + Util.shortenString(currentTopicEntry.content, 30);
             }
             getSupportActionBar().setTitle(newTitle);
