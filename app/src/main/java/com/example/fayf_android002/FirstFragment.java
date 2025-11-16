@@ -337,6 +337,10 @@ public class FirstFragment extends Fragment {
             logger.error("ButtonList ViewGroup not found in MainActivity");
             return;
         }
+        if (null == binding || null == binding.ButtonScrollView) {
+            logger.error("Binding or ButtonScrollView is null, cannot update buttons");
+            return;
+        }
         if (false) {
             logger.info("updateButtons() skipped - TEST");
             return;

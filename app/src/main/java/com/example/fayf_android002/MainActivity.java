@@ -327,12 +327,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         int topDetector = scrollView.getScrollY();
         int bottomDetector = view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY());
         if(bottomDetector == 0 ){
-            scrollView.scrollTo(0,scrollView.getBottom()/2);
-            // Toast.makeText(getBaseContext(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
+            //scrollView.scrollTo(0,scrollView.getBottom()/2);
+            Toast.makeText(getBaseContext(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
         }
         if(topDetector <= 0){
-            scrollView.scrollTo(0,scrollView.getBottom()/2);
-            // Toast.makeText(getBaseContext(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
+            // scrollView.scrollTo(0,scrollView.getBottom()/2);
+            Toast.makeText(getBaseContext(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
         }
         recursionGuard = false;
     }
