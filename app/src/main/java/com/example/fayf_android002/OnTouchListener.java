@@ -145,7 +145,11 @@ public class OnTouchListener implements View.OnTouchListener {
         new android.os.Handler().postDelayed(() -> {
             fragment.requireActivity().runOnUiThread(() -> {
                 if (touching) { // only if not yet released - that would have triggered onLongClick already
-                    onLongPressDelayReached();
+                    if (!isMoveStarted || isDirectionX) {
+                        onLongPressDelayReached();
+                    } else {
+                        logger.info("Long press delay reached, but move for scrolling - not triggering long press visual");
+                    }
                 }
             });
         }, LONG_PRESS_DURATION);
