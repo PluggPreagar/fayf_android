@@ -12,11 +12,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.databinding.FragmentSecondBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static androidx.core.content.ContextCompat.getSystemService;
 
 public class InputFragment extends Fragment {
 
@@ -31,7 +30,7 @@ public class InputFragment extends Fragment {
     ) {
 
         binding = FragmentSecondBinding.inflate(inflater, container, false);
-        RuntimeTester.registerFragment("InputFragment", this, binding.getRoot());
+        RuntimeTester.registerFragment("InputFragment", this, R.id.FirstFragment, binding.getRoot());
         return binding.getRoot();
 
     }

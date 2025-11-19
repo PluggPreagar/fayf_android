@@ -10,9 +10,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class FirstFragment extends Fragment {
 
         logger.info("FirstFragment onCreateView() called");
         binding = FragmentFirstBinding.inflate(inflater, container, false);
-        RuntimeTester.registerFragment("FirstFragment", this, binding.getRoot());
+        RuntimeTester.registerFragment("FirstFragment", this, R.id.FirstFragment, binding.getRoot());
 
         // initializeButtons(); // to early here ?
 
@@ -368,7 +368,7 @@ public class FirstFragment extends Fragment {
                 Button btn = (Button) button;
                 btn.setText(entry.content);
                 btn.setVisibility(View.VISIBLE);
-                /*
+
                 btn.setOnClickListener(v -> {
                     this.setTopic(entry);
                 });
@@ -379,7 +379,7 @@ public class FirstFragment extends Fragment {
                     return true;
                 });
 
-                 */
+
 
                 /*
                 // move button 1px left
@@ -406,20 +406,19 @@ public class FirstFragment extends Fragment {
                 params.bottomMargin = 10;
                 button.setLayoutParams(params);
 
-
-
-
                 btn.setOnTouchListener(new OnTouchListener(this) {
 
                     @Override
                     public void onClick() {
                         Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                        Entries.setTopicEntry(entry); // set topic to this entry
+                        //Entries.setTopicEntry(entry); // set topic to this entry
+                        btn.performClick();
                     }
                     @Override
                     public void onLongClick() {
                         Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                        navigateToEdit(entry); // navigate to edit this entry
+                        //navigateToEdit(entry); // navigate to edit this entry
+                        btn.performLongClick();
                     }
 
                     @Override

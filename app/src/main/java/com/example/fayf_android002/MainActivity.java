@@ -12,6 +12,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import com.example.fayf_android002.RuntimeTest.RuntimeTest;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import org.slf4j.Logger;
@@ -172,9 +173,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return true;
         } else if (id == R.id.action_test) {
             logger.info("Runtime tests menu item selected");
-            RuntimeTest runtimeTest = new RuntimeTest();
             // runtimeTest.runTests( getSupportFragmentManager() ); // does not find FirstFragment properly
-            runtimeTest.runTests( getSupportFragmentManager() );
+            // run async on ui-thread
+            new Thread(() -> {
+                try {
+                    // wait a bit to let ui settle
+                    Thread.sleep(500);
+                    RuntimeTest runtimeTest = new RuntimeTest();
+                    runtimeTest.runTests(getSupportFragmentManager());
+                } catch (Exception e) {
+                    logger.error("Error while running tests in a separate thread", e);
+                }
+            }).start();
             return true;
         } else if (id == R.id.action_refresh) {
             logger.info("Refresh UI");
