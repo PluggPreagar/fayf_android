@@ -12,10 +12,13 @@ import java.util.zip.GZIPOutputStream;
 public class DataStorageLocal {
 
     private static final Logger logger = LoggerFactory.getLogger(DataStorageLocal.class);
-    private final static String filePath = "entries.dat.gz";
+    private final static String filePath = "entries_TID.dat.gz";
 
     // Serialize the EntryTree to a file
     public static void saveEntries(TreeMap<String, TreeMap<String, Entry>> entries, Context context)  {
+        // inject tenantId into file name
+        String filePath = DataStorageLocal.filePath.replace("TID", DataStorageWeb.getTenant());
+
         if (entries == null || entries.isEmpty()) {
             logger.warn("No entries to save to file: {}", filePath);
             return;
@@ -38,6 +41,8 @@ public class DataStorageLocal {
 
     // Deserialize the EntryTree from a file
     public static TreeMap<String, TreeMap<String, Entry>> loadEntries( Context context)  {
+        String filePath = DataStorageLocal.filePath.replace("TID", DataStorageWeb.getTenant());
+
         TreeMap<String, TreeMap<String, Entry>> entries = new TreeMap<>();
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream( context.openFileInput( filePath)))) {

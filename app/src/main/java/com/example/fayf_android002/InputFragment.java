@@ -95,7 +95,7 @@ public class InputFragment extends Fragment {
     public void onSendEntry(){
         String newContent = binding.editextSecond.getText().toString();
         Entry entry = Entries.getCurrentEntry();
-        Entries.setContent(entry, newContent);
+        Entries.setContent(entry, newContent, getContext());
         logger.info("Entry updated: {}", entry.getFullPath());
         Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
         backToFirstFragment();

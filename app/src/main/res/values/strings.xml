@@ -49,4 +49,5 @@
     <string name="action_refresh">RefreshUI</string>
     <string name="action_load_from_web">Download Data</string>
     <string name="send_toast">Entry saved.</string>
+    <string name="toggle_log">Toggle Log</string>
 </resources>

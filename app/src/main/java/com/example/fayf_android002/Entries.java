@@ -3,6 +3,7 @@ package com.example.fayf_android002;
 import android.content.Context;
 import android.view.View;
 
+import java.io.DataInputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -41,6 +42,12 @@ public class Entries {
     private static int currentTopicEntryCount;
 
     static final int PAGE_SIZE_MIN = 5;
+
+    public static final String ROOT_TOPIC = "/";
+
+
+
+
 
 
 
@@ -135,6 +142,15 @@ public class Entries {
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             DataStorageLocal.saveEntries(entryTree.entries,  context);
         }
+        // ensure config is merged
+        // config entry must exist - even if not in storage
+        Entries.entryTree.entries.putIfAbsent(Entry.HIDDEN_ENTRY_PATH, new TreeMap<>());
+        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH, "Config"), false);
+
+        // at least 1 entry to allow navigation to config
+        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH,"Version", "Version : 0.0.1"), false);
+        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH,"Tenant", "Tenant : " + DataStorageWeb.TID_DEFAULT  ), false);
+
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(currentTopicEntry);
         if (listener != null) {
@@ -195,10 +211,22 @@ public class Entries {
             return entry;
     }
 
+    public static Entry getEntryOrNew(String entryParentPath, String nodeId, String defaultContent) {
+        Entry entry = entryTree.getEntry(entryParentPath, nodeId);
+        // TODO do not use NULL_ENTRY as DUMMY-ENTRY
+        if (entry == null || EntryTree.NULL_ENTRY.equals(entry) /*DUMMY-ENTRY*/)  {
+            entry = new Entry(entryParentPath, nodeId , defaultContent);
+            logger.info("New entry created: {}", entry.getFullPath());
+            entryTree.setEntry(entry, true); // add new entry to tree
+        }
+        return entry;
+    }
+
     public static Entry createNewChildEntry(Entry parentEntry, String content) {
          String nodeId = String.valueOf(System.currentTimeMillis());
          Entry entry = new Entry(parentEntry.getFullPath(), nodeId, content);
          logger.info("New entry created: {}", entry.getFullPath());
+         entryTree.setEntry(entry, true); // add new entry to tree
          return entry;
     }
 
@@ -216,9 +244,24 @@ public class Entries {
     }
 
 
-    public static void setContent(Entry entry, String newContent) {
+    public static void setContent(Entry entry, String newContent, Context context) {
          if (evaluateEntryUpdate(entry, newContent)) {
-                persistEntry(entry);
+                if ("/_/config/Tenant".equals(entry.getFullPath())){
+                    // special handling of tenant change
+                    String oldTenant = getTenant();
+                    String newTenant = entry.getContent().replace("Tenant : ", "").trim();
+                    logger.info("Tenant change detected: {} -> {}", oldTenant, newTenant);
+                    if (null == context) {
+                        logger.warn("Context is null - cannot reload entries for new tenant");
+                        return;
+                    } else if (!oldTenant.equals(newTenant)) {
+                        entryTree = new EntryTree(); // reset
+                        DataStorageWeb.setTenant(newTenant);
+                        load_async( context , true); // force web reload
+                    }
+                } else {
+                    persistEntry(entry);
+                }
          }
         logger.info("Entry content updated: {}", entry.getFullPath());
     }
@@ -290,7 +333,7 @@ public class Entries {
      */
 
     public static Iterator<Map.Entry<String, Entry>> getEntriesIterator(String topic, int offset) {
-        return getInstance().getEntryTree().getEntriesIterator(topic, offset);
+        return null == entryTree || null == entryTree.entries ? Collections.emptyIterator() :  entryTree.getEntriesIterator(topic, offset);
     }
 
 

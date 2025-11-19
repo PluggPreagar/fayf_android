@@ -7,7 +7,6 @@
         android:layout_height="match_parent"
         android:overScrollMode="always"
         tools:context=".FirstFragment"
-        android:background="@android:color/holo_orange_light"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
         android:id="@+id/ButtonScrollView"
         >
@@ -37,7 +36,6 @@
             android:layout_height="wrap_content"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:background="@android:color/holo_blue_light"
             >  <!-- padding seams not to work on my phone -->
 
         <Button
@@ -49,6 +47,7 @@
                 android:text="aaaK"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -60,6 +59,7 @@
                 android:text="bb2"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -71,6 +71,7 @@
                 android:text="bb3"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -82,6 +83,7 @@
                 android:text="bb4"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -93,6 +95,7 @@
                 android:text="bb5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -105,6 +108,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="@string/next"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -116,6 +120,7 @@
                 android:text="bb7"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -127,6 +132,7 @@
                 android:text="bb3"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -138,6 +144,7 @@
                 android:text="bb4"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -148,7 +155,9 @@
                 android:layout_height="wrap_content"
                 android:text="bb5"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
+                />
 
 
         <Button
@@ -161,6 +170,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="@string/next"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -172,6 +182,7 @@
                 android:text="bb2"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -183,6 +194,7 @@
                 android:text="bb3"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -194,6 +206,7 @@
                 android:text="bb4"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -205,6 +218,7 @@
                 android:text="bb5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -217,6 +231,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="@string/next"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -228,6 +243,7 @@
                 android:text="bb2"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -239,6 +255,7 @@
                 android:text="bb3"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -250,6 +267,7 @@
                 android:text="bb4"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
                 />
 
         <Button
@@ -260,7 +278,9 @@
                 android:layout_height="wrap_content"
                 android:text="bb5"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                android:backgroundTint="@color/EntryButtonColor"
+                />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

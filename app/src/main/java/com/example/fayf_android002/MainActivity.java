@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
-        setTopic("/");
+        setTopic(Entries.ROOT_TOPIC);
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -161,9 +161,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (id == R.id.action_settings) {
             logger.info("Action menu item selected");
             if (Entries.getCurrentTopicString().startsWith(Entry.HIDDEN_ENTRY_PATH+Entry.PATH_SEPARATOR)) {
-                setTopic("/");
+                setTopic(Entries.ROOT_TOPIC);
             } else {
-                setTopic("/_/config");
+                setTopic(Configuration.CONFIG_PATH);
             }
             return true;
         } else if (id == R.id.action_about) {
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return true;
         } else if (id == R.id.action_load_from_web) {
             logger.info("action_load_from_web");
-            Entries.setTopicEntry( Entries.getEntry("/") );
+            Entries.setTopicEntry( Entries.getEntry(Entries.ROOT_TOPIC) );
             Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
             Entries.load_async( getApplicationContext(), true);
             return true;
@@ -191,6 +191,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             logger.info("back-menu-button pressed");
             // check if in InputFragment, then go back to FirstFragment
             onBackPressed();
+            return true;
+        } else if (id == R.id.toggle_log) {
+            Configuration.SHOW_LOGS.toggleValue();
+            if (Configuration.SHOW_LOGS.asBoolean()) {
+                Toast.makeText(this, "Logs shown", Toast.LENGTH_SHORT).show();
+                binding.logScrollView.setVisibility(View.VISIBLE);
+
+            } else {
+                Toast.makeText(this, "Logs hidden", Toast.LENGTH_SHORT).show();
+                binding.logScrollView.setVisibility(View.GONE);
+            }
             return true;
         }
 

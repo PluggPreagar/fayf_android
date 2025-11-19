@@ -29,4 +29,10 @@
             android:title="@string/action_load_from_web"
             android:orderInCategory="100"
             app:showAsAction="never"/>
+    <item
+            android:id="@+id/toggle_log"
+            android:title="@string/toggle_log"
+            android:orderInCategory="100"
+            app:showAsAction="never"
+            />
 </menu>

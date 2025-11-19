@@ -103,31 +103,54 @@ public class EntryTree implements  java.io.Serializable {
 
 
     public void addEntry(String path, Entry entry) {
+        // TODO  check  path vs entry.topic
         entries.putIfAbsent(path, new TreeMap<>(new EntryComparator()));
         entries.get(path).put(entry.nodeId, entry);
     }
 
-
     public void addEntryIfNew(Entry entry) {
-        TreeMap<String, Entry> topicEntry = entries.get(entry.getTopic());
+            setEntry(entry); // TODO remove duplicate
+    }
+
+    public void  setEntry(Entry entry) {
+        setEntry(entry,false); // do not overwrite existing entries, assume nodeId is unique
+    }
+
+    public void setEntry(Entry entry, boolean overwrite) {
+        // "/<grandparent>/<parent>" [ "nodeId" ] -> Content
+        // "/<grandparent>" [ "<parent>" ]  should exist before adding child entries
+        String parentFullPath = entry.getTopic();
+        TreeMap<String, Entry> topicEntry = entries.get(parentFullPath);
         if (null == topicEntry) {
             // first child to parent entry -> create parent entry map
-            // proof that parent entry must exist before child entries
-            if (entries.containsKey( Entry.getParent(entry.getTopic()))) {
-                entries.put(entry.getTopic(), new TreeMap<>(new EntryComparator()));
-                topicEntry = entries.get(entry.getTopic());
-                logger.info("Parent entry found, created new topic for entry: {}", entry.getFullPath());
+            // proof that parent entry must exist before creating child entries
+            // Exception: root topic "/" and hidden entries below "/_" like "/_/config"
+            // --> check that parent is child of grandparent
+            Entry parentEntry = getEntry(parentFullPath);// log warning if parent entry does not exist
+            if (parentEntry.isRootTopic() || parentFullPath.startsWith(Entry.HIDDEN_ENTRY_PATH + "/")
+                    || !parentEntry.equals(NULL_ENTRY)) {
+                topicEntry = new TreeMap<>(new EntryComparator());
+                entries.put(parentFullPath, topicEntry);
+                logger.info("Created topic {} for entry: {}", parentFullPath, entry.getFullPath());
             } else {
                 logger.warn("Parent entry not found for entry: {}", entry.getFullPath());
             }
         }
         if (null != topicEntry) {
             if (topicEntry.containsKey(entry.nodeId)) {
-                logger.info("Entry updated: {}", entry.getFullPath());
+                if (overwrite) {
+                    logger.info("Overwriting existing entry: {}", entry.getFullPath());
+                } else {
+                    logger.info("Entry already exists, not overwriting: {}", entry.getFullPath());
+                }
             } else {
                 logger.info("Entry added: {}", entry.getFullPath());
             }
-            topicEntry.putIfAbsent(entry.nodeId, entry);
+            if (overwrite) {
+                topicEntry.put(entry.nodeId, entry);
+            } else {
+                topicEntry.putIfAbsent(entry.nodeId, entry);
+            }
         }
     }
 
@@ -169,11 +192,14 @@ public class EntryTree implements  java.io.Serializable {
     }
 
     public int size() {
-        return size(entries);
+        return null == entries ? 0 :  size(entries);
     }
 
     public int size(Entry topic) {
         // return size of entries under topic - will be maximum of child entries, to be paginated later
+        if (null == topic || null == entries) {
+            return 0;
+        }
         TreeMap<String, Entry> entryTree = entries.get(topic.getFullPath());
         return null == entryTree ? 0 : entryTree.size();
     }

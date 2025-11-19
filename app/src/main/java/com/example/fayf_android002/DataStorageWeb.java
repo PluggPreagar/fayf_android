@@ -17,6 +17,29 @@ public class DataStorageWeb {
 
     private final static Logger logger = LoggerFactory.getLogger(DataStorageWeb.class);
 
+    public static void setTenant(String newTenant) {
+        TID_DEFAULT = newTenant;
+    }
+
+    public static void setSessionId(String newSid) {
+        SID_DEFAULT = newSid;
+    }
+
+    public static String getTenant() {
+        return TID_DEFAULT;
+    }
+
+    public static String getSessionId() {
+        return SID_DEFAULT;
+    }
+
+
+    /*
+
+
+     */
+
+
     public List<String> readData() {
         return readData(SID_DEFAULT, TID_DEFAULT);
     }

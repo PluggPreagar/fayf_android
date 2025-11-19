@@ -21,6 +21,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                android:visibility="gone"
                 />
 
         <EditText
@@ -57,7 +58,7 @@
                     android:id="@+id/button_star"
                     android:src="@android:drawable/star_off"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:background="@android:color/transparent"
                     android:layout_weight="1"/>
 

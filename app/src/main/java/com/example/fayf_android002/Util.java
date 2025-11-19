@@ -41,4 +41,14 @@ public class Util {
         }
     }
 
+    public static boolean asBoolean(String str) {
+        if (null == str) {
+            return false;
+        }
+        String lower = str.toLowerCase();
+        return lower.equalsIgnoreCase("true") || lower.equals("1")
+                || lower.equalsIgnoreCase("yes") || lower.equalsIgnoreCase("y")
+                || lower.equalsIgnoreCase("on");
+    }
+
 }

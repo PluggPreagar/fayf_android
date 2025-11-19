@@ -34,6 +34,14 @@ public class Entry implements java.io.Serializable {
         this.content = content;
     }
 
+    public Entry(String fullPath, String content) {
+        this.topic = getTopicFromFullPath(fullPath);
+        this.nodeId = getNodeIdFromFullPath(fullPath);
+        this.content = content;
+    }
+
+
+
     // allow String to be invalid
     public static Entry build(String entryString) {
         Entry entry = null;
@@ -116,6 +124,8 @@ public class Entry implements java.io.Serializable {
         return fixTopicAndWarn( lastSlashIndex <=1  ? "/" : fullPath.substring(0, lastSlashIndex));
     }
 
+
+
     private static String fixTopicAndWarn(String topic) {
         String fixedTopic = fixTopic(topic);
         if (!fixedTopic.equals(topic)) {
@@ -125,6 +135,7 @@ public class Entry implements java.io.Serializable {
     }
 
     public static String fixTopic(String topic) {
+        // allow "/" , "/parent", "/parent/node" etc. - remove trailing slash if any
         if (topic == null || topic.isEmpty()) {
             topic = "/";
         }else {
@@ -135,7 +146,7 @@ public class Entry implements java.io.Serializable {
                 topic = topic.substring(0, topic.length() - 1);
             }
         }
-        return topic; // allow "/" , "/parent", "/parent/node"
+        return topic;
     }
 
     public static String fixNodeAndWarn(String nodeId) {
@@ -153,4 +164,12 @@ public class Entry implements java.io.Serializable {
         return nodeId;
     }
 
+
+    /*
+        SETTERS
+     */
+
+    public void setContent(String value) {
+        this.content = value;
+    }
 }
