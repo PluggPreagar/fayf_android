@@ -29,12 +29,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ActivityMainBinding binding;
     NestedScrollView scrollView;
 
+    private static MainActivity instance = null;
+    public Menu menu = null;
 
+    public static MainActivity getInstance() {
+        return instance;
+    }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        instance = this;
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -146,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        this.menu = menu; // for Runtime-Test-Access
         return true;
     }
 
@@ -154,6 +162,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
+        if (null == item || null == item.getTitle() || item.getItemId() == R.id.menu_main) {
+            // KLUDGE allow Runtime-Test to trigger back button
+            // but we can't create/get MenuItem directly
+            logger.info("back-menu-button pressed");
+            // check if in InputFragment, then go back to FirstFragment
+            onBackPressed();
+            return true;
+        }
+
+
         int id = item.getItemId();
         // items defined in res/menu/menu_main.xml
         logger.info("Settings Menu item selected: {} (id: {})", item.getTitle(), id);
@@ -197,11 +215,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
             Entries.load_async( getApplicationContext(), true);
             return true;
-        } else if (null == item.getTitle() || id == R.id.menu_main) {
-            logger.info("back-menu-button pressed");
-            // check if in InputFragment, then go back to FirstFragment
-            onBackPressed();
-            return true;
         } else if (id == R.id.toggle_log) {
             Configuration.SHOW_LOGS.toggleValue();
             if (Configuration.SHOW_LOGS.asBoolean()) {
@@ -241,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         String topicBefore = Entries.getCurrentTopicString();
         Entry entry = Entries.moveUpOneTopicLevel();
         String topic = entry.getTopic();
-        logger.info("Navigating up topic: {} (from {})", topic, topicBefore);
+        logger.info("Navigating up topic: {} (from {}) (UP)", topic, topicBefore);
 
 
         return true;
@@ -253,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         String topicBefore = Entries.getCurrentTopicString();
         Entry entry = Entries.moveUpOneTopicLevel();
         String topic = entry.getTopic();
-        logger.info("Navigating up topic: {} (from {})", topic, topicBefore);
+        logger.info("Navigating up topic: {} (from {}) (BACK)", topic, topicBefore);
         // String topic = Entry.getTopicFromFullPath(this.topic); // get parent topic
         if (null==topic){
             super.onBackPressed();

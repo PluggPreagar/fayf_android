@@ -73,7 +73,7 @@ public class Entry implements java.io.Serializable {
         if (path == null || path.isEmpty()) {
             path ="/";
         }
-        path = path +  (path.endsWith("/") ? "" : "/") + this.nodeId;
+        path = path +  (path.endsWith("/") ? "" : "/") + (null == this.nodeId ? "" : this.nodeId);
         if (path.contains("//")) {
             path = path.replaceAll("//+", "/");
         }

@@ -364,11 +364,11 @@ public class FirstFragment extends Fragment {
 
             // iterate over Buttons in ButtonList
             View button = buttonList.getChildAt(idx);
-            if (button instanceof Button) {
-                Button btn = (Button) button;
+            if (button instanceof ButtonTouchable) {
+                ButtonTouchable btn = (ButtonTouchable) button;
                 btn.setText(entry.content);
                 btn.setVisibility(View.VISIBLE);
-
+/*
                 btn.setOnClickListener(v -> {
                     this.setTopic(entry);
                 });
@@ -376,8 +376,9 @@ public class FirstFragment extends Fragment {
                     // TODO move that all to FirstFragment
                     // determine first fragment
                     navigateToEdit(entry);
-                    return true;
+                    return true; // indicate the event is consumed
                 });
+*/
 
 
 
@@ -406,18 +407,19 @@ public class FirstFragment extends Fragment {
                 params.bottomMargin = 10;
                 button.setLayoutParams(params);
 
+                btn.setEntry(entry, this); // set entry and fragment reference, allow runtime test
+
                 btn.setOnTouchListener(new OnTouchListener(this) {
 
                     @Override
                     public void onClick() {
                         Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                        //Entries.setTopicEntry(entry); // set topic to this entry
                         btn.performClick();
+                        updateButtonsUIThread();
                     }
                     @Override
                     public void onLongClick() {
                         Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                        //navigateToEdit(entry); // navigate to edit this entry
                         btn.performLongClick();
                     }
 

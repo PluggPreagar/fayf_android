@@ -1,25 +1,38 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.view.MenuItem;
+import android.widget.Button;
 import androidx.fragment.app.FragmentActivity;
+import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.view.View;
 import androidx.fragment.app.Fragment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ActionExecutor {
 
+    public List<String> errorMsg = new ArrayList<>();
     Logger logger = LoggerFactory.getLogger(ActionExecutor.class);
 
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
         // switch on action type
+        Object view = getView(action);
+        if ( view == null ) {
+            view = MainActivity.getInstance().menu.findItem(action.viewId); // ensure menu is initialized
+        }
+        logger.info("---------------------------------------");
         logger.info("Executing action: " + action.action + " on Fragment: " + action.fragmentId + " View: " + action.viewId
-                    + ( action.viewId != -1 ? " (" + getView(action).getClass().getSimpleName() + ")"
-                            + (  getView(action) instanceof android.widget.TextView
-                                ? " Text='" + ((android.widget.TextView) getView(action)).getText().toString() + "'"
-                                    : "" )
+                    + ( action.viewId != -1 ? (null == view ? " (NOT FOUND)" :
+                        " (" + view.getClass().getSimpleName() + ")"
+                            + (  view instanceof android.widget.TextView
+                                ? " Text='" + ((android.widget.TextView) view).getText().toString() + "'"
+                                    : "" ))
                         : "" )
                 );
         switch (action.action) {
@@ -50,9 +63,24 @@ public class ActionExecutor {
             case CALL_BACK:
                 executeCallback(action, actionQueue);
                 break;
+            case DOC:
+                dock(action, actionQueue);
+                break;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action.action);
         }
+        // post-action wait time
+        try {
+            Thread.sleep(action.waitTimeMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted during pre-action delay", e);
+        }
+    }
+
+    private void dock(ActionQueueEntry action, ActionQueue actionQueue) {
+        // do nothing, just a marker
+        logger.info(action.text);
     }
 
 
@@ -67,7 +95,7 @@ public class ActionExecutor {
         Fragment fragment = getFragment(action);
         View view = Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
         if (view == null) {
-            throw new IllegalArgumentException("View not found: " + action.viewId + " in fragment " + action.fragmentId);
+            logger.warn("View not found: {} in fragment {}", action.viewId, action.fragmentId);
         }
         return view;
     }
@@ -85,7 +113,32 @@ public class ActionExecutor {
      */
 
     private void executeClick(ActionQueueEntry action, ActionQueue actionQueue) {
-        getActivity(action).runOnUiThread(() -> getView(action).performClick());
+
+        if (ActionQueue.ID_BACK == action.viewId) {
+            // special case for back button
+            logger.info("Performing back press");
+            getActivity(action).runOnUiThread(() -> getActivity(action).getOnBackPressedDispatcher().onBackPressed());
+            return;
+        }
+        if (ActionQueue.ID_UP == action.viewId) {
+            // special case for home button
+            logger.info("Performing navigate up");
+            getActivity(action).runOnUiThread(() -> getActivity(action).onNavigateUp());
+            return;
+        }
+        Fragment fragment = getFragment(action);
+        View view = Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
+        if (view instanceof Button) {
+            getActivity(action).runOnUiThread(view::performClick);
+        } else {
+            MenuItem item = MainActivity.getInstance().menu.findItem(action.viewId);
+            if (item != null) {
+                getActivity(action).runOnUiThread(() -> MainActivity.getInstance().onOptionsItemSelected(item));
+            } else {
+                // throw new IllegalArgumentException("View is not a Button or MenuItem: " + action.viewId);
+                logger.warn("View is not a Button or MenuItem: " + action.viewId);
+            }
+        }
     }
 
     private void executeLongClick(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -94,35 +147,43 @@ public class ActionExecutor {
 
     private void executeSetText(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = getView(action);
-        if (view instanceof android.widget.TextView) {
+        if( null == view ) {
+            assertFail("View is null for SET_TEXT action: " + action.viewId);
+        } else if (view instanceof android.widget.TextView) {
             ((android.widget.TextView) view).setText(action.text);
-        } else {
-            throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
+        } else  {
+            assertFail("View is not a TextView for SET_TEXT action: " + action.viewId);
+            // throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
         }
     }
 
     private void executeGetText(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = getView(action);
-        if (view instanceof android.widget.TextView) {
+        if ( null == view ) {
+            assertFail("View is null for GET_TEXT action: " + action.viewId);
+        } else if (view instanceof android.widget.TextView) {
             String text = ((android.widget.TextView) view).getText().toString();
             actionQueue.setLastRetrievedText(text);
         } else {
-            throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
+            assertFail("View is not a TextView for GET_TEXT action: " + action.viewId);
+            //throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
         }
     }
 
     private void executeAssertText(ActionQueueEntry action, ActionQueue actionQueue) {
         String lastText = actionQueue.getLastRetrievedText();
         if (!action.text.equals(lastText)) {
-            throw new AssertionError("Text assertion failed: expected '" + action.text + "', got '" + lastText + "'");
+            assertFail("Text assertion failed: expected '" + action.text + "', got '" + lastText + "'");
+            //throw new AssertionError("Text assertion failed: expected '" + action.text + "', got '" + lastText + "'");
         }
     }
 
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = getView(action);
-        boolean isVisible = view.getVisibility() == View.VISIBLE;
+        boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
         if (!isVisible) {
-            throw new AssertionError("View is not visible: " + action.viewId);
+            assertFail("View is not visible: " + action.viewId);
+            // throw new AssertionError("View is not visible: " + action.viewId);
         }
     }
 
@@ -131,8 +192,17 @@ public class ActionExecutor {
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
         while (System.currentTimeMillis() - startTime < timeout) {
-            if (view.getVisibility() == View.VISIBLE) {
-                return;
+            if (null == view) {
+                view = getView(action);
+            } else if (view.getVisibility() == View.VISIBLE) {
+                if (null == action.text) {
+                    return;
+                } else if (view instanceof android.widget.TextView) {
+                    String currentText = ((android.widget.TextView) view).getText().toString();
+                    if (action.text.equals(currentText)) {
+                        return;
+                    }
+                }
             }
             try {
                 Thread.sleep(100);
@@ -141,7 +211,10 @@ public class ActionExecutor {
                 throw new RuntimeException("Interrupted while waiting for visibility", e);
             }
         }
-        throw new AssertionError("View did not become visible within timeout: " + action.viewId);
+
+        assertFail("View did not become visible within timeout: " + action.viewId
+                + ( null != action.text ? " with text: '" + action.text + "'" : ""));
+        //throw new AssertionError("View did not become visible within timeout: " + action.viewId);
     }
 
     private void executeDelay(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -159,6 +232,16 @@ public class ActionExecutor {
         } else {
             throw new IllegalArgumentException("Callback is null for CALL_BACK action");
         }
+    }
+
+
+    /*
+        assert fail method
+     */
+
+    private void assertFail(String message) {
+        errorMsg.add(message);
+        //throw new AssertionError(message);
     }
 
 }

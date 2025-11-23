@@ -2,10 +2,7 @@ package com.example.fayf_android002.RuntimeTest;
 
 import android.widget.Button;
 import androidx.fragment.app.FragmentManager;
-import com.example.fayf_android002.Entries;
-import com.example.fayf_android002.EntryTree;
-import com.example.fayf_android002.R;
-import com.example.fayf_android002.Util;
+import com.example.fayf_android002.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +17,24 @@ public class RuntimeTest {
         EntryTree entryTree = Entries.getInstance().getEntryTree();
         logger.info("EntryTree root has " + entryTree.size() + " children.");
 
-        new ActionQueue(R.id.FirstFragment)
-                .delay(5000)
-                .click(R.id.button2)
-                .delay(500)
-                .longClick(R.id.button2)
+        entryTree.entries.clear(); // clear entries for test
+        Entries.getEntryOrNew("/", "t1", "c1");
+        Entries.getEntryOrNew("/", "t2", "c2");
+        Entries.getEntryOrNew("/t2", "t2.1", "c2.1");
+
+        // ui thread refresh
+        MainActivity.getInstance().runOnUiThread(() -> {
+            MainActivity.getInstance().onBackPressed(); // force refresh GUI
+        });
+
+        new ActionQueue(R.id.FirstFragment).delay(1000)
+                .waitForVisible(R.id.button1, "c1")
+                .click(R.id.button2,500).doc("goto 'früher war alles besser'")
+                .longClick(R.id.button2,1000).doc("edit entry 'früher war alles besser'")
+                .clickBack().doc("click back")
+                .waitForVisible(R.id.button1, "c2.1")
+                .clickBack()
+                .waitForVisible(R.id.button1, "c1")
                 .run();
 
     }

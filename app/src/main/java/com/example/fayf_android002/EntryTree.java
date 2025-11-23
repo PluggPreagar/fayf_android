@@ -48,7 +48,7 @@ public class EntryTree implements  java.io.Serializable {
         // "/node"  -> topic = "/" , nodeId = "node"
         // "/parent/node"  -> topic = "/parent" , nodeId = "node"
         String topic = 0 == lastSlashIndex ? "/" : fullPath.substring(0, lastSlashIndex);
-        String nodeId = fullPath.substring(lastSlashIndex + 1);
+        String nodeId = lastSlashIndex == fullPath.length() - 1 ? "" : fullPath.substring(lastSlashIndex + 1);
         return getEntry(topic, nodeId);
     }
 

@@ -266,6 +266,10 @@ public class Entries {
         logger.info("Entry content updated: {}", entry.getFullPath());
     }
 
+
+
+
+
     private static void persistEntry(Entry entry) {
         //logger.info("Entries loaded async ({} entries)", entries.size());
         // new Entries not in tree yet -> update before returning to first fragment

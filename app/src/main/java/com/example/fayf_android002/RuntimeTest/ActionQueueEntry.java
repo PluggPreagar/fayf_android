@@ -16,7 +16,7 @@ public class ActionQueueEntry {
         IS_VISIBLE,
         WAIT_FOR_VISIBLE,
         DELAY,
-        CALL_BACK
+        DOC, CALL_BACK
     }
 
 
