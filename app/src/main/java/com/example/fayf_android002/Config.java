@@ -1,5 +1,8 @@
 package com.example.fayf_android002;
 
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.Entry;
+import com.example.fayf_android002.Entry.EntryKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,28 +77,25 @@ public enum Config {
     */
 
 
-
     // TODO use Resource IDs instead of hardcoded strings
     // define enumeration of settings entries
 
 
     public static void set(String key, String value) {
-        Entry entry = Entries.getEntryOrNew(CONFIG_PATH, key, value);
-        // todo - check if created or updated
-        if (!entry.getContent().equals(value)) {
-            logger.info("configuration set '{}' to '{}'", key, value);
-            entry.setContent(value);
-        }
+        Config config = Config.fromKey(key);// validate key
+        config.setValue(value); // use instance method
+        Entries.setEntry(new EntryKey(CONFIG_PATH, key), value, null);
+        logger.info("configuration set '{}' to value '{}'", key, value);
     }
 
     public static String get(String key) {
-        Entry entry = Entries.getEntryOrNew(CONFIG_PATH, key, "");
+        Entry entry = Entries.getEntry(new EntryKey(CONFIG_PATH, key)); // validate key
         logger.info("configuration read '{}' with value '{}'", key, entry.getContent());
         return entry.getContent();
     }
 
     public static String toggle(String key) {
-        Entry entry = Entries.getEntryOrNew(CONFIG_PATH, key, "false");
+        Entry entry = Entries.getEntry(new EntryKey(CONFIG_PATH, key)); // validate key
         String newValue = entry.getContent().equals("true") ? "false" : "true";
         entry.setContent(newValue);
         logger.info("configuration toggled '{}' to '{}'", key, newValue);

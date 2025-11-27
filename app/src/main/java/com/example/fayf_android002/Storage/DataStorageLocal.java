@@ -2,13 +2,11 @@ package com.example.fayf_android002.Storage;
 
 import android.content.Context;
 import com.example.fayf_android002.Config;
-import com.example.fayf_android002.Entry;
-import com.example.fayf_android002.EntryTree;
+import com.example.fayf_android002.Entry.EntryTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -20,7 +18,7 @@ public class DataStorageLocal {
     private final static String filePath = "entries_TID.dat.gz";
 
     // Serialize the EntryTree to a file
-    public static void saveEntries(TreeMap<String, TreeMap<String, Entry>> entries, Context context)  {
+    public static void saveEntries(EntryTree entries, Context context)  {
         // inject tenantId into file name
         String filePath = DataStorageLocal.filePath.replace("TID", Config.TENANT.getValue());
 
@@ -29,14 +27,14 @@ public class DataStorageLocal {
             return;
         }
         // check if filePath is valid
-        if (filePath == null || filePath.isEmpty()) {
+        if (filePath.length()>0) {
             logger.error("Invalid file path for saving entries: {}", filePath);
             return;
         }
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
             oos.writeObject(entries);
-            logger.info("Entries saved to file: {} ({} entries)", filePath, EntryTree.size(entries));
+            logger.info("Entries saved to file: {} ({} entries)", filePath, entries.size());
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Error saving entries to file: {}", filePath, e);
@@ -45,14 +43,14 @@ public class DataStorageLocal {
 
 
     // Deserialize the EntryTree from a file
-    public static TreeMap<String, TreeMap<String, Entry>> loadEntries( Context context)  {
+    public static EntryTree loadEntries(Context context)  {
         String filePath = DataStorageLocal.filePath.replace("TID", TENANT.getValue());
 
-        TreeMap<String, TreeMap<String, Entry>> entries = new TreeMap<>();
+        EntryTree entries = new EntryTree();
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream( context.openFileInput( filePath)))) {
-            entries = (TreeMap<String, TreeMap<String, Entry>>) ois.readObject();
-            logger.info("Entries loaded from file: {} ({} entries)", filePath, EntryTree.size(entries));
+            entries = (EntryTree) ois.readObject();
+            logger.info("Entries loaded from file: {} ({} entries)", filePath, entries.size());
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Error saving entries to file: {}", filePath, e);

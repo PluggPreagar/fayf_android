@@ -1,5 +1,6 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -29,7 +30,10 @@ public class RuntimeTester {
     }
 
 
+    public void register(Menu menu) {
+        // TODO
 
+    }
 
 
 

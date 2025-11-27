@@ -12,6 +12,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.Entry;
+import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.databinding.FragmentSecondBinding;
 import org.slf4j.Logger;
@@ -51,8 +54,8 @@ public class InputFragment extends Fragment {
             binding.editextSecond.requestFocus();
         }, 100);
         */
-        Entry entry = Entries.getCurrentEntry();
 
+        Entry entry = Entries.getCurrentEntry();
         binding.editextSecond.setText( null == entry ? "" : entry.content);
         binding.editextSecond.setSelection( binding.editextSecond.getText().length() );
         binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
@@ -93,15 +96,15 @@ public class InputFragment extends Fragment {
 
     public void onSendEntry(){
         String newContent = binding.editextSecond.getText().toString();
-        Entry entry = Entries.getCurrentEntry();
-        Entries.setContent(entry, newContent, getContext());
+        EntryKey entry = Entries.getCurrentEntryKey();
+        Entries.setEntry(entry, newContent, getContext());
         logger.info("Entry updated: {}", entry.getFullPath());
         Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
         backToFirstFragment();
     }
 
     public void onDelete(){
-        Entry entry = Entries.getCurrentEntry();
+        EntryKey entry = Entries.getCurrentEntryKey();
         logger.info("Entry deleting: {}", entry.getFullPath());
         Entries.removeEntry(entry);
         backToFirstFragment();

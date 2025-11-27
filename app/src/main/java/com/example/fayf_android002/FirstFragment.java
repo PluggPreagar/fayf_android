@@ -12,6 +12,9 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.Entry;
+import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
@@ -43,13 +46,13 @@ public class FirstFragment extends Fragment {
         // initializeButtons(); // to early here ?
 
         // Navigating from SecondFragment to FirstFragment will not show the Topic Title
-        getMainActivity().updateActionBarTitle(null);
+        getMainActivity().updateActionBarTitle();
 
-        if (0 == Entries.getInstance().getEntryTree().size()) {
+        if (0 == Entries.size()) {
 
             /* get Data */
             Entries.setOnEntriesLoadedListener(loadedEntries -> requireActivity().runOnUiThread(() -> {
-                        logger.info("Entries loaded callback received ({} entries)", Entries.getInstance().getEntryTree().size());
+                        logger.info("Entries loaded callback received ({} entries)", Entries.size());
                         updateButtons( ); // update buttons after entries loaded
                     }
             ));
@@ -143,10 +146,10 @@ public class FirstFragment extends Fragment {
             logger.info("Received argument entryFullPath: {}, setting topic to: {}", entryFullPath, topic);
         }
 
-        if (0 == Entries.getInstance().getEntryTree().size()) {
+        if (0 == Entries.size()) {
             logger.info("Entries not loaded yet, will update buttons after loading");
         } else {
-            logger.info("Entries already loaded ({} entries), updating buttons", Entries.getInstance().getEntryTree().size());
+            logger.info("Entries already loaded ({} entries), updating buttons", Entries.size());
             updateButtonsUIThread();
         }
 */
@@ -315,24 +318,20 @@ public class FirstFragment extends Fragment {
     }
 
 
-    public void setTopic(Entry entry) {
-        Entries.setTopicEntry(entry); // e.g. not valid for leaf entries
-        // button will be updated via listener
-    }
 
     public void updateButtonsUIThread() {
         requireActivity().runOnUiThread(() -> {
             initializeButtons();
-            logger.info("Render in UI-Thread ({} entries)", Entries.getInstance().getEntryTree().size());
+            logger.info("Render in UI-Thread ({} entries)", Entries.size());
             updateButtons(); // update buttons after entries loaded
         });
     }
 
     public void updateButtons() {
-        updateButtons( Entries.getCurrentTopicString(), Entries.getOffset());
+        updateButtons( Entries.getOffset());
     }
 
-    public void updateButtons(String topic, int offset) {
+    public void updateButtons( int offset) {
         ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
         if (buttonList == null) {
             logger.error("ButtonList ViewGroup not found in MainActivity");
@@ -347,116 +346,90 @@ public class FirstFragment extends Fragment {
             return;
         }
         int limit = 20; // buttonList.getChildCount();
+        String topic = Entries.getCurrentEntryKey().getFullPath();
         logger.info("Updating buttons for topic: {}, offset: {}, limit: {}", topic, offset, limit);
-        Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator(topic, offset);
+        Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
         if (!entriesIterator.hasNext()) {
             logger.info("No entries found for topic: {}, offset: {}", topic, offset);
-            topic = Entries.restoreLastTopic().getFullPath();
-            entriesIterator = Entries.getEntriesIterator(topic, 0); // fallback to root
+            Entries.upOneTopicLevel(); // will trigger callback to update buttons again
             // Toast message
             Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
-        }
-        int idx = 0;
-        while (entriesIterator.hasNext() && limit > 0) {
-            Map.Entry<String, Entry> e = entriesIterator.next();
-            Entry entry = e.getValue();
-            logger.info("Entry: {}", entry.content);
-            // KLUDGE  iterate over Buttons in ButtonList
+        } else {
 
-            // iterate over Buttons in ButtonList
-            View button = buttonList.getChildAt(idx);
-            if (button instanceof ButtonTouchable) {
-                ButtonTouchable btn = (ButtonTouchable) button;
-                btn.setText(entry.content);
-                btn.setVisibility(View.VISIBLE);
-/*
-                btn.setOnClickListener(v -> {
-                    this.setTopic(entry);
-                });
-                btn.setOnLongClickListener(v -> {
-                    // TODO move that all to FirstFragment
-                    // determine first fragment
-                    navigateToEdit(entry);
-                    return true; // indicate the event is consumed
-                });
-*/
+            int idx = 0;
+            while (entriesIterator.hasNext() && limit > 0) {
+                Map.Entry<String, Entry> e = entriesIterator.next();
+                String nodeId = e.getKey();
+                Entry entry = e.getValue();
+                logger.info("Entry: {}", entry.content);
+                // KLUDGE  iterate over Buttons in ButtonList
 
+                // iterate over Buttons in ButtonList
+                View button = buttonList.getChildAt(idx);
+                if (button instanceof ButtonTouchable) {
+                    ButtonTouchable btn = (ButtonTouchable) button;
+                    btn.setText(entry.content);
+                    btn.setVisibility(View.VISIBLE);
+                    // make button height larger
+                    MaterialButton btn_m = (MaterialButton) button;
+                    btn_m.setInsetTop( 0);
+                    btn_m.setInsetBottom(0);
+                    // compensate with margins
+                    ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) button.getLayoutParams();
+                    params.topMargin = 10;
+                    params.bottomMargin = 10;
+                    button.setLayoutParams(params);
 
+                    btn.setEntry(new EntryKey( topic, nodeId), this); // set entry and fragment reference, allow runtime test
 
-                /*
-                // move button 1px left
-                // Get the button's LayoutParams
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) button.getLayoutParams();
-                // Convert 1dp to pixels
-                float scale = button.getContext().getResources().getDisplayMetrics().density;
-                int shiftInPixel = (int) (idx * 40 * scale + 0.5f);
-                // Adjust the left margin
-                params.leftMargin += shiftInPixel;
-                params.height = btn.getHeight(); // keep height - even if it is wrap content on shrink
-                int parentWidth = ((ViewGroup) btn.getParent()).getWidth();
-                //params.width = (int) (parentWidth * 0.8 - shiftInPixel); // width is initially not fixed - but can be set here
-                // Apply the updated LayoutParams back to the button
-                button.setLayoutParams(params);
-                */
-                // make button height larger
-                MaterialButton btn_m = (MaterialButton) button;
-                btn_m.setInsetTop( 0);
-                btn_m.setInsetBottom(0);
-                // compensate with margins
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) button.getLayoutParams();
-                params.topMargin = 10;
-                params.bottomMargin = 10;
-                button.setLayoutParams(params);
+                    btn.setOnTouchListener(new OnTouchListener(this) {
 
-                btn.setEntry(entry, this); // set entry and fragment reference, allow runtime test
+                        @Override
+                        public void onClick() {
+                            Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
+                            btn.performClick();
+                            updateButtonsUIThread();
+                        }
+                        @Override
+                        public void onLongClick() {
+                            Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
+                            btn.performLongClick();
+                        }
 
-                btn.setOnTouchListener(new OnTouchListener(this) {
-
-                    @Override
-                    public void onClick() {
-                        Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                        btn.performClick();
-                        updateButtonsUIThread();
-                    }
-                    @Override
-                    public void onLongClick() {
-                        Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                        btn.performLongClick();
-                    }
-
-                    @Override
-                    public void onSwipeRight() {
-                        Toast.makeText(getActivity(), "Swiped right on entry: " + entry.content, Toast.LENGTH_SHORT).show();
-                        //Entries.setTopicEntry(entry); // set topic to this entry
-                    }
-                    @Override
-                    public void onSwipeLeft() {
-                        Toast.makeText(getActivity(), "Swiped left on entry: " + entry.content, Toast.LENGTH_SHORT).show();
-                        //navigateToEdit(entry); // navigate to edit this entry
-                    }
+                        @Override
+                        public void onSwipeRight() {
+                            Toast.makeText(getActivity(), "Swiped right on entry: " + entry.content, Toast.LENGTH_SHORT).show();
+                            //Entries.setTopicEntry(entry); // set topic to this entry
+                        }
+                        @Override
+                        public void onSwipeLeft() {
+                            Toast.makeText(getActivity(), "Swiped left on entry: " + entry.content, Toast.LENGTH_SHORT).show();
+                            //navigateToEdit(entry); // navigate to edit this entry
+                        }
 
 
-                });
+                    });
 
 
+                } //
+
+                limit--;
+                idx++;
             }
-
-            limit--;
-            idx++;
-        }
-
-
-        while (limit > 0) {
-            if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
-                logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
-                break;
+            while (limit > 0) {
+                if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
+                    logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
+                    break;
+                }
+                buttonList.getChildAt(idx).setVisibility(View.GONE);
+                logger.info("No more entries (hiding button at index {} - content {})"
+                        , idx, buttonList.getChildAt(idx).toString());
+                limit--;
+                idx++;
             }
-            buttonList.getChildAt(idx).setVisibility(View.GONE);
-            logger.info("No more entries (hiding button at index {} - content {})"
-                    , idx, buttonList.getChildAt(idx).toString());
-            limit--;
-            idx++;
         }
+
+
         //
         // getMainActivity().getSupportActionBar().setTitle("FAYF - " + topic);
         if (null != binding.ButtonScrollView){
@@ -474,8 +447,8 @@ public class FirstFragment extends Fragment {
      */
 
 
-    public void navigateToEdit(Entry entry) {
-        Entries.setCurrentEntry(entry);
+    public void navigateToEdit(EntryKey entryKey) {
+        Entries.setCurrentEntryKey(entryKey);
         try {
             NavHostFragment.findNavController(FirstFragment.this)
                     .navigate(R.id.action_FirstFragment_to_SecondFragment);

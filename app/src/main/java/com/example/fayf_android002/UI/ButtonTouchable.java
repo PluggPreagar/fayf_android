@@ -1,7 +1,8 @@
 package com.example.fayf_android002.UI;
 
-import com.example.fayf_android002.Entries;
-import com.example.fayf_android002.Entry;
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.Entry;
+import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
 import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
@@ -10,7 +11,7 @@ public class ButtonTouchable extends MaterialButton {
 
     Logger logger = org.slf4j.LoggerFactory.getLogger(ButtonTouchable.class);
 
-    private Entry entry = null; // entry associated with this button
+    private EntryKey entryKey = null; // entry associated with this button
     private FirstFragment fragment = null; // fragment containing this button
 
     com.example.fayf_android002.OnTouchListener touchListener = null;
@@ -21,8 +22,8 @@ public class ButtonTouchable extends MaterialButton {
     }
 
 
-    public void setEntry(Entry entry, FirstFragment fragment) {
-        this.entry = entry;
+    public void setEntry(EntryKey entryKey, FirstFragment fragment) {
+        this.entryKey = entryKey;
         this.fragment = fragment;
     }
 
@@ -40,7 +41,7 @@ public class ButtonTouchable extends MaterialButton {
     public boolean performClick() {
         super.performClick();
         logger.info("ButtonTouchable clicked.");
-        Entries.setTopicEntry(entry); // set topic to this entry
+        Entries.setCurrentEntryKey(entryKey); // set topic to this entry
         return true; // indicate the click was handled
     }
 
@@ -48,7 +49,7 @@ public class ButtonTouchable extends MaterialButton {
     public boolean performLongClick() {
         super.performLongClick();
         logger.info("ButtonTouchable long-clicked.");
-        fragment.navigateToEdit(entry); // navigate to edit this entry
+        fragment.navigateToEdit(entryKey); // navigate to edit this entry
         // Custom behavior can be added here
         return super.performLongClick();
     }

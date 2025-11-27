@@ -1,8 +1,9 @@
 package com.example.fayf_android002.RuntimeTest;
 
-import android.widget.Button;
 import androidx.fragment.app.FragmentManager;
 import com.example.fayf_android002.*;
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.EntryTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,10 @@ public class RuntimeTest {
     public void runTests(FragmentManager fragmentManager) {
         // Placeholder for runtime test logic
 
-        EntryTree entryTree = Entries.getInstance().getEntryTree();
+        EntryTree entryTree = Entries.clearAllEntries();
+        Entries.setEntry();
+
+        EntryTreeOld entryTree = Entries.getInstance().getEntryTree();
         logger.info("EntryTree root has " + entryTree.size() + " children.");
 
         entryTree.entries.clear(); // clear entries for test
