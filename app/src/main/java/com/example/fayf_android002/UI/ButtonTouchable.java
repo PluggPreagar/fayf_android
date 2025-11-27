@@ -1,8 +1,8 @@
-package com.example.fayf_android002;
+package com.example.fayf_android002.UI;
 
-import android.widget.Button;
-import android.widget.Toast;
-import androidx.fragment.app.Fragment;
+import com.example.fayf_android002.Entries;
+import com.example.fayf_android002.Entry;
+import com.example.fayf_android002.FirstFragment;
 import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
 

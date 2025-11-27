@@ -1,6 +1,9 @@
-package com.example.fayf_android002;
+package com.example.fayf_android002.Storage;
 
 import android.content.Context;
+import com.example.fayf_android002.Config;
+import com.example.fayf_android002.Entry;
+import com.example.fayf_android002.EntryTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +11,8 @@ import java.io.*;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import static com.example.fayf_android002.Config.TENANT;
 
 public class DataStorageLocal {
 
@@ -17,7 +22,7 @@ public class DataStorageLocal {
     // Serialize the EntryTree to a file
     public static void saveEntries(TreeMap<String, TreeMap<String, Entry>> entries, Context context)  {
         // inject tenantId into file name
-        String filePath = DataStorageLocal.filePath.replace("TID", DataStorageWeb.getTenant());
+        String filePath = DataStorageLocal.filePath.replace("TID", Config.TENANT.getValue());
 
         if (entries == null || entries.isEmpty()) {
             logger.warn("No entries to save to file: {}", filePath);
@@ -41,7 +46,7 @@ public class DataStorageLocal {
 
     // Deserialize the EntryTree from a file
     public static TreeMap<String, TreeMap<String, Entry>> loadEntries( Context context)  {
-        String filePath = DataStorageLocal.filePath.replace("TID", DataStorageWeb.getTenant());
+        String filePath = DataStorageLocal.filePath.replace("TID", TENANT.getValue());
 
         TreeMap<String, TreeMap<String, Entry>> entries = new TreeMap<>();
         try (ObjectInputStream ois = new ObjectInputStream(

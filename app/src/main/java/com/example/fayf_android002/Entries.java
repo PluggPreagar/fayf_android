@@ -2,8 +2,9 @@ package com.example.fayf_android002;
 
 import android.content.Context;
 import android.view.View;
+import com.example.fayf_android002.Storage.DataStorageLocal;
+import com.example.fayf_android002.Storage.DataStorageWeb;
 
-import java.io.DataInputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -145,11 +146,11 @@ public class Entries {
         // ensure config is merged
         // config entry must exist - even if not in storage
         Entries.entryTree.entries.putIfAbsent(Entry.HIDDEN_ENTRY_PATH, new TreeMap<>());
-        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH, "Config"), false);
+        Entries.entryTree.setEntry( new Entry(Config.CONFIG_PATH, "Config"), false);
 
         // at least 1 entry to allow navigation to config
-        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH,"Version", "Version : 0.0.1"), false);
-        Entries.entryTree.setEntry( new Entry(Configuration.CONFIG_PATH,"Tenant", "Tenant : " + DataStorageWeb.TID_DEFAULT  ), false);
+        Entries.entryTree.setEntry( new Entry(Config.CONFIG_PATH,"Version", "Version : 0.0.1"), false);
+        Entries.entryTree.setEntry( new Entry(Config.CONFIG_PATH,"Tenant", "Tenant : " + Config.TENANT.getValue() ), false);
 
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(currentTopicEntry);
@@ -256,7 +257,7 @@ public class Entries {
                         return;
                     } else if (!oldTenant.equals(newTenant)) {
                         entryTree = new EntryTree(); // reset
-                        DataStorageWeb.setTenant(newTenant);
+                        Config.TENANT.setValue( newTenant);
                         load_async( context , true); // force web reload
                     }
                 } else {
@@ -381,7 +382,7 @@ public class Entries {
         String tenantName = "";
         Entry entry = entryTree.getEntry(Entry.TENANT_ENTRY_PATH);
         if (entry == null || EntryTree.NULL_ENTRY.equals(entry)) {
-            tenantName = DataStorageWeb.TID_DEFAULT;
+            tenantName = Config.TENANT.getValue();
         } else {
             tenantName = entry.getContent();
         }        

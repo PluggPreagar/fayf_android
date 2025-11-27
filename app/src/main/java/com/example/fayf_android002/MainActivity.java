@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (Entries.getCurrentTopicString().startsWith(Entry.HIDDEN_ENTRY_PATH+Entry.PATH_SEPARATOR)) {
                 setTopic(Entries.ROOT_TOPIC);
             } else {
-                setTopic(Configuration.CONFIG_PATH);
+                setTopic(Config.CONFIG_PATH);
             }
             return true;
         } else if (id == R.id.action_about) {
@@ -216,8 +216,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Entries.load_async( getApplicationContext(), true);
             return true;
         } else if (id == R.id.toggle_log) {
-            Configuration.SHOW_LOGS.toggleValue();
-            if (Configuration.SHOW_LOGS.asBoolean()) {
+            Config.SHOW_LOGS.toggleValue();
+            if (Config.SHOW_LOGS.asBoolean()) {
                 Toast.makeText(this, "Logs shown", Toast.LENGTH_SHORT).show();
                 binding.logScrollView.setVisibility(View.VISIBLE);
 

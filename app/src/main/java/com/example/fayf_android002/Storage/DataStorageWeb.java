@@ -1,5 +1,8 @@
-package com.example.fayf_android002;
+package com.example.fayf_android002.Storage;
 
+import com.example.fayf_android002.Config;
+import com.example.fayf_android002.Entry;
+import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,26 +15,7 @@ import java.util.List;
 
 public class DataStorageWeb {
 
-    public static String SID_DEFAULT = "sid_example";
-    public static String TID_DEFAULT = "tst5";
-
     private final static Logger logger = LoggerFactory.getLogger(DataStorageWeb.class);
-
-    public static void setTenant(String newTenant) {
-        TID_DEFAULT = newTenant;
-    }
-
-    public static void setSessionId(String newSid) {
-        SID_DEFAULT = newSid;
-    }
-
-    public static String getTenant() {
-        return TID_DEFAULT;
-    }
-
-    public static String getSessionId() {
-        return SID_DEFAULT;
-    }
 
 
     /*
@@ -41,7 +25,7 @@ public class DataStorageWeb {
 
 
     public List<String> readData() {
-        return readData(SID_DEFAULT, TID_DEFAULT);
+        return readData(Config.SYSTEM.getValue(), Config.TENANT.getValue());
     }
 
     // Fetch CSV data from a URL
@@ -76,7 +60,7 @@ public class DataStorageWeb {
     }
 
     public void saveEntry(Entry entry) {
-        saveEntry(entry, SID_DEFAULT, TID_DEFAULT);
+        saveEntry(entry, Config.SYSTEM.getValue(), Config.TENANT.getValue());
     }
     public void saveEntry(Entry entry, String sid, String tid) {
 
