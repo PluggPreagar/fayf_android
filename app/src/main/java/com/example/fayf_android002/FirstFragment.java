@@ -63,7 +63,7 @@ public class FirstFragment extends Fragment {
 
         //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
         Entries.setOnTopicChangedListener("FirstFragment", entry -> {
-            logger.info("Topic changed callback received: {}", entry.getFullPath());
+            logger.info("Topic changed callback received: {}", null == entry ? "NONE" : entry.getFullPath());
             updateButtonsUIThread();
         });
 
@@ -351,7 +351,7 @@ public class FirstFragment extends Fragment {
         Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
         if (!entriesIterator.hasNext()) {
             logger.info("No entries found for topic: {}, offset: {}", topic, offset);
-            Entries.upOneTopicLevel(); // will trigger callback to update buttons again
+            //Entries.upOneTopicLevel(); // will trigger callback to update buttons again --> RECURSIVE LOOP !!
             // Toast message
             Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
         } else {

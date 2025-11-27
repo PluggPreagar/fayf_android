@@ -26,10 +26,12 @@ public enum Config {
 
     private final String key;
     private final Object defaultValue;
+    private Object value;
 
     Config(String key, Object defaultValue) {
         this.key = key;
         this.defaultValue = defaultValue;
+        this.value = defaultValue;
     }
 
 
@@ -83,21 +85,22 @@ public enum Config {
 
     public static void set(String key, String value) {
         Config config = Config.fromKey(key);// validate key
-        config.setValue(value); // use instance method
+        config.value = value; // use instance method
         Entries.setEntry(new EntryKey(CONFIG_PATH, key), value, null);
         logger.info("configuration set '{}' to value '{}'", key, value);
     }
 
     public static String get(String key) {
-        Entry entry = Entries.getEntry(new EntryKey(CONFIG_PATH, key)); // validate key
-        logger.info("configuration read '{}' with value '{}'", key, entry.getContent());
-        return entry.getContent();
+        String content = Entries.getContentOr(CONFIG_PATH, key,""); // validate key
+        logger.info("configuration read '{}' with value '{}'", key,content);
+        return content;
     }
 
     public static String toggle(String key) {
-        Entry entry = Entries.getEntry(new EntryKey(CONFIG_PATH, key)); // validate key
-        String newValue = entry.getContent().equals("true") ? "false" : "true";
-        entry.setContent(newValue);
+        EntryKey currentTopicEntry = new EntryKey(CONFIG_PATH, key);
+        Entry entry = Entries.getEntry(currentTopicEntry); // validate key
+        String newValue = null != entry && entry.getContent().equals("true") ? "false" : "true";
+        Entries.setEntry(currentTopicEntry, newValue, null);
         logger.info("configuration toggled '{}' to '{}'", key, newValue);
         return newValue;
     }

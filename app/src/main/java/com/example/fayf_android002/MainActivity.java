@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         Entries.setOnTopicChangedListener( "MainActivity", currentTopicEntry -> {
             runOnUiThread(() -> {
                 logger.info("Topic changed listener triggered for currentTopicEntry: {}"
-                        , currentTopicEntry.getFullPath());
+                        , null == currentTopicEntry ? "" : currentTopicEntry.getFullPath());
                 refresh( currentTopicEntry );
             });
         });

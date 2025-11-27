@@ -6,6 +6,7 @@ import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,11 +29,12 @@ public class Entries {
         STATUS - TODO move to ViewModel ?
     */
 
-    private static EntryKey currentEntryKey = null;
+    private static EntryKey currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
     private static int currentTopicEntryCount; // for offset
 
     private static int offset = 0;
     static final int PAGE_SIZE_MIN = 5;
+
 
 
     /*
@@ -212,7 +214,7 @@ public class Entries {
                     .iterator();
         } else {
             currentTopicEntryCount = 0;
-            return null;
+            return Collections.emptyIterator();
         }
     }
 
@@ -234,6 +236,9 @@ public class Entries {
     }
 
     public static EntryKey getCurrentEntryKey() {
+        if (null == currentEntryKey) {
+            currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
+        }
         return currentEntryKey;
     }
 
@@ -254,6 +259,15 @@ public class Entries {
     public static Entry getEntry(EntryKey currentTopicEntry) {
         return entryTree.get(currentTopicEntry);
     }
+
+    public static String getContentOr(String configPath, String key, String optional) {
+        Entry entry = entryTree.get(new EntryKey(configPath, key));
+        if (null != entry) {
+            return entry.getContent();
+        }
+        return optional;
+    }
+
 
     public static void removeEntry(EntryKey entry) {
         entryTree.remove(entry);
