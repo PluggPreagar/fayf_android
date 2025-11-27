@@ -15,16 +15,10 @@ public class RuntimeTest {
     public void runTests(FragmentManager fragmentManager) {
         // Placeholder for runtime test logic
 
-        EntryTree entryTree = Entries.clearAllEntries();
-        Entries.setEntry();
-
-        EntryTreeOld entryTree = Entries.getInstance().getEntryTree();
-        logger.info("EntryTree root has " + entryTree.size() + " children.");
-
-        entryTree.entries.clear(); // clear entries for test
-        Entries.getEntryOrNew("/", "t1", "c1");
-        Entries.getEntryOrNew("/", "t2", "c2");
-        Entries.getEntryOrNew("/t2", "t2.1", "c2.1");
+        Entries.clearAllEntries();
+        Entries.setEntry("/", "t1", "c1");
+        Entries.setEntry("/", "t2", "c2");
+        Entries.setEntry("/t2", "t2.1", "c2.1");
 
         // ui thread refresh
         MainActivity.getInstance().runOnUiThread(() -> {

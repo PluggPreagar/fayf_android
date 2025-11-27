@@ -264,6 +264,12 @@ public class Entries {
         new DataStorageWeb().saveEntry(entryKey, entry);
     }
 
+    public static Entries setEntry(String topic, String nodeId, String content) {
+        entryTree.set(new EntryKey(topic, nodeId), content);
+        return Entries.getInstance();
+    }
+
+
     public static int size() {
         return entryTree.size();
     }

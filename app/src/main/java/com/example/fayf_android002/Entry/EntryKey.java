@@ -17,7 +17,7 @@ public class EntryKey {
         // fix invalid formats: "" -> "/" , "node" -> "/node" , "parent/node/" -> "/parent/node"
         fullPath = sanitizeTopic(fullPath);
         int lastSlashIndex = fullPath.lastIndexOf("/");
-        topic = fullPath.substring(0, lastSlashIndex); // up to last "/" , at least "/"
+        topic = lastSlashIndex == 0 ? PATH_SEPARATOR : fullPath.substring(0, lastSlashIndex); // up to last "/" , at least "/"
         nodeId = fullPath.substring( lastSlashIndex + 1); // after last "/"
     }
 
