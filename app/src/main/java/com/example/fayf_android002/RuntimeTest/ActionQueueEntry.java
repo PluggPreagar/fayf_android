@@ -7,6 +7,8 @@ public class ActionQueueEntry {
     public final String text; // for SET_TEXT action
     public final long waitTimeMs; // for WAIT action
 
+    public String sourceCodeLine = ""; // for DOC action
+
     public enum ACTIONS {
         CLICK,
         LONG_CLICK,
@@ -16,7 +18,9 @@ public class ActionQueueEntry {
         IS_VISIBLE,
         WAIT_FOR_VISIBLE,
         DELAY,
-        DOC, CALL_BACK
+        DOC,
+        CALL_BACK,
+        TEST_BLOCK
     }
 
 
@@ -30,5 +34,6 @@ public class ActionQueueEntry {
         this.text = text;
         this.waitTimeMs = waitTimeMs;
         this.callback = callback;
+        this.sourceCodeLine = Thread.currentThread().getStackTrace()[4].toString();
     }
 }

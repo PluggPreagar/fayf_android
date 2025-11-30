@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.UI.TextViewAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

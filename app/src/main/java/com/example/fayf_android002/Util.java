@@ -29,6 +29,9 @@ public class Util {
         return str != null && !str.isEmpty();
     }
 
+    public static String appendIfFilled(String str, String toAppend) {
+        return str != null && !str.isEmpty() ? str + toAppend : "";
+    }
 
 
 

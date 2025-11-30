@@ -63,7 +63,8 @@ public class ActionQueue {
         // wait
         new Thread(() -> {
             ActionExecutor actionExecutor = new ActionExecutor();
-            while(run_next(actionExecutor)) {
+            while(run_next(actionExecutor)
+                    && actionExecutor.errorMsg.isEmpty()) {
                 // continue
             }
             if (!actionExecutor.errorMsg.isEmpty()) {
@@ -209,6 +210,13 @@ public class ActionQueue {
                 , fragmentId, -1, msg, 0, null));
         return this;
     }
+
+    public ActionQueue testBlock(String msg) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
+                , fragmentId, -1, msg, 0, null));
+        return this;
+    }
+
 
     public ActionQueue clickUp() {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.CLICK

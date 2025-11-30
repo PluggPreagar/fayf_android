@@ -1,4 +1,4 @@
-package com.example.fayf_android002;
+package com.example.fayf_android002.UI;
 
 import android.widget.TextView;
 import android.os.Handler;
@@ -6,7 +6,6 @@ import android.os.Looper;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.spi.LocationAwareLogger;
 
 import java.util.Arrays;
 import java.util.List;

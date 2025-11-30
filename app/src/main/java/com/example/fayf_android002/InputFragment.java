@@ -89,8 +89,7 @@ public class InputFragment extends Fragment {
     }
 
     public void  backToFirstFragment(){
-        NavHostFragment.findNavController(InputFragment.this)
-                .navigate(R.id.action_SecondFragment_to_FirstFragment);
+        MainActivity.getInstance().switchToFirstFragment();
     }
 
 

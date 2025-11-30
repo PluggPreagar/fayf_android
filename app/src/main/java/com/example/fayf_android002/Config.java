@@ -16,13 +16,14 @@ public enum Config {
 
     TENANT("tenant", "tst5"),
 
-    SYSTEM("system", "sid_example")
+    SYSTEM("system", "sid_example"),
 
-    ;
+    RUN_SELF_TEST("self_test", true);
 
     static Logger logger = LoggerFactory.getLogger(Config.class);
 
     public final static String CONFIG_PATH = "/_/config";  // HIDDEN_ENTRY_PATH + "/config"
+    public final static String TENANT_TEST_SUFFIX = "Test";
 
     private final String key;
     private final Object defaultValue;
@@ -91,15 +92,18 @@ public enum Config {
     }
 
     public static String get(String key) {
-        String content = Entries.getContentOr(CONFIG_PATH, key,""); // validate key
+        Config config = Config.fromKey(key);// validate key
+        String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(config.value)); // validate key
         logger.info("configuration read '{}' with value '{}'", key,content);
         return content;
     }
 
     public static String toggle(String key) {
+        Config config = Config.fromKey(key);// validate key
         EntryKey currentTopicEntry = new EntryKey(CONFIG_PATH, key);
         Entry entry = Entries.getEntry(currentTopicEntry); // validate key
-        String newValue = null != entry && entry.getContent().equals("true") ? "false" : "true";
+        String newValue = null != entry && Util.asBoolean(entry.getContent()) ||  Util.asBoolean((String) config.value)
+                ? "false" : "true";
         Entries.setEntry(currentTopicEntry, newValue, null);
         logger.info("configuration toggled '{}' to '{}'", key, newValue);
         return newValue;

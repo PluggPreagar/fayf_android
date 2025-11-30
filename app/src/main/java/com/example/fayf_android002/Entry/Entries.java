@@ -30,7 +30,6 @@ public class Entries {
     */
 
     private static EntryKey currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
-    private static int currentTopicEntryCount; // for offset
 
     private static int offset = 0;
     static final int PAGE_SIZE_MIN = 5;
@@ -106,8 +105,18 @@ public class Entries {
 
     public static void callTopicChangedListeners(EntryKey topic) {
 
-        for (OnTopicChanged listener : topicListener.values()) {
-            listener.onTopicChanged(topic); // null signals complete reload
+        for (Map.Entry<String, OnTopicChanged> e : topicListener.entrySet()) {
+            logger.debug("callTopicChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
+            e.getValue().onTopicChanged(topic); // null signals complete reload
+        }
+    }
+
+    public static String toString(EntryKey topic) {
+        if (null == topic) {
+            return "null";
+        } else {
+            Entry entry = Entries.getEntry(topic);
+            return topic.getFullPath() + (null != entry ? " \"" + entry.getContent() + "\"" : " (no entry)");
         }
     }
 
@@ -117,7 +126,7 @@ public class Entries {
      */
 
 
-    public static void load(EntryTree entryTree, Context context, boolean forceWeb) {
+    private static void load(EntryTree entryTree, Context context, boolean forceWeb) {
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
@@ -147,20 +156,26 @@ public class Entries {
     }
 
     public static void load_async(Context context, boolean forceWeb) {
-        executorService.execute(() -> {
-            try {
-                load(entryTree, context, forceWeb);
-                //logger.info("Entries loaded async ({} entries)", entries.size());
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Error loading entries asynchronously", e);
-            }
-        });
+        if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
+            logger.info("SKIPP load entries async for tenant '{}'", Config.TENANT.getValue());
+        } else {
+            executorService.execute(() -> {
+                try {
+                    load(entryTree, context, forceWeb);
+                    //logger.info("Entries loaded async ({} entries)", entries.size());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.error("Error loading entries asynchronously", e);
+                }
+            });
+        } // SKIPP for test tenant
     }
 
     public static void load_async(Context context) {
         load_async(context, false);
     }
+
+
 
 
     public static void save(Context context) {
@@ -199,7 +214,7 @@ public class Entries {
         // check if more entries exist with current
         int offsetOld = offset;
         offset += i;
-        offset = Math.min(offset, currentTopicEntryCount - PAGE_SIZE_MIN);
+        offset = Math.min(offset, getCurrentTopicSize() - PAGE_SIZE_MIN);
         offset = Math.max(0, offset);
         return offsetOld != offset;
     }
@@ -207,13 +222,11 @@ public class Entries {
     public static Iterator<Map.Entry<String, Entry>> getEntriesIterator(int offset) {
         TreeMap<String, Entry> entry = entryTree.getTopic(currentEntryKey);
         if (null != entry) {
-            currentTopicEntryCount = entry.size();
             return entry.entrySet().stream()
                     .skip(offset)
                     .limit(PAGE_SIZE_MIN)
                     .iterator();
         } else {
-            currentTopicEntryCount = 0;
             return Collections.emptyIterator();
         }
     }
@@ -227,9 +240,9 @@ public class Entries {
      */
 
     public static void setCurrentEntryKey(EntryKey entryKey) {
-        currentEntryKey = null == entryKey ? entryKey : EntryTree.ROOT_ENTRY_KEY;
+        currentEntryKey = null == entryKey ? EntryTree.ROOT_ENTRY_KEY: entryKey;
         offset = 0;
-        callTopicChangedListeners(null);
+        callTopicChangedListeners(currentEntryKey);
         if (listener != null) {
             listener.onEntriesLoaded(entryTree);
         }
@@ -275,7 +288,11 @@ public class Entries {
 
     public static void setEntry(EntryKey entryKey, String content, Context context) {
         Entry entry = entryTree.set(entryKey, content);
-        new DataStorageWeb().saveEntry(entryKey, entry);
+        if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
+            logger.info("SKIPP upload Entry: {} = \"{}\" ", Entries.toString(entryKey), content);
+        } else {
+            new DataStorageWeb().saveEntry(entryKey, entry);
+        }
     }
 
     public static Entries setEntry(String topic, String nodeId, String content) {
@@ -286,6 +303,11 @@ public class Entries {
 
     public static int size() {
         return entryTree.size();
+    }
+
+    public static int getCurrentTopicSize() {
+        TreeMap<String, Entry> topicEntries = entryTree.getTopic(currentEntryKey);
+        return null != topicEntries ? topicEntries.size() : 0;
     }
 
 

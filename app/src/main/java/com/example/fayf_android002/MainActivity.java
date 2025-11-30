@@ -7,14 +7,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.widget.NestedScrollView;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.navigation.ui.AppBarConfiguration;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
+import com.example.fayf_android002.UI.TextViewAppender;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
-import com.google.android.material.snackbar.Snackbar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +27,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public static final Logger logger = LoggerFactory.getLogger(MainActivity.class);
 
-    private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     NestedScrollView scrollView;
 
@@ -54,40 +55,77 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         setSupportActionBar(binding.toolbar);
 
-        Entries.setCurrentEntryKey(null); // clear current entry on app start
+        Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
-
+        // init self-test entries if started
+        // prevent auto-load from storage
+        if (Config.RUN_SELF_TEST.asBoolean()) {
+            logger.info("Config.RUN_SELF_TEST is enabled - initializing self-test entries");
+            RuntimeTest.initSelfTest();
+            // start self test in 2 seconds
+            new Thread(() -> {
+                try {
+                    Thread.sleep(2000);
+                    RuntimeTest runtimeTest = new RuntimeTest();
+                    runtimeTest.runTests(getSupportFragmentManager());
+                } catch (Exception e) {
+                    logger.error("Error while running self-test in a separate thread", e);
+                }
+            }).start();
+        }
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /*
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAnchorView(R.id.fab)
                         .setAction("Action", null).show();
+                 */
+                switchToInputFragment();
             }
         });
 
         Entries.setOnTopicChangedListener( "MainActivity", currentTopicEntry -> {
-            runOnUiThread(() -> {
-                logger.info("Topic changed listener triggered for currentTopicEntry: {}"
-                        , null == currentTopicEntry ? "" : currentTopicEntry.getFullPath());
-                refresh( currentTopicEntry );
-            });
+            runOnUiThread(() -> {refresh( currentTopicEntry );});
         });
+        refresh(Entries.getCurrentEntryKey());
 
+        switchToFirstFragment();
 
         /* added for scrollview */
-
+/*
         scrollView = findViewById(R.id.ButtonScrollView);
         scrollView.setOnTouchListener(this);
         scrollView.getViewTreeObserver().addOnScrollChangedListener(this);
-
+*/
     }
+
+    private void loadFragment(Fragment fragment) {
+        logger.info("Loading fragment: {}", fragment.getClass().getSimpleName());
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
+    }
+
+    public void switchToFirstFragment() {
+        loadFragment(new FirstFragment());
+    }
+
+    public void switchToInputFragment() {
+        loadFragment(new InputFragment());
+    }
+
 
 
     private void refresh(EntryKey currentTopicEntry){
         // called in runOnUiThread from onTopicChangedListener
-
+        logger.info("Refreshing MainActivity UI for topic: {}", Entries.getCurrentEntryKey().getFullPath());
+        UtilDebug.logCompactCallStack();
+        updateActionBarTitle( );
+        //
+        UtilDebug.inspectView();
     }
 
 
@@ -209,9 +247,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        // same es pressing ESC-key or up-button in action bar
         String topicBefore = Entries.getCurrentEntryKey().getFullPath();
-        Entries.upOneTopicLevel();
-        logger.info("Navigating up topic: {} (from {}) (BACK)", Entries.getCurrentEntryKey().getFullPath(), topicBefore);
+        // switch from InputFragment to FirstFragment if needed
+        // TODO only if in InputFragment
+
+        // check current fragment
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment instanceof InputFragment) {
+            logger.info("Back pressed in InputFragment - switching to FirstFragment");
+            switchToFirstFragment();
+        } else {
+            logger.info("Back pressed in FirstFragment or other - navigating up topic");
+            Entries.upOneTopicLevel();
+            logger.info("Navigating up topic: {} (from {}) (BACK)", Entries.getCurrentEntryKey().getFullPath(), topicBefore);
+        }
+        //
     }
 
 
@@ -273,10 +324,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             boolean isRootTopic = EntryTree.isRootKey(currentTopicEntry);
             Entry entry = Entries.getEntry(currentTopicEntry);
             logger.info("Updating action bar title for topic: \"{}\" {}"
-                    , null == currentTopicEntry ? "" : entry.content
+                    , null == entry ? "" : entry.content
                     , isRootTopic ? "(root topic)" : "(enable back button)");
             if (isRootTopic ||  null == entry || !Util.isFilled(entry.content)) {
-                newTitle += " of " + Config.TENANT.getValue();
+                String tenant = Config.TENANT.getValue();
+                if (Util.isFilled(tenant)) {
+                    newTitle += " of " + Config.TENANT.getValue();
+                }
             } else {
                 newTitle += " - " + Util.shortenString(entry.content, 30);
             }
@@ -284,6 +338,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             // enable back button in action bar
             getSupportActionBar().setDisplayHomeAsUpEnabled(!isRootTopic); // show back button if not root
         }
+        getSupportActionBar().show();
     }
 
 

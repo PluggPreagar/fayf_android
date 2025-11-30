@@ -1,5 +1,8 @@
 package com.example.fayf_android002.Entry;
 
+import androidx.annotation.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 public class EntryKey {
 
     public static final String PATH_SEPARATOR = "/";
@@ -38,8 +41,12 @@ public class EntryKey {
 
 
     public String getFullPath() {
-        return topic + PATH_SEPARATOR + nodeId;
+        return ( PATH_SEPARATOR.equals(topic) ? topic : topic + PATH_SEPARATOR ) + nodeId;
     }
 
-
+    @NonNull
+    @Override
+    public @NotNull java.lang.String toString() {
+        return getFullPath();
+    }
 }

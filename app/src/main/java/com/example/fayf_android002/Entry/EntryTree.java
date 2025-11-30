@@ -28,8 +28,7 @@ public class EntryTree {
     }
 
     public TreeMap<String, Entry> getTopic(EntryKey key) {
-        TreeMap<String, Entry> stringEntryTreeMap = entries.get(key.topic);
-        return stringEntryTreeMap;
+        return entries.get(key.getFullPath());
     }
 
 

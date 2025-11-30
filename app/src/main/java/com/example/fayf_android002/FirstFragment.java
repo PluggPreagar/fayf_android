@@ -16,6 +16,7 @@ import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.button.MaterialButton;
@@ -132,6 +133,7 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
+        UtilDebug.inspectView();
 
 /*
         binding.button1.setOnClickListener(v ->
@@ -161,6 +163,7 @@ public class FirstFragment extends Fragment {
         super.onResume();
         // called when getting from InputFragment back to FirstFragment
         updateButtonsUIThread(); // in case entries changed while in background
+
     }
 
     public void onPause() {
@@ -347,7 +350,9 @@ public class FirstFragment extends Fragment {
         }
         int limit = 20; // buttonList.getChildCount();
         String topic = Entries.getCurrentEntryKey().getFullPath();
-        logger.info("Updating buttons for topic: {}, offset: {}, limit: {}", topic, offset, limit);
+        logger.info("Updating buttons for topic: {} , offset: {}, limit: {} max: {} "
+                , Entries.toString(Entries.getCurrentEntryKey())
+                , offset, limit, Entries.getCurrentTopicSize());
         Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
         if (!entriesIterator.hasNext()) {
             logger.info("No entries found for topic: {}, offset: {}", topic, offset);

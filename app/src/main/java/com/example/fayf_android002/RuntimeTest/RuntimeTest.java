@@ -3,7 +3,6 @@ package com.example.fayf_android002.RuntimeTest;
 import androidx.fragment.app.FragmentManager;
 import com.example.fayf_android002.*;
 import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.EntryTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,29 +11,43 @@ public class RuntimeTest {
 
     Logger logger = LoggerFactory.getLogger(RuntimeTest.class);
 
-    public void runTests(FragmentManager fragmentManager) {
-        // Placeholder for runtime test logic
-
+    public static void initSelfTest() {
+        // Placeholder for any initialization logic needed before running tests
+        Config.TENANT.setValue("RuntimeTest");
         Entries.clearAllEntries();
         Entries.setEntry("/", "t1", "c1");
         Entries.setEntry("/", "t2", "c2");
         Entries.setEntry("/t2", "t2.1", "c2.1");
+        Entries.setEntry("/t2", "t2.2", "c2.2");
+    }
 
-        // ui thread refresh
-        MainActivity.getInstance().runOnUiThread(() -> {
-            MainActivity.getInstance().onBackPressed(); // force refresh GUI
-        });
 
-        new ActionQueue(R.id.FirstFragment).delay(1000)
+    public void runTests(FragmentManager fragmentManager) {
+        // Placeholder for runtime test logic
+        logger.info("Running runtime tests...");
+        logger.info("Entry tree:\n" + Entries.getInstance().toString());
+        UtilDebug.inspectView();
+
+        ActionQueue queue = new ActionQueue(R.id.FirstFragment).delay(1000);
+        queue.testBlock("start at root")
                 .waitForVisible(R.id.button1, "c1")
-                .click(R.id.button2,500).doc("goto 'früher war alles besser'")
-                .longClick(R.id.button2,1000).doc("edit entry 'früher war alles besser'")
-                .clickBack().doc("click back")
+                .waitForVisible(R.id.button2, "c2");
+        queue.testBlock("stay - no child to n1")
+                .waitForVisible(R.id.button1, "c1")
+                .click(R.id.button1)
+                .delay(500)
+                .waitForVisible(R.id.button1, "c1"); // check if still in root
+        queue.testBlock("goto 'n2' child")
+                .click(R.id.button2,500).doc("goto 'n2'")
                 .waitForVisible(R.id.button1, "c2.1")
+                .waitForVisible(R.id.button2, "c2.2")
                 .clickBack()
-                .waitForVisible(R.id.button1, "c1")
-                .run();
-
+                .waitForVisible(R.id.button1, "c1"); // check if back to root
+        queue.testBlock("edit n1")
+                .longClick(R.id.button1,1000).doc("edit entry 'n1'")
+                ;
+        queue.testBlock("done"); // check finish of last block
+        queue.run();
     }
 
     public void runTests2(FragmentManager fragmentManager) {

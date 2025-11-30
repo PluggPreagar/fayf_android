@@ -3,8 +3,11 @@ package com.example.fayf_android002.RuntimeTest;
 import android.view.MenuItem;
 import android.widget.Button;
 import androidx.fragment.app.FragmentActivity;
+import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.R;
+import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,16 +22,19 @@ public class ActionExecutor {
 
     public List<String> errorMsg = new ArrayList<>();
     Logger logger = LoggerFactory.getLogger(ActionExecutor.class);
+    private String testContext = "";
+    private ActionQueueEntry currentAction = null;
 
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
         // switch on action type
-        Object view = getView(action);
+        currentAction = action;
+        Object view = getViewOptional(action);
         if ( view == null ) {
             view = MainActivity.getInstance().menu.findItem(action.viewId); // ensure menu is initialized
         }
         logger.info("---------------------------------------");
-        logger.info("Executing action: " + action.action + " on Fragment: " + action.fragmentId + " View: " + action.viewId
-                    + ( action.viewId != -1 ? (null == view ? " (NOT FOUND)" :
+        logger.info("Executing action: " + action.action + " on Fragment: " + action.fragmentId
+                    + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" :
                         " (" + view.getClass().getSimpleName() + ")"
                             + (  view instanceof android.widget.TextView
                                 ? " Text='" + ((android.widget.TextView) view).getText().toString() + "'"
@@ -66,6 +72,9 @@ public class ActionExecutor {
             case DOC:
                 dock(action, actionQueue);
                 break;
+            case TEST_BLOCK:
+                testBlock(action, actionQueue);
+                break;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action.action);
         }
@@ -76,6 +85,16 @@ public class ActionExecutor {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted during pre-action delay", e);
         }
+    }
+
+    private void testBlock(ActionQueueEntry action, ActionQueue actionQueue) {
+        // do nothing, just a marker
+        // check if on root
+        if (!EntryTree.isRootKey( Entries.getCurrentEntryKey() )){
+            assertFail("Not on root entry after block: " + action.text + ", current entry: " + Entries.getCurrentEntryKey());
+        }
+        logger.info("=== TEST BLOCK: " + action.text + " ===");
+        testContext = action.text;
     }
 
     private void dock(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -91,14 +110,20 @@ public class ActionExecutor {
         }
         return fragment;
     }
-    private View getView(ActionQueueEntry action) {
+
+    private View getViewOptional(ActionQueueEntry action) {
         Fragment fragment = getFragment(action);
-        View view = Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
+        return Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
+    }
+    private View getView(ActionQueueEntry action) {
+        View view = getViewOptional(action);
         if (view == null) {
             logger.warn("View not found: {} in fragment {}", action.viewId, action.fragmentId);
         }
         return view;
     }
+
+
 
     private FragmentActivity getActivity(ActionQueueEntry action) {
         Fragment fragment = getFragment(action);
@@ -188,18 +213,20 @@ public class ActionExecutor {
     }
 
     private void executeWaitForVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getView(action);
+        View view = getViewOptional(action);
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
         while (System.currentTimeMillis() - startTime < timeout) {
             if (null == view) {
-                view = getView(action);
+                view = getViewOptional(action);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
+                    logger.info("View is visible: " + action.viewId);
                     return;
                 } else if (view instanceof android.widget.TextView) {
                     String currentText = ((android.widget.TextView) view).getText().toString();
                     if (action.text.equals(currentText)) {
+                        logger.info("View is visible with expected text: " + action.viewId);
                         return;
                     }
                 }
@@ -240,7 +267,8 @@ public class ActionExecutor {
      */
 
     private void assertFail(String message) {
-        errorMsg.add(message);
+        errorMsg.add( Util.appendIfFilled(testContext,": ") + message +
+                " (at " + currentAction.sourceCodeLine + ")" );
         //throw new AssertionError(message);
     }
 

@@ -40,7 +40,7 @@ public class ButtonTouchable extends MaterialButton {
     @Override
     public boolean performClick() {
         super.performClick();
-        logger.info("ButtonTouchable clicked.");
+        logger.info("ButtonTouchable clicked ({}).", entryKey.getFullPath());
         Entries.setCurrentEntryKey(entryKey); // set topic to this entry
         return true; // indicate the click was handled
     }
