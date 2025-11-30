@@ -25,6 +25,10 @@ public class ActionExecutor {
     private String testContext = "";
     private ActionQueueEntry currentAction = null;
 
+    private String logName(View view) {
+        return UtilDebug.getResourceName(view) + " (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
+    }
+
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
         // switch on action type
         currentAction = action;
@@ -32,15 +36,20 @@ public class ActionExecutor {
         if ( view == null ) {
             view = MainActivity.getInstance().menu.findItem(action.viewId); // ensure menu is initialized
         }
-        logger.info("---------------------------------------");
-        logger.info("Executing action: " + action.action + " on Fragment: " + action.fragmentId
+        if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
+            logger.info("=======================================");
+        } else {
+            logger.info("---------------------------------------");
+            logger.info("Executing action: " + action.action
+                    + " on Fragment: " + getFragment(action).getClass().getSimpleName()
                     + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" :
-                        " (" + view.getClass().getSimpleName() + ")"
+                    logName((View) view)
                             + (  view instanceof android.widget.TextView
-                                ? " Text='" + ((android.widget.TextView) view).getText().toString() + "'"
-                                    : "" ))
-                        : "" )
-                );
+                            ? " Text='" + ((android.widget.TextView) view).getText().toString() + "'"
+                            : "" ))
+                    : "" )
+            );
+        }
         switch (action.action) {
             case CLICK:
                 executeClick(action, actionQueue);
@@ -85,6 +94,9 @@ public class ActionExecutor {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted during pre-action delay", e);
         }
+        if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
+            logger.info("=======================================");
+        }
     }
 
     private void testBlock(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -93,7 +105,7 @@ public class ActionExecutor {
         if (!EntryTree.isRootKey( Entries.getCurrentEntryKey() )){
             assertFail("Not on root entry after block: " + action.text + ", current entry: " + Entries.getCurrentEntryKey());
         }
-        logger.info("=== TEST BLOCK: " + action.text + " ===");
+        logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
         testContext = action.text;
     }
 
@@ -221,12 +233,12 @@ public class ActionExecutor {
                 view = getViewOptional(action);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
-                    logger.info("View is visible: " + action.viewId);
+                    logger.info(logName(view) + " is visible.");
                     return;
                 } else if (view instanceof android.widget.TextView) {
                     String currentText = ((android.widget.TextView) view).getText().toString();
                     if (action.text.equals(currentText)) {
-                        logger.info("View is visible with expected text: " + action.viewId);
+                        logger.info(logName(view) + " is visible with expected text: '" + action.text + "'.");
                         return;
                     }
                 }

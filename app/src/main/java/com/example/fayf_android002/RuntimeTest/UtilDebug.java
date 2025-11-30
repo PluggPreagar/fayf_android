@@ -82,6 +82,18 @@ public class UtilDebug {
         }
     }
 
+
+    public static String getResourceName(View view) {
+        if (view.getId() != View.NO_ID) {
+            try {
+                return view.getResources().getResourceEntryName(view.getId());
+            } catch (Exception e) {
+                return "unknown";
+            }
+        }
+        return "no_id";
+    }
+
     /*
         Stack trace helper
      */
