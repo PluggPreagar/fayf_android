@@ -246,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+        // super.onBackPressed(); // SKIPP to prevent closing ...
         // same es pressing ESC-key or up-button in action bar
         String topicBefore = Entries.getCurrentEntryKey().getFullPath();
         // switch from InputFragment to FirstFragment if needed

@@ -6,7 +6,6 @@ import androidx.fragment.app.FragmentActivity;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.MainActivity;
-import com.example.fayf_android002.R;
 import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,6 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class ActionExecutor {
 
@@ -26,7 +24,7 @@ public class ActionExecutor {
     private ActionQueueEntry currentAction = null;
 
     private String logName(View view) {
-        return UtilDebug.getResourceName(view) + " (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
+        return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
     }
 
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -37,11 +35,10 @@ public class ActionExecutor {
             view = MainActivity.getInstance().menu.findItem(action.viewId); // ensure menu is initialized
         }
         if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
-            logger.info("=======================================");
-        } else {
             logger.info("---------------------------------------");
-            logger.info("Executing action: " + action.action
-                    + " on Fragment: " + getFragment(action).getClass().getSimpleName()
+        } else if ( ActionQueueEntry.ACTIONS.DOC != action.action ) {
+            logger.info("-- " + action.action
+                    + " on Fragment: \"" + getFragment(action).getClass().getSimpleName() + "\""
                     + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" :
                     logName((View) view)
                             + (  view instanceof android.widget.TextView
@@ -79,7 +76,7 @@ public class ActionExecutor {
                 executeCallback(action, actionQueue);
                 break;
             case DOC:
-                dock(action, actionQueue);
+                doc(action, actionQueue);
                 break;
             case TEST_BLOCK:
                 testBlock(action, actionQueue);
@@ -95,7 +92,7 @@ public class ActionExecutor {
             throw new RuntimeException("Interrupted during pre-action delay", e);
         }
         if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
-            logger.info("=======================================");
+            logger.info("---------------------------------------");
         }
     }
 
@@ -109,9 +106,9 @@ public class ActionExecutor {
         logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
     }
 
-    private void dock(ActionQueueEntry action, ActionQueue actionQueue) {
+    private void doc(ActionQueueEntry action, ActionQueue actionQueue) {
         // do nothing, just a marker
-        logger.info(action.text);
+        logger.info("DOC: {}", action.text);
     }
 
 
@@ -154,13 +151,16 @@ public class ActionExecutor {
         if (ActionQueue.ID_BACK == action.viewId) {
             // special case for back button
             logger.info("Performing back press");
-            getActivity(action).runOnUiThread(() -> getActivity(action).getOnBackPressedDispatcher().onBackPressed());
+            // calls Fragment.onPause() - NOT MainActivity.onBackPressed()
+            // getActivity(action).runOnUiThread(() -> getActivity(action).getOnBackPressedDispatcher().onBackPressed());
+            MainActivity.getInstance().runOnUiThread(() -> MainActivity.getInstance().onBackPressed());
             return;
         }
         if (ActionQueue.ID_UP == action.viewId) {
             // special case for home button
             logger.info("Performing navigate up");
-            getActivity(action).runOnUiThread(() -> getActivity(action).onNavigateUp());
+            //getActivity(action).runOnUiThread(() -> getActivity(action).onNavigateUp());
+            MainActivity.getInstance().runOnUiThread(() -> MainActivity.getInstance().onNavigateUp());
             return;
         }
         Fragment fragment = getFragment(action);

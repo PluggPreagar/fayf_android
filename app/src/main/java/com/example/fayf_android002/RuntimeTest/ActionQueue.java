@@ -59,6 +59,7 @@ public class ActionQueue {
 
 
     public void run () {
+        int initialSize = actionQueue.size();
         logger.info("Starting ActionQueue with {} actions", actionQueue.size());
         // wait
         new Thread(() -> {
@@ -86,7 +87,17 @@ public class ActionQueue {
                             });
                 }
             }
+            logger.info("===========================");
+            // sum up
+            logger.info("ActionQueue summary: executed {} actions, {} errors, {} skipped of {} total"
+                    , initialSize - actionQueue.size() - actionExecutor.errorMsg.size()
+                    , actionExecutor.errorMsg.size()
+                    , actionQueue.size()
+                    , initialSize
+                );
+            //
             logger.info("ActionQueue {} completed", this);
+            logger.info("===========================");
         }).start();
     }
 

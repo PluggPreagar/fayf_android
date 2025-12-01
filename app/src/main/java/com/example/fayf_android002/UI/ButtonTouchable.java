@@ -41,7 +41,11 @@ public class ButtonTouchable extends MaterialButton {
     public boolean performClick() {
         super.performClick();
         logger.info("ButtonTouchable clicked ({}).", entryKey.getFullPath());
-        Entries.setCurrentEntryKey(entryKey); // set topic to this entry
+        if (Entries.getTopicSize(entryKey) > 0) {
+            Entries.setCurrentEntryKey(entryKey); // set topic to this entry
+        } else {
+            logger.info("Do not enter leaf node (no children for {}).", entryKey.getFullPath());
+        }
         return true; // indicate the click was handled
     }
 

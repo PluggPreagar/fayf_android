@@ -20,7 +20,6 @@ public class Entries {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Entries.class);
 
     private static Entries instance = new Entries();
-    private static OnEntriesLoaded listener;
     private static Map<String, OnTopicChanged> topicListener = new ConcurrentHashMap<>();
     private static EntryTree entryTree = new EntryTree();
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -87,9 +86,6 @@ public class Entries {
 
     /* LOAD ENTRIES ASYNC */
 
-    public static void setOnEntriesLoadedListener(OnEntriesLoaded listener) {
-        Entries.listener = listener;
-    }
 
     // allow trigger topic change by button click (Fragment1)
     //  as well as back-navigation (top-menu), back-button (MainActivity)
@@ -106,8 +102,12 @@ public class Entries {
     public static void callTopicChangedListeners(EntryKey topic) {
 
         for (Map.Entry<String, OnTopicChanged> e : topicListener.entrySet()) {
-            logger.debug("callTopicChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
-            e.getValue().onTopicChanged(topic); // null signals complete reload
+            if ( null != e.getValue()) {
+                logger.debug("callTopicChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
+                e.getValue().onTopicChanged(topic); // null signals complete reload
+            } else {
+                logger.debug("callTopicChangedListeners: SKIPP {} has null listener for {} ", e.getKey(), Entries.toString(topic) );
+            }
         }
     }
 
@@ -150,9 +150,6 @@ public class Entries {
 
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(null);
-        if (listener != null) {
-            listener.onEntriesLoaded(entryTree);
-        }
     }
 
     public static void load_async(Context context, boolean forceWeb) {
@@ -179,15 +176,19 @@ public class Entries {
 
 
     public static void save(Context context) {
-        executorService.execute(() -> {
-            try {
-                DataStorageLocal.saveEntries(entryTree, context);
-                logger.info("Entries saved async ({} entries)", entryTree.entries.size());
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Error saving entries asynchronously", e);
-            }
-        });
+        if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
+            logger.info("SKIPP save entries async (locale tenant '{}')", Config.TENANT.getValue());
+        } else {
+            executorService.execute(() -> {
+                try {
+                    DataStorageLocal.saveEntries(entryTree, context);
+                    logger.info("Entries saved async ({} entries)", entryTree.entries.size());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.error("Error saving entries asynchronously", e);
+                }
+            });
+        }
     }
 
     /*
@@ -243,9 +244,6 @@ public class Entries {
         currentEntryKey = null == entryKey ? EntryTree.ROOT_ENTRY_KEY: entryKey;
         offset = 0;
         callTopicChangedListeners(currentEntryKey);
-        if (listener != null) {
-            listener.onEntriesLoaded(entryTree);
-        }
     }
 
     public static EntryKey getCurrentEntryKey() {
@@ -289,7 +287,7 @@ public class Entries {
     public static void setEntry(EntryKey entryKey, String content, Context context) {
         Entry entry = entryTree.set(entryKey, content);
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
-            logger.info("SKIPP upload Entry: {} = \"{}\" ", Entries.toString(entryKey), content);
+            logger.info("SKIPP upload Entry (volatile tenant {} ) : {} = \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
         } else {
             new DataStorageWeb().saveEntry(entryKey, entry);
         }
@@ -310,6 +308,9 @@ public class Entries {
         return null != topicEntries ? topicEntries.size() : 0;
     }
 
-
+    public static int getTopicSize(EntryKey entryKey) {
+        TreeMap<String, Entry> topicEntries = entryTree.getTopic(entryKey);
+        return null != topicEntries ? topicEntries.size() : 0;
+    }
 
 }

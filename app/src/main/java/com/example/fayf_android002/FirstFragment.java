@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
@@ -28,6 +27,7 @@ import java.util.Map;
 
 public class FirstFragment extends Fragment {
 
+    private final String FIRST_FRAGMENT = "FirstFragment";
     Logger logger = LoggerFactory.getLogger(FirstFragment.class);
 
     private FragmentFirstBinding binding;
@@ -42,7 +42,7 @@ public class FirstFragment extends Fragment {
 
         logger.info("FirstFragment onCreateView() called");
         binding = FragmentFirstBinding.inflate(inflater, container, false);
-        RuntimeTester.registerFragment("FirstFragment", this, R.id.FirstFragment, binding.getRoot());
+        RuntimeTester.registerFragment(FIRST_FRAGMENT, this, R.id.FirstFragment, binding.getRoot());
 
         // initializeButtons(); // to early here ?
 
@@ -51,16 +51,11 @@ public class FirstFragment extends Fragment {
 
         if (0 == Entries.size()) {
             /* get Data */
-            Entries.setOnEntriesLoadedListener(loadedEntries -> requireActivity().runOnUiThread(() -> {
-                        logger.info("Entries loaded callback received ({} entries)", Entries.size());
-                        updateButtons( ); // update buttons after entries loaded
-                    }
-            ));
-            Entries.load_async(requireContext()); // async load entries
+            Entries.load_async(requireContext()); // async load entries - will trigger callback to update buttons
         }
 
         //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
-        Entries.setOnTopicChangedListener("FirstFragment", entry -> {
+        Entries.setOnTopicChangedListener(FIRST_FRAGMENT, entry -> {
             logger.info("Topic changed callback received: {}", null == entry ? "NONE" : entry.getFullPath());
             updateButtonsUIThread();
         });
@@ -332,6 +327,7 @@ public class FirstFragment extends Fragment {
     }
 
     public void updateButtons( int offset) {
+        UtilDebug.logCompactCallStack("FirstFragment.updateButtons()");
         ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
         if (buttonList == null) {
             logger.error("ButtonList ViewGroup not found in MainActivity");
@@ -452,8 +448,7 @@ public class FirstFragment extends Fragment {
     public void navigateToEdit(EntryKey entryKey) {
         Entries.setCurrentEntryKey(entryKey);
         try {
-            NavHostFragment.findNavController(FirstFragment.this)
-                    .navigate(R.id.action_FirstFragment_to_SecondFragment);
+            MainActivity.getInstance().switchToInputFragment();
         } catch (Exception ex) {
             // needed due to timing issues
             logger.error("Navigation to SecondFragment failed: {}", ex.getMessage());
@@ -464,8 +459,9 @@ public class FirstFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        logger.info("FirstFragment onDestroyView() called");
         binding = null;
-        Entries.setOnTopicChangedListener("FirstFragment", null); // remove listener
+        Entries.setOnTopicChangedListener(FIRST_FRAGMENT, null); // remove listener
     }
 
 
