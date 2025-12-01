@@ -7,9 +7,7 @@ import com.example.fayf_android002.MainActivity;
 
 public class UtilDebug {
 
-    private static final String TAG = "UiViewDebugHelper";
-
-
+    private static final String TAG = "UtilDebug";
 
     public static void inspectView() {
         inspectView(null, 0);

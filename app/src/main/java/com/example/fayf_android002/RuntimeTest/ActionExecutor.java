@@ -125,7 +125,7 @@ public class ActionExecutor {
 
     private View getViewOptional(ActionQueueEntry action) {
         Fragment fragment = getFragment(action);
-        return Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
+        return fragment.requireView().findViewById(action.viewId);
     }
     private View getView(ActionQueueEntry action) {
         View view = getViewOptional(action);
@@ -164,7 +164,7 @@ public class ActionExecutor {
             return;
         }
         Fragment fragment = getFragment(action);
-        View view = Objects.requireNonNull(fragment.getView()).findViewById(action.viewId);
+        View view = fragment.requireView().findViewById(action.viewId);
         if (view instanceof Button) {
             getActivity(action).runOnUiThread(view::performClick);
         } else {

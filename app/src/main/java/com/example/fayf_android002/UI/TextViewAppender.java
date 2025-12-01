@@ -53,6 +53,11 @@ public class TextViewAppender {
         ch.qos.logback.classic.Logger rootLogger =
                 (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
+        // read logback.xml configuration
+        log.info("Setting up TextViewAppender for SLF4J");
+
+
+
         // Create a custom appender
         ch.qos.logback.core.AppenderBase<ILoggingEvent> textViewAppender =
                 new ch.qos.logback.core.AppenderBase<>() {
