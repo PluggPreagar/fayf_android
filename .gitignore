@@ -1,3 +1,5 @@
 /.gradle/config.properties
 /.idea
 /.gradle
+/app/build
+/app/release

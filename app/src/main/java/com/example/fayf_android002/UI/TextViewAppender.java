@@ -4,6 +4,7 @@ import android.widget.TextView;
 import android.os.Handler;
 import android.os.Looper;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,14 @@ public class TextViewAppender {
         return message;
     }
 
+    private static void enhanceLog(ILoggingEvent iLoggingEvent) {
+        // add stack trace info for errors
+        if (iLoggingEvent.getLevel().isGreaterOrEqual(ch.qos.logback.classic.Level.ERROR)) {
+            UtilDebug.logCompactCallStack("Error Callstack: \n\t" + iLoggingEvent.getFormattedMessage());
+        }
+    }
+
+
     public static void setupSLF4J() {
         // Get the root logger
         ch.qos.logback.classic.Logger rootLogger =
@@ -49,6 +58,7 @@ public class TextViewAppender {
                 new ch.qos.logback.core.AppenderBase<>() {
                     @Override
                     protected void append(ILoggingEvent iLoggingEvent) {
+                        enhanceLog(iLoggingEvent);
                         appendLog(iLoggingEvent.getFormattedMessage());
                     }
                 };
@@ -60,5 +70,6 @@ public class TextViewAppender {
         // Add the appender to the root logger
         rootLogger.addAppender(textViewAppender);
     }
+
 
 }

@@ -103,10 +103,10 @@ public class ActionExecutor {
         // do nothing, just a marker
         // check if on root
         if (!EntryTree.isRootKey( Entries.getCurrentEntryKey() )){
-            assertFail("Not on root entry after block: " + action.text + ", current entry: " + Entries.getCurrentEntryKey());
+            assertFail("Block ends not in root (current entry: " + Entries.getCurrentEntryKey() + ")");
         }
-        logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
         testContext = action.text;
+        logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
     }
 
     private void dock(ActionQueueEntry action, ActionQueue actionQueue) {

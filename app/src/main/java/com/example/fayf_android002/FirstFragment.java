@@ -50,7 +50,6 @@ public class FirstFragment extends Fragment {
         getMainActivity().updateActionBarTitle();
 
         if (0 == Entries.size()) {
-
             /* get Data */
             Entries.setOnEntriesLoadedListener(loadedEntries -> requireActivity().runOnUiThread(() -> {
                         logger.info("Entries loaded callback received ({} entries)", Entries.size());
@@ -58,8 +57,6 @@ public class FirstFragment extends Fragment {
                     }
             ));
             Entries.load_async(requireContext()); // async load entries
-        } else {
-            updateButtons( ); // update buttons if entries already loaded
         }
 
         //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);

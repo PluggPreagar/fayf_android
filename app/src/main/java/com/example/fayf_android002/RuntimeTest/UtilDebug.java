@@ -98,13 +98,19 @@ public class UtilDebug {
         Stack trace helper
      */
     public static void logCompactCallStack() {
+        logCompactCallStack("Compact Call Stack:");
+    }
+
+    public static void logCompactCallStack(String prefix) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         String packageName = "com.example.fayf_android002";
 
-        StringBuilder compactStack = new StringBuilder("Compact Call Stack:\n");
+        StringBuilder compactStack = new StringBuilder(prefix + "\n");
         for (StackTraceElement element : stackTrace) {
-            if (element.getClassName().contains(packageName) && !element.getMethodName().equals("logCompactCallStack")) {
-                compactStack.append("at ").append(element.toString()).append("\n");
+            if (element.getClassName().contains(packageName)
+                    && !element.getClassName().contains("TextViewAppender") // exclude logging helper methods
+                    && !element.getMethodName().equals("logCompactCallStack")) {
+                compactStack.append("\tat ").append(element.toString()).append("\n");
             }
         }
 

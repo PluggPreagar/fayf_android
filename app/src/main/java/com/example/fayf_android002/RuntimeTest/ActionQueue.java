@@ -63,6 +63,10 @@ public class ActionQueue {
         // wait
         new Thread(() -> {
             ActionExecutor actionExecutor = new ActionExecutor();
+            // check reset - Test_Block, make sure app is in expected state
+            actionQueue.add(0, new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
+                    , fragmentId, -1, "init check", 0, null));
+            //
             while(run_next(actionExecutor)
                     && actionExecutor.errorMsg.isEmpty()) {
                 // continue
