@@ -1,5 +1,7 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MenuItem;
 import android.widget.Button;
 import androidx.fragment.app.FragmentActivity;
@@ -76,10 +78,10 @@ public class ActionExecutor {
                 executeCallback(action, actionQueue);
                 break;
             case DOC:
-                doc(action, actionQueue);
+                executeDoc(action, actionQueue);
                 break;
             case TEST_BLOCK:
-                testBlock(action, actionQueue);
+                executeTestBlock(action, actionQueue);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action.action);
@@ -96,20 +98,6 @@ public class ActionExecutor {
         }
     }
 
-    private void testBlock(ActionQueueEntry action, ActionQueue actionQueue) {
-        // do nothing, just a marker
-        // check if on root
-        if (!EntryTree.isRootKey( Entries.getCurrentEntryKey() )){
-            assertFail("Block ends not in root (current entry: " + Entries.getCurrentEntryKey() + ")");
-        }
-        testContext = action.text;
-        logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
-    }
-
-    private void doc(ActionQueueEntry action, ActionQueue actionQueue) {
-        // do nothing, just a marker
-        logger.info("DOC: {}", action.text);
-    }
 
 
     private Fragment getFragment(ActionQueueEntry action) {
@@ -145,6 +133,21 @@ public class ActionExecutor {
     /*
         A C T I O N  E X E C U T O R  M E T H O D S
      */
+
+    private void executeTestBlock(ActionQueueEntry action, ActionQueue actionQueue) {
+        // do nothing, just a marker
+        // check if on root
+        if (!EntryTree.isRootKey( Entries.getCurrentEntryKey() )){
+            assertFail("Block ends not in root (current entry: " + Entries.getCurrentEntryKey() + ")");
+        }
+        testContext = action.text;
+        logger.info("=      TEST BLOCK: " + action.text ); // + " ===");
+    }
+
+    private void executeDoc(ActionQueueEntry action, ActionQueue actionQueue) {
+        // do nothing, just a marker
+        logger.info("DOC: {}", action.text);
+    }
 
     private void executeClick(ActionQueueEntry action, ActionQueue actionQueue) {
 
@@ -187,7 +190,10 @@ public class ActionExecutor {
         if( null == view ) {
             assertFail("View is null for SET_TEXT action: " + action.viewId);
         } else if (view instanceof android.widget.TextView) {
-            ((android.widget.TextView) view).setText(action.text);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                // Perform UI updates here
+                ((android.widget.TextView) view).setText(action.text);
+            });
         } else  {
             assertFail("View is not a TextView for SET_TEXT action: " + action.viewId);
             // throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
@@ -253,6 +259,7 @@ public class ActionExecutor {
 
         assertFail("View did not become visible within timeout: " + action.viewId
                 + ( null != action.text ? " with text: '" + action.text + "'" : ""));
+        UtilDebug.inspectView();
         //throw new AssertionError("View did not become visible within timeout: " + action.viewId);
     }
 

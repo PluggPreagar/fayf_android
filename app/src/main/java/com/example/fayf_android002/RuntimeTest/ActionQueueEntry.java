@@ -3,9 +3,9 @@ package com.example.fayf_android002.RuntimeTest;
 public class ActionQueueEntry {
     public final ACTIONS action;
     public final int fragmentId;
-    public final int viewId;
-    public final String text; // for SET_TEXT action
-    public final long waitTimeMs; // for WAIT action
+    public int viewId;
+    public String text; // for SET_TEXT action
+    public long waitTimeMs; // for WAIT action
 
     public String sourceCodeLine = ""; // for DOC action
 

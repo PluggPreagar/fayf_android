@@ -54,4 +54,7 @@ public class Util {
                 || lower.equalsIgnoreCase("on");
     }
 
+    public static String getCurrentTimestamp() {
+        return String.valueOf(System.currentTimeMillis() / 1000L);
+    }
 }

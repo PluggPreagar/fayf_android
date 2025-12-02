@@ -48,7 +48,8 @@ public class UtilDebug {
             ViewGroup viewGroup = (ViewGroup) view;
             int childCount = viewGroup.getChildCount();
             Log.d(TAG, indent +  viewName +
-                    (resourceName.isEmpty() ? "" : ", " + resourceName) +
+                    (resourceName.isEmpty() ? "" : " \"" + resourceName+"\"") +
+                    ( view.getId() != View.NO_ID ? " (" + view.getId() + ")" : "") +
                     " (" + childCount + " child)" +
                     ", " + visibilityStatus +
                     " (" + x + ", " + y + ") " + width + "x" + height
@@ -59,7 +60,8 @@ public class UtilDebug {
             }
         } else {
             Log.d(TAG, indent +  viewName +
-                    (resourceName.isEmpty() ? "" : ", " + resourceName) +
+                    (resourceName.isEmpty() ? "" : " \"" + resourceName+"\"") +
+                    ( view.getId() != View.NO_ID ? " (" + view.getId() + ")" : "") +
                     ", " + visibilityStatus +
                     " (" + x + ", " + y + ") " + width + "x" + height
             );

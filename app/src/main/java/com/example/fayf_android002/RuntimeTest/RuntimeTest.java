@@ -34,17 +34,19 @@ public class RuntimeTest {
                 .waitForVisible(R.id.button2, "c2");
         queue.testBlock("stay - no child to n1")
                 .waitForVisible(R.id.button1, "c1")
-                .click(R.id.button1)
-                .delay(500)
-                .waitForVisible(R.id.button1, "c1"); // check if still in root
+                .click(R.id.button1);
         queue.testBlock("goto 'n2' child")
                 .click(R.id.button2,500).doc("goto 'n2'")
                 .waitForVisible(R.id.button1, "c2.1")
                 .waitForVisible(R.id.button2, "c2.2")
-                .clickBack()
-                .waitForVisible(R.id.button1, "c1"); // check if back to root
+                .clickBack();
+        String newContent = "n2_"+ Util.getCurrentTimestamp();
         queue.testBlock("edit n1")
                 .longClick(R.id.button1,1000).doc("edit entry 'n1'")
+                .waitForVisible(R.id.editext_second)
+                //.setFragment(R.id.SecondFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
+                .setText(R.id.editext_second, newContent)
+                .click(R.id.button_send)
                 ;
         queue.testBlock("done"); // check finish of last block
         queue.run();

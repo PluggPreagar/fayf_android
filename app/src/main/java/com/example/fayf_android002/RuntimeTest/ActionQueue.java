@@ -2,6 +2,7 @@ package com.example.fayf_android002.RuntimeTest;
 
 import android.widget.Toast;
 import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public class ActionQueue {
         // wait
         new Thread(() -> {
             ActionExecutor actionExecutor = new ActionExecutor();
-            // check reset - Test_Block, make sure app is in expected state
+            // check reset - Test_Block, make sure app is in expected state / give time to settle
             actionQueue.add(0, new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
                     , fragmentId, -1, "init check", 0, null));
             //
@@ -87,20 +88,31 @@ public class ActionQueue {
                             });
                 }
             }
-            logger.info("===========================");
-            // sum up
-            logger.info("ActionQueue summary: executed {} actions, {} errors, {} skipped of {} total"
+            String msg  = ( actionExecutor.errorMsg.isEmpty() ? "TEST PASSED\n"
+                            : "TEST FAILED (" + actionExecutor.errorMsg.size() + ")\n") +
+                    "===========================\n" +
+                    "ActionQueue summary: executed {} actions, {} errors, {} skipped of {} total\n" +
+                    "ActionQueue {} completed\n" +
+                    "===========================" ;
+            if (actionExecutor.errorMsg.isEmpty()) {
+                logger.info(msg
                     , initialSize - actionQueue.size() - actionExecutor.errorMsg.size()
                     , actionExecutor.errorMsg.size()
                     , actionQueue.size()
                     , initialSize
+                    , this
                 );
-            //
-            logger.info("ActionQueue {} completed", this);
-            logger.info("===========================");
+            } else {
+                logger.error(msg
+                        , initialSize - actionQueue.size() - actionExecutor.errorMsg.size()
+                        , actionExecutor.errorMsg.size()
+                        , actionQueue.size()
+                        , initialSize
+                        , this
+                );
+            }
         }).start();
     }
-
 
     private boolean run_next(ActionExecutor actionExecutor) {
         if (!actionQueue.isEmpty()) {
@@ -227,6 +239,12 @@ public class ActionQueue {
     }
 
     public ActionQueue testBlock(String msg) {
+        // check current state, let app settle before
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
+                , fragmentId, -1, "", 500, null));
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
+                , fragmentId, R.id.button1, "c1", 500, null));
+        // mark a test block - reset checks
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
                 , fragmentId, -1, msg, 0, null));
         return this;
