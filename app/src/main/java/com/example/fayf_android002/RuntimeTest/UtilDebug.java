@@ -94,6 +94,39 @@ public class UtilDebug {
         return "no_id";
     }
 
+
+    public static View getView(int viewId) {
+        return getView(null, viewId);
+    }
+
+    public static View getView(View view, int viewId) {
+        View matchingView = null;
+        if (view == null) {
+            view = MainActivity.getInstance().findViewById(android.R.id.content);
+        }
+        // If the view is a ViewGroup, inspect its children
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            int childCount = viewGroup.getChildCount();
+
+            for (int i = 0; i < childCount; i++) {
+                matchingView = getView(viewGroup.getChildAt(i), viewId);
+                if (matchingView != null)
+                    break;
+            }
+        } else if (view.getId() == viewId) {
+                matchingView = view;
+        } else {
+            Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
+        }
+        return matchingView;
+    }
+
+
+
+
+
+
     /*
         Stack trace helper
      */

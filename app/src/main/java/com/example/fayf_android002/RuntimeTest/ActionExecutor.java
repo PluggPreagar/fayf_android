@@ -166,11 +166,14 @@ public class ActionExecutor {
             MainActivity.getInstance().runOnUiThread(() -> MainActivity.getInstance().onNavigateUp());
             return;
         }
-        Fragment fragment = getFragment(action);
-        View view = fragment.requireView().findViewById(action.viewId);
-        if (view instanceof Button) {
+        // Fragment fragment = getFragment(action);
+        // View view = fragment.requireView().findViewById(action.viewId);
+        View view = UtilDebug.getView(action.viewId);
+        if (view instanceof Button || view instanceof android.widget.ImageButton
+                || view instanceof androidx.appcompat.widget.AppCompatImageButton
+            ) {
             getActivity(action).runOnUiThread(view::performClick);
-        } else {
+        } else { // assume it's a MenuItem from the top menu
             MenuItem item = MainActivity.getInstance().menu.findItem(action.viewId);
             if (item != null) {
                 getActivity(action).runOnUiThread(() -> MainActivity.getInstance().onOptionsItemSelected(item));
@@ -182,11 +185,11 @@ public class ActionExecutor {
     }
 
     private void executeLongClick(ActionQueueEntry action, ActionQueue actionQueue) {
-        getActivity(action).runOnUiThread(() -> getView(action).performLongClick());
+        getActivity(action).runOnUiThread(() -> UtilDebug.getView(action.viewId).performLongClick());
     }
 
     private void executeSetText(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getView(action);
+        View view = UtilDebug.getView(action.viewId);
         if( null == view ) {
             assertFail("View is null for SET_TEXT action: " + action.viewId);
         } else if (view instanceof android.widget.TextView) {
@@ -201,7 +204,7 @@ public class ActionExecutor {
     }
 
     private void executeGetText(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getView(action);
+        View view = UtilDebug.getView(action.viewId);
         if ( null == view ) {
             assertFail("View is null for GET_TEXT action: " + action.viewId);
         } else if (view instanceof android.widget.TextView) {
@@ -222,7 +225,7 @@ public class ActionExecutor {
     }
 
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getView(action);
+        View view = UtilDebug.getView(action.viewId);
         boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
         if (!isVisible) {
             assertFail("View is not visible: " + action.viewId);
@@ -231,12 +234,12 @@ public class ActionExecutor {
     }
 
     private void executeWaitForVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getViewOptional(action);
+        View view = UtilDebug.getView(action.viewId);
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
         while (System.currentTimeMillis() - startTime < timeout) {
             if (null == view) {
-                view = getViewOptional(action);
+                view = UtilDebug.getView(action.viewId);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
                     logger.info(logName(view) + " is visible.");
@@ -290,5 +293,8 @@ public class ActionExecutor {
                 " (at " + currentAction.sourceCodeLine + ")" );
         //throw new AssertionError(message);
     }
+
+
+
 
 }

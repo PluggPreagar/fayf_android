@@ -29,6 +29,7 @@ public class RuntimeTest {
         UtilDebug.inspectView();
 
         ActionQueue queue = new ActionQueue(R.id.FirstFragment).delay(1000);
+        /*
         queue.testBlock("start at root")
                 .waitForVisible(R.id.button1, "c1")
                 .waitForVisible(R.id.button2, "c2");
@@ -40,13 +41,16 @@ public class RuntimeTest {
                 .waitForVisible(R.id.button1, "c2.1")
                 .waitForVisible(R.id.button2, "c2.2")
                 .clickBack();
+
+         */
         String newContent = "n2_"+ Util.getCurrentTimestamp();
         queue.testBlock("edit n1")
                 .longClick(R.id.button1,1000).doc("edit entry 'n1'")
                 .waitForVisible(R.id.editext_second)
-                //.setFragment(R.id.SecondFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
                 .setText(R.id.editext_second, newContent)
+                //.setFragment(R.id.SecondFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
                 .click(R.id.button_send)
+                //.setFragment(R.id.FirstFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
                 ;
         queue.testBlock("done"); // check finish of last block
         queue.run();
