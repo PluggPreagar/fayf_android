@@ -69,8 +69,7 @@ public class ActionQueue {
             actionQueue.add(0, new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
                     , fragmentId, -1, "init check", 0, null));
             //
-            while(run_next(actionExecutor)
-                    && actionExecutor.errorMsg.isEmpty()) {
+            while(run_next(actionExecutor)) {
                 // continue
             }
             if (!actionExecutor.errorMsg.isEmpty()) {
@@ -88,8 +87,8 @@ public class ActionQueue {
                             });
                 }
             }
-            String msg  = ( actionExecutor.errorMsg.isEmpty() ? "TEST PASSED\n"
-                            : "TEST FAILED (" + actionExecutor.errorMsg.size() + ")\n") +
+            String msg  = ( actionExecutor.errorMsg.isEmpty() ? " PASSED \n ✅ TEST PASSED\n"
+                            : " FAIL \n  ❌ TEST FAILED (" + actionExecutor.errorMsg.size() + ")\n") +
                     "===========================\n" +
                     "ActionQueue summary: executed {} actions, {} errors, {} skipped of {} total\n" +
                     "ActionQueue {} completed\n" +
@@ -111,6 +110,7 @@ public class ActionQueue {
                         , this
                 );
             }
+            logger.info("ActionQueue ended 4");
         }).start();
     }
 
@@ -125,7 +125,7 @@ public class ActionQueue {
             ActionQueueEntry action = actionQueue.remove(0);
             actionExecutor.executeAction(action, this);
         }
-        return actionExecutor.errorMsg.isEmpty();
+        return actionExecutor.errorMsg.isEmpty() && !actionQueue.isEmpty();
     }
 
     /*
@@ -197,6 +197,13 @@ public class ActionQueue {
                 , fragmentId, viewId, null, 0, null));
         return this;
     }
+
+    public ActionQueue isVisible(int viewId, String s) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.IS_VISIBLE
+                , fragmentId, viewId, s, 0, null));
+        return this;
+    }
+
 
     public ActionQueue waitForVisible( int viewId) {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE

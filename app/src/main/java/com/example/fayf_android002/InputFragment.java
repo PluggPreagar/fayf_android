@@ -89,6 +89,7 @@ public class InputFragment extends Fragment {
     }
 
     public void  backToFirstFragment(){
+        Entries.upOneTopicLevel(); // ???
         MainActivity.getInstance().switchToFirstFragment();
     }
 

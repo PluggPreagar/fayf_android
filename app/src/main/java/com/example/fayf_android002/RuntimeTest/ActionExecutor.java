@@ -2,6 +2,7 @@ package com.example.fayf_android002.RuntimeTest;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import androidx.fragment.app.FragmentActivity;
@@ -34,7 +35,11 @@ public class ActionExecutor {
         currentAction = action;
         Object view = getViewOptional(action);
         if ( view == null ) {
-            view = MainActivity.getInstance().menu.findItem(action.viewId); // ensure menu is initialized
+            // maybe a MenuItem
+            Menu menu = MainActivity.getInstance().menu;
+            if ( null != menu ){
+                view = menu.findItem(action.viewId); // ensure menu is initialized
+            }
         }
         if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
             logger.info("---------------------------------------");
@@ -218,18 +223,23 @@ public class ActionExecutor {
 
     private void executeAssertText(ActionQueueEntry action, ActionQueue actionQueue) {
         String lastText = actionQueue.getLastRetrievedText();
-        if (!action.text.equals(lastText)) {
-            assertFail("Text assertion failed: expected '" + action.text + "', got '" + lastText + "'");
-            //throw new AssertionError("Text assertion failed: expected '" + action.text + "', got '" + lastText + "'");
-        }
+        assertEquals(action.text, lastText
+                , "Asserting text for view ID " + action.viewId);
     }
 
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = UtilDebug.getView(action.viewId);
         boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
-        if (!isVisible) {
-            assertFail("View is not visible: " + action.viewId);
-            // throw new AssertionError("View is not visible: " + action.viewId);
+        assertTrue(isVisible, logName(view) + " is visible.", null, null);
+        if ( null != action.text ) {
+            // also check text
+            if (view instanceof android.widget.TextView) {
+                String currentText = ((android.widget.TextView) view).getText().toString();
+                assertEquals(action.text, currentText
+                        , logName(view) + " has expected text.");
+            } else {
+                assertFail("View is not a TextView for IS_VISIBLE with text check: " + action.viewId);
+            }
         }
     }
 
@@ -242,12 +252,14 @@ public class ActionExecutor {
                 view = UtilDebug.getView(action.viewId);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
-                    logger.info(logName(view) + " is visible.");
+                    assertTrue(true, logName(view) + " is visible.", null, null);
                     return;
                 } else if (view instanceof android.widget.TextView) {
                     String currentText = ((android.widget.TextView) view).getText().toString();
                     if (action.text.equals(currentText)) {
-                        logger.info(logName(view) + " is visible with expected text: '" + action.text + "'.");
+                        assertTrue(true
+                                ,logName(view) + " is visible with expected text: '" + action.text + "'."
+                                , null, null);
                         return;
                     }
                 }
@@ -292,6 +304,25 @@ public class ActionExecutor {
         errorMsg.add( Util.appendIfFilled(testContext,": ") + message +
                 " (at " + currentAction.sourceCodeLine + ")" );
         //throw new AssertionError(message);
+    }
+
+    private void assertTrue(boolean condition, String message, String expected, String actual) {
+        if (condition) {
+            logger.info(" ✅ " + message);
+        } else {
+            logger.error(" ❌ " + message
+                    + ( null==expected && null==actual ? ""
+                        : " - expected: '" + expected + "', actual: '" + actual + "'" )
+            );
+            assertFail(message);
+        }
+    }
+
+    private void assertEquals(String text, String lastText, String message) {
+        assertTrue( (text == null && lastText == null) || (text != null && text.equals(lastText))
+                , message
+                , text
+                , lastText);
     }
 
 

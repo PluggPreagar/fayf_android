@@ -149,20 +149,16 @@ public class OnTouchListener implements View.OnTouchListener {
     private void initLongPressCheckByTimeout(View v){
         LONG_PRESS_RELEASE_AUTO_TIMEOUT = 2000;
         new android.os.Handler().postDelayed(() -> {
-            fragment.requireActivity().runOnUiThread(() -> {
-                checkLongPressByTimeout(this);
-            });
+            checkLongPressByTimeout(this);
         }, LONG_PRESS_RELEASE_AUTO_TIMEOUT);
         new android.os.Handler().postDelayed(() -> {
-            fragment.requireActivity().runOnUiThread(() -> {
-                if (touching) { // only if not yet released - that would have triggered onLongClick already
-                    if (!isMoveStarted || isDirectionX) {
-                        onLongPressDelayReached();
-                    } else {
-                        logger.info("Long press delay reached, but move for scrolling - not triggering long press visual");
-                    }
+            if (touching) { // only if not yet released - that would have triggered onLongClick already
+                if (!isMoveStarted || isDirectionX) {
+                    onLongPressDelayReached();
+                } else {
+                    logger.info("Long press delay reached, but move for scrolling - not triggering long press visual");
                 }
-            });
+            }
         }, LONG_PRESS_DURATION);
     }
 

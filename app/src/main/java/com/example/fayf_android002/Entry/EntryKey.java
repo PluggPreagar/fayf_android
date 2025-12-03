@@ -31,6 +31,8 @@ public class EntryKey {
         }else {
             if (!topic.startsWith("/")) {
                 topic = "/" + topic;
+            } else if (topic.startsWith("//")) {
+                topic = topic.substring(1);
             }
             if (topic.length() > 1 && topic.endsWith("/")) {
                 topic = topic.substring(0, topic.length() - 1);

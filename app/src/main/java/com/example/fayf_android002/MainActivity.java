@@ -82,7 +82,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         .setAnchorView(R.id.fab)
                         .setAction("Action", null).show();
                  */
-                switchToInputFragment();
+                // TODO KLUDGE check if in InputFragment is set
+                //
+                if (null != UtilDebug.getView(R.id.FirstFragment)) {
+                    logger.info("FAB clicked - switching to InputFragment");
+                    switchToInputFragment();
+                } else {
+                    logger.info("FAB clicked - already in InputFragment - create child entry");
+
+                }
             }
         });
 

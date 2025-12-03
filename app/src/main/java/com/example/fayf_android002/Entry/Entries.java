@@ -147,10 +147,48 @@ public class Entries {
         if (null == entryTree.get(currentEntryKey)) {
             currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
         }
-
+        // check data integrity
+        checkDataIntegrity();
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(null);
     }
+
+    public static void checkDataIntegrity() {
+        EntryTree entryTree = Entries.entryTree;
+        // entry content should have ">"-suffix for topics
+        for (Map.Entry<String, TreeMap<String, Entry>> topicEntry : entryTree.entries.entrySet()) {
+            //  /
+            //      n1 -> c1
+            //      n2 -> c2
+            //  /n1
+            //      n1.1 -> c1.1
+            for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
+                EntryKey entryKey = new EntryKey(topicEntry.getKey(), nodeEntry.getKey());
+                Entry entry = nodeEntry.getValue();
+                checkDataIntegrity(entryKey, entry);
+            } // for nodeEntry
+        } // for topics
+    }
+
+
+    public static void checkDataIntegrity(EntryKey entryKey, Entry entry) {
+        if (null != entryKey && null != entry) {
+            EntryTree entryTree = Entries.entryTree;
+            String fullPath = entryKey.getFullPath();
+            boolean isTopic = entryTree.entries.containsKey(fullPath);
+            boolean appearsTopic = entry.getContent().endsWith(">");
+            if (isTopic != appearsTopic) {
+                if (isTopic) {
+                    entry.setContent(entry.getContent().trim() + " >");
+                } else {
+                    entry.setContent(entry.getContent().substring(0, entry.getContent().length() - 1).trim());
+                }
+                logger.info("Corrected entry content for {} to '{}'", fullPath, entry.getContent());
+            } // not correct
+        }
+    }
+
+
 
     public static void load_async(Context context, boolean forceWeb) {
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
@@ -286,6 +324,7 @@ public class Entries {
 
     public static void setEntry(EntryKey entryKey, String content, Context context) {
         Entry entry = entryTree.set(entryKey, content);
+        checkDataIntegrity(entryKey, entry);
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP upload Entry (volatile tenant {} ) : {} = \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
         } else {

@@ -16,9 +16,11 @@ public class RuntimeTest {
         Config.TENANT.setValue("RuntimeTest");
         Entries.clearAllEntries();
         Entries.setEntry("/", "t1", "c1");
-        Entries.setEntry("/", "t2", "c2");
+        Entries.setEntry("/", "t2", "c2 >");
+        Entries.setEntry("/", "t3", "c3");
         Entries.setEntry("/t2", "t2.1", "c2.1");
         Entries.setEntry("/t2", "t2.2", "c2.2");
+        Entries.checkDataIntegrity();
     }
 
 
@@ -29,28 +31,31 @@ public class RuntimeTest {
         UtilDebug.inspectView();
 
         ActionQueue queue = new ActionQueue(R.id.FirstFragment).delay(1000);
-        /*
         queue.testBlock("start at root")
-                .waitForVisible(R.id.button1, "c1")
-                .waitForVisible(R.id.button2, "c2");
-        queue.testBlock("stay - no child to n1")
-                .waitForVisible(R.id.button1, "c1")
+                .isVisible(R.id.button1, "c1")
+                .isVisible(R.id.button2, "c2 >");
+        queue.testBlock("stay - no child to t1")
+                .isVisible(R.id.button1, "c1")
                 .click(R.id.button1);
-        queue.testBlock("goto 'n2' child")
-                .click(R.id.button2,500).doc("goto 'n2'")
+        queue.testBlock("goto 't2' child")
+                .click(R.id.button2,500)
                 .waitForVisible(R.id.button1, "c2.1")
-                .waitForVisible(R.id.button2, "c2.2")
+                .isVisible(R.id.button2, "c2.2" )
                 .clickBack();
-
-         */
-        String newContent = "n2_"+ Util.getCurrentTimestamp();
-        queue.testBlock("edit n1")
-                .longClick(R.id.button1,1000).doc("edit entry 'n1'")
-                .waitForVisible(R.id.editext_second)
+        String newContent = "c2_"+ Util.getCurrentTimestamp();
+        queue.testBlock("edit t2")
+                .longClick(R.id.button2,1000).waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, newContent)
-                //.setFragment(R.id.SecondFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
-                .click(R.id.button_send)
-                //.setFragment(R.id.FirstFragment) // TODO - obsolete - remove later ?? WaitForFragment ??
+                .click(R.id.button_send).waitForVisible(R.id.button2)
+                .isVisible(R.id.button2, newContent + " >")
+                ;
+        queue.testBlock("add child to t3 - by click on fab-button during edit")
+                .longClick(R.id.button3)
+                .waitForVisible(R.id.editext_second)
+                .click(R.id.fab).delay(500).waitForVisible(R.id.editext_second)
+                .setText(R.id.editext_second, "c3.1")
+                .click(R.id.button_send).waitForVisible(R.id.button3)
+                .isVisible(R.id.button3, "c3 >")
                 ;
         queue.testBlock("done"); // check finish of last block
         queue.run();
