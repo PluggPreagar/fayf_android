@@ -20,6 +20,8 @@ public class RuntimeTest {
         Entries.setEntry("/", "t3", "c3");
         Entries.setEntry("/t2", "t2.1", "c2.1");
         Entries.setEntry("/t2", "t2.2", "c2.2");
+        Entries.setEntry("/_/config", "dark_mode", "false");
+        Entries.setEntry("/_/config", "test_string", "default_value");
         Entries.checkDataIntegrity();
     }
 
@@ -30,7 +32,34 @@ public class RuntimeTest {
         logger.info("Entry tree:\n" + Entries.getInstance().toString());
         UtilDebug.inspectView();
 
-        ActionQueue queue = new ActionQueue(R.id.FirstFragment).delay(1000);
+        ActionQueue queue = new ActionQueue(R.id.FirstFragment);
+
+        queue.testBlock("config toggle boolean - dark_mode")
+                .click(R.id.action_settings)
+                .waitForVisible(R.id.button1, "dark_mode: false")
+                .click(R.id.button1)
+                .delay(500)
+                .waitForVisible(R.id.button1, "dark_mode: true")
+                .delay(500)
+                .click(R.id.button1)
+                .delay(500)
+                .waitForVisible(R.id.button1, "dark_mode: false")
+                .clickBack()
+                .clickBack()
+        ;
+        queue.testBlock("config set value directly - test_string")
+                .click(R.id.action_settings)
+                .waitForVisible(R.id.button2, "test_string: default_value")
+                .click(R.id.button1).doc("click with no effect on non-boolean")
+                .delay(500)
+                .longClick(R.id.button2).waitForVisible(R.id.editext_second)
+                .isText(R.id.editext_second, "default_value")
+                .setText(R.id.editext_second, "new_value")
+                .click(R.id.button_send)
+                .waitForVisible(R.id.button2, "test_string: new_value")
+                .clickBack()
+                .clickBack()
+        ;
         queue.testBlock("start at root")
                 .isVisible(R.id.button1, "c1")
                 .isVisible(R.id.button2, "c2 >");
@@ -42,6 +71,7 @@ public class RuntimeTest {
                 .waitForVisible(R.id.button1, "c2.1")
                 .isVisible(R.id.button2, "c2.2" )
                 .clickBack();
+
         String newContent = "c2_"+ Util.getCurrentTimestamp();
         queue.testBlock("edit t2")
                 .longClick(R.id.button2,1000).waitForVisible(R.id.editext_second)
@@ -49,14 +79,18 @@ public class RuntimeTest {
                 .click(R.id.button_send).waitForVisible(R.id.button2)
                 .isVisible(R.id.button2, newContent + " >")
                 ;
+
         queue.testBlock("add first child to t3 - by click on fab-button during edit")
                 .longClick(R.id.button3)
                 .waitForVisible(R.id.editext_second)
                 .click(R.id.fab).delay(500).waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, "c3.1")
-                .click(R.id.button_send).waitForVisible(R.id.button3)
-                .isVisible(R.id.button3, "c3 >").doc("c3 is now a parent")
+                .click(R.id.button_send)
+                .waitForVisible(R.id.button1, "c3.1").doc("show new child c3.1")
+                .clickBack()
+                .waitForVisible(R.id.button3, "c3 >").doc("c3 is now a topic with child")
                 ;
+
         queue.testBlock("done"); // check finish of last block
         queue.run();
     }

@@ -418,14 +418,13 @@ public class FirstFragment extends Fragment {
                 limit--;
                 idx++;
             }
+            logger.info("{} Buttons updated, hiding remaining buttons if any", idx);
             while (limit > 0) {
                 if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
                     logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
                     break;
                 }
                 buttonList.getChildAt(idx).setVisibility(View.GONE);
-                logger.info("No more entries (hiding button at index {} - content {})"
-                        , idx, buttonList.getChildAt(idx).toString());
                 limit--;
                 idx++;
             }

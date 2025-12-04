@@ -18,7 +18,10 @@ public enum Config {
 
     SYSTEM("system", "sid_example"),
 
-    RUN_SELF_TEST("self_test", true);
+    RUN_SELF_TEST("self_test", true),
+
+    TEST_STRING("test_string", "default_value"),
+    ;
 
     static Logger logger = LoggerFactory.getLogger(Config.class);
 

@@ -1,10 +1,12 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import androidx.core.internal.view.SupportMenuItem;
 import androidx.fragment.app.FragmentActivity;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.EntryTree;
@@ -30,6 +32,7 @@ public class ActionExecutor {
         return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
     }
 
+    @SuppressLint("RestrictedApi")
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
         // switch on action type
         currentAction = action;
@@ -44,13 +47,20 @@ public class ActionExecutor {
         if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
             logger.info("---------------------------------------");
         } else if ( ActionQueueEntry.ACTIONS.DOC != action.action ) {
+            // FIXME : handle menu items here too
+            String text = "";
+            if ( null != view && view instanceof SupportMenuItem ){
+                text = ((SupportMenuItem) view).getTitle().toString();
+                text += " Text='" + ((SupportMenuItem) view).getTitle().toString() + "'";
+            } else if ( null != view && view instanceof android.widget.TextView ){
+                text = logName( (View) view ) + " Text='" + ((android.widget.TextView) view).getText().toString() + "'";
+            } else if ( null != view && view instanceof View ){
+                text = logName( (View) view );
+            }
+
             logger.info("-- " + action.action
                     + " on Fragment: \"" + getFragment(action).getClass().getSimpleName() + "\""
-                    + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" :
-                    logName((View) view)
-                            + (  view instanceof android.widget.TextView
-                            ? " Text='" + ((android.widget.TextView) view).getText().toString() + "'"
-                            : "" ))
+                    + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" : text )
                     : "" )
             );
         }
@@ -63,6 +73,9 @@ public class ActionExecutor {
                 break;
             case SET_TEXT:
                 executeSetText(action, actionQueue);
+                break;
+            case IS_TEXT:
+                executeIsText(action, actionQueue);
                 break;
             case GET_TEXT:
                 executeGetText(action, actionQueue);
@@ -227,6 +240,23 @@ public class ActionExecutor {
                 , "Asserting text for view ID " + action.viewId);
     }
 
+    private void executeIsText(ActionQueueEntry action, ActionQueue actionQueue) {
+        View view = UtilDebug.getView(action.viewId);
+        if ( null == view ) {
+            assertFail("View is null for GET_TEXT action: " + action.viewId);
+        } else if (view instanceof android.widget.TextView) {
+            String text = ((android.widget.TextView) view).getText().toString();
+            actionQueue.setLastRetrievedText(text);
+            assertEquals(action.text, text
+                    , "Checking text for view ID " + action.viewId);
+        } else {
+            assertFail("View is not a TextView for GET_TEXT action: " + action.viewId);
+            //throw new IllegalArgumentException("View is not a TextView: " + action.viewId);
+        }
+    }
+
+
+
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = UtilDebug.getView(action.viewId);
         boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
@@ -301,8 +331,11 @@ public class ActionExecutor {
      */
 
     private void assertFail(String message) {
-        errorMsg.add( Util.appendIfFilled(testContext,": ") + message +
-                " (at " + currentAction.sourceCodeLine + ")" );
+        // from: com.example.fayf_android002.RuntimeTest.RuntimeTest.runTests(RuntimeTest.java:51)
+        //  to : RuntimeTest.java:51
+        String shortenCaller = currentAction.sourceCodeLine.replaceAll(".*\\(|\\)", "");
+        logger.error(" ❌ " + shortenCaller + " " + message );
+        errorMsg.add( shortenCaller + " " + Util.appendIfFilled(testContext,": ") + message );
         //throw new AssertionError(message);
     }
 

@@ -1,6 +1,8 @@
 package com.example.fayf_android002.UI;
 
+import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
 import com.google.android.material.button.MaterialButton;
@@ -39,9 +41,21 @@ public class ButtonTouchable extends MaterialButton {
     @Override
     public boolean performClick() {
         super.performClick();
-        logger.info("ButtonTouchable clicked ({}).", entryKey.getFullPath());
+        String fullPath = entryKey.getFullPath();
+        logger.info("ButtonTouchable clicked ({}).", fullPath);
         if (Entries.sizeTopic(entryKey) > 0) {
             Entries.setCurrentEntryKey(entryKey); // set topic to this entry
+        } else if (entryKey.getFullPath().startsWith(Config.CONFIG_PATH)) {
+            // Edit config -> toggle boolean or do nothing for others -> check text
+            Config config = Config.fromKey(entryKey.nodeId);
+            if (config.getDefaultValue() instanceof Boolean) {
+                logger.info("Toggle config entry for {}.", entryKey.getFullPath());
+                config.toggleValue(); // nodeId is the config key
+                // force refresh button text - refresh fragment
+                fragment.updateButtonsUIThread();
+            } else {
+                logger.info("No toggle action for non-boolean config entry {}.", entryKey.getFullPath());
+            }
         } else {
             logger.info("Do not enter leaf node (no children for {}).", entryKey.getFullPath());
         }

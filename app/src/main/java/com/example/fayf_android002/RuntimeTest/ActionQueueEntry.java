@@ -13,6 +13,7 @@ public class ActionQueueEntry {
         CLICK,
         LONG_CLICK,
         SET_TEXT,
+        IS_TEXT,
         GET_TEXT,
         ASSERT_TEXT,
         IS_VISIBLE,

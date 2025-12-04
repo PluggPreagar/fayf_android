@@ -117,7 +117,7 @@ public class UtilDebug {
         } else if (view.getId() == viewId) {
                 matchingView = view;
         } else {
-            Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
+            // Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
         }
         return matchingView;
     }

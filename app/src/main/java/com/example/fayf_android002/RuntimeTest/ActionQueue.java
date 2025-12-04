@@ -25,13 +25,16 @@ public class ActionQueue {
 
     String currentText = null;
 
-    String caller = "";
-
+    private final String caller;
 
     public ActionQueue(int FragmentId) {
         this.fragmentId = FragmentId;
         // get calling method for logging
-        // Get the calling method for logging
+        this.caller = getCaller();
+    }
+
+    private String getCaller() {
+        String caller = "";
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         // search first method package fayf_android002
         for (int i = 2; i < stackTrace.length ; i++) {
@@ -44,6 +47,7 @@ public class ActionQueue {
                 break;
             }
         }
+        return caller;
     }
 
 
@@ -73,7 +77,7 @@ public class ActionQueue {
                 // continue
             }
             if (!actionExecutor.errorMsg.isEmpty()) {
-                logger.error("{}", caller);
+                //logger.error("{}", caller);
                 logger.error("ActionQueue error: {}", actionExecutor.errorMsg.get(0));
             }
             if (!actionQueue.isEmpty()) {
@@ -99,7 +103,7 @@ public class ActionQueue {
                     , actionExecutor.errorMsg.size()
                     , actionQueue.size()
                     , initialSize
-                    , this
+                    , caller
                 );
             } else {
                 logger.error(msg
@@ -189,6 +193,12 @@ public class ActionQueue {
     public ActionQueue assertText(String expectedText) {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.ASSERT_TEXT
                 , -1, -1, expectedText, 0, null));
+        return this;
+    }
+
+    public ActionQueue isText( int viewId, String expectedText) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.IS_TEXT
+                , fragmentId, viewId, expectedText, 0, null));
         return this;
     }
 
