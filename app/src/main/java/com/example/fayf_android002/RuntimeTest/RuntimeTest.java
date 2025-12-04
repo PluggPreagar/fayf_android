@@ -49,13 +49,13 @@ public class RuntimeTest {
                 .click(R.id.button_send).waitForVisible(R.id.button2)
                 .isVisible(R.id.button2, newContent + " >")
                 ;
-        queue.testBlock("add child to t3 - by click on fab-button during edit")
+        queue.testBlock("add first child to t3 - by click on fab-button during edit")
                 .longClick(R.id.button3)
                 .waitForVisible(R.id.editext_second)
                 .click(R.id.fab).delay(500).waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, "c3.1")
                 .click(R.id.button_send).waitForVisible(R.id.button3)
-                .isVisible(R.id.button3, "c3 >")
+                .isVisible(R.id.button3, "c3 >").doc("c3 is now a parent")
                 ;
         queue.testBlock("done"); // check finish of last block
         queue.run();

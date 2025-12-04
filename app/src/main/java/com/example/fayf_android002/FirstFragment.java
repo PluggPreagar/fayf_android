@@ -49,7 +49,7 @@ public class FirstFragment extends Fragment {
         // Navigating from SecondFragment to FirstFragment will not show the Topic Title
         getMainActivity().updateActionBarTitle();
 
-        if (0 == Entries.size()) {
+        if (Entries.size()<3) { // TODO ignore /_/config topic
             /* get Data */
             Entries.load_async(requireContext()); // async load entries - will trigger callback to update buttons
         }
@@ -366,7 +366,11 @@ public class FirstFragment extends Fragment {
                 View button = buttonList.getChildAt(idx);
                 if (button instanceof ButtonTouchable) {
                     ButtonTouchable btn = (ButtonTouchable) button;
-                    btn.setText(entry.content);
+                    if (topic.startsWith(Config.CONFIG_PATH)) {
+                        btn.setText("" + nodeId + ": " + entry.content);
+                    } else {
+                        btn.setText(entry.content);
+                    }
                     btn.setVisibility(View.VISIBLE);
                     // make button height larger
                     MaterialButton btn_m = (MaterialButton) button;
@@ -386,7 +390,7 @@ public class FirstFragment extends Fragment {
                         public void onClick() {
                             Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
                             btn.performClick();
-                            updateButtonsUIThread();
+                            updateButtonsUIThread(); // TODO should be called from Entries after topic change
                         }
                         @Override
                         public void onLongClick() {

@@ -1,7 +1,6 @@
 package com.example.fayf_android002.UI;
 
 import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
 import com.google.android.material.button.MaterialButton;
@@ -41,7 +40,7 @@ public class ButtonTouchable extends MaterialButton {
     public boolean performClick() {
         super.performClick();
         logger.info("ButtonTouchable clicked ({}).", entryKey.getFullPath());
-        if (Entries.getTopicSize(entryKey) > 0) {
+        if (Entries.sizeTopic(entryKey) > 0) {
             Entries.setCurrentEntryKey(entryKey); // set topic to this entry
         } else {
             logger.info("Do not enter leaf node (no children for {}).", entryKey.getFullPath());

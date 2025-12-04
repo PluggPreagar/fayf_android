@@ -102,7 +102,8 @@ public enum Config {
         Config config = Config.fromKey(key);// validate key
         EntryKey currentTopicEntry = new EntryKey(CONFIG_PATH, key);
         Entry entry = Entries.getEntry(currentTopicEntry); // validate key
-        String newValue = null != entry && Util.asBoolean(entry.getContent()) ||  Util.asBoolean((String) config.value)
+        String newValue = (null != entry && Util.asBoolean(entry.getContent()))
+                ||  Util.asBoolean(String.valueOf(config.value))
                 ? "false" : "true";
         Entries.setEntry(currentTopicEntry, newValue, null);
         logger.info("configuration toggled '{}' to '{}'", key, newValue);

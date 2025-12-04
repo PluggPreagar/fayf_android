@@ -31,7 +31,7 @@ public class Entries {
     private static EntryKey currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
 
     private static int offset = 0;
-    static final int PAGE_SIZE_MIN = 5;
+    static final int PAGE_SIZE_MIN = 20;
 
 
 
@@ -173,9 +173,7 @@ public class Entries {
 
     public static void checkDataIntegrity(EntryKey entryKey, Entry entry) {
         if (null != entryKey && null != entry) {
-            EntryTree entryTree = Entries.entryTree;
-            String fullPath = entryKey.getFullPath();
-            boolean isTopic = entryTree.entries.containsKey(fullPath);
+            boolean isTopic = isTopic(entryKey);
             boolean appearsTopic = entry.getContent().endsWith(">");
             if (isTopic != appearsTopic) {
                 if (isTopic) {
@@ -183,7 +181,7 @@ public class Entries {
                 } else {
                     entry.setContent(entry.getContent().substring(0, entry.getContent().length() - 1).trim());
                 }
-                logger.info("Corrected entry content for {} to '{}'", fullPath, entry.getContent());
+                logger.info("Corrected entry content for {} to '{}'", entryKey.getFullPath(), entry.getContent());
             } // not correct
         }
     }
@@ -247,6 +245,11 @@ public class Entries {
         // get parent topic -> topic =  fullpath of parent
         EntryKey key = new EntryKey( currentEntryKey.topic);
         setCurrentEntryKey( key );
+    }
+
+    public static EntryKey upOneTopicLevel(EntryKey fromKey) {
+        // get parent topic -> topic =  fullpath of parent
+        return new EntryKey(fromKey.topic);
     }
 
     public static boolean changeOffsetBy(int i) {
@@ -325,8 +328,16 @@ public class Entries {
     public static void setEntry(EntryKey entryKey, String content, Context context) {
         Entry entry = entryTree.set(entryKey, content);
         checkDataIntegrity(entryKey, entry);
+        // check if first parent
+        EntryKey parentKey = Entries.upOneTopicLevel(entryKey);
+        if (!parentKey.equals(entryKey) && sizeTopic(parentKey) < 2) {
+            // first child in topic -> check parent integrity
+            checkDataIntegrity(parentKey, Entries.getEntry(parentKey));
+        }
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP upload Entry (volatile tenant {} ) : {} = \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
+        } else if (entryKey.topic.startsWith(Config.CONFIG_PATH)) {
+            logger.debug("SKIPP upload Config Entry : {} = \"{}\" ", Entries.toString(entryKey), content);
         } else {
             new DataStorageWeb().saveEntry(entryKey, entry);
         }
@@ -347,9 +358,13 @@ public class Entries {
         return null != topicEntries ? topicEntries.size() : 0;
     }
 
-    public static int getTopicSize(EntryKey entryKey) {
+    public static int sizeTopic(EntryKey entryKey) {
         TreeMap<String, Entry> topicEntries = entryTree.getTopic(entryKey);
         return null != topicEntries ? topicEntries.size() : 0;
+    }
+
+    public static boolean isTopic(EntryKey entryKey) {
+        return entryTree.getTopic(entryKey) != null;
     }
 
 }

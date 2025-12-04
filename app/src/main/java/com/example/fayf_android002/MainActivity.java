@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
+        Config.RUN_SELF_TEST.setValue("false"); // disable self-test auto-run for normal app start
         // init self-test entries if started
         // prevent auto-load from storage
         if (Config.RUN_SELF_TEST.asBoolean()) {
@@ -89,7 +90,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     switchToInputFragment();
                 } else {
                     logger.info("FAB clicked - already in InputFragment - create child entry");
-
+                    // create child entry and set current entry as topic
+                    // get random id
+                    int randomId = (int) (Math.random() * 100000);
+                    EntryKey key = new EntryKey(Entries.getCurrentEntryKey().getFullPath(), String.valueOf(randomId));
+                    Entries.setCurrentEntryKey(key);
+                    switchToInputFragment(); // reload InputFragment
                 }
             }
         });
