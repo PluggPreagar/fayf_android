@@ -47,6 +47,21 @@ public class RuntimeTest {
                 .clickBack()
                 .clickBack()
         ;
+
+        queue.testBlock("config toggle boolean - dark_mode - RETRY")
+                .click(R.id.action_settings)
+                .waitForVisible(R.id.button1, "dark_mode: false")
+                .click(R.id.button1)
+                .delay(500)
+                .waitForVisible(R.id.button1, "dark_mode: true")
+                .delay(500)
+                .click(R.id.button1)
+                .delay(500)
+                .waitForVisible(R.id.button1, "dark_mode: false")
+                .clickBack()
+                .clickBack()
+        ;
+
         queue.testBlock("config set value directly - test_string")
                 .click(R.id.action_settings)
                 .waitForVisible(R.id.button2, "test_string: default_value")

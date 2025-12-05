@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
-        //Config.RUN_SELF_TEST.setValue("false"); // disable self-test auto-run for normal app start
+        Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
         // init self-test entries if started
         // prevent auto-load from storage
         if (Config.RUN_SELF_TEST.asBoolean()) {

@@ -389,13 +389,13 @@ public class FirstFragment extends Fragment {
                         @Override
                         public void onClick() {
                             Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                            btn.performClick();
-                            updateButtonsUIThread(); // TODO should be called from Entries after topic change
+                            // btn.performClick(); // Fragment calls updateButtonsUIThread() after changing topic
+                            // updateButtonsUIThread(); // TODO should be called from Entries after topic change
                         }
                         @Override
                         public void onLongClick() {
                             Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                            btn.performLongClick();
+                            // btn.performLongClick();
                         }
 
                         @Override

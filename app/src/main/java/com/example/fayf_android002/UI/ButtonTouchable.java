@@ -5,6 +5,7 @@ import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
 
@@ -41,6 +42,7 @@ public class ButtonTouchable extends MaterialButton {
     @Override
     public boolean performClick() {
         super.performClick();
+        UtilDebug.logCompactCallStack("ButtonTouchable performClick");
         String fullPath = entryKey.getFullPath();
         logger.info("ButtonTouchable clicked ({}).", fullPath);
         if (Entries.sizeTopic(entryKey) > 0) {
