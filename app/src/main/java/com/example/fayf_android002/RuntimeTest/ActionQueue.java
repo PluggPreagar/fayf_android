@@ -1,6 +1,7 @@
 package com.example.fayf_android002.RuntimeTest;
 
 import android.widget.Toast;
+import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.R;
 import org.slf4j.Logger;
@@ -8,9 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ActionQueue {
 
+    private static final boolean CONTINUE_ON_ERROR = false;
     Logger logger = LoggerFactory.getLogger(ActionQueue.class);
 
     List<ActionQueueEntry> actionQueue = new LinkedList<>();
@@ -26,6 +29,7 @@ public class ActionQueue {
     String currentText = null;
 
     private final String caller;
+    public static int TO_BE_FOUND = -9999;
 
     public ActionQueue(int FragmentId) {
         this.fragmentId = FragmentId;
@@ -65,6 +69,7 @@ public class ActionQueue {
 
     public void run () {
         int initialSize = actionQueue.size();
+        AtomicInteger skipped = new AtomicInteger();
         logger.info("Starting ActionQueue with {} actions", actionQueue.size());
         // wait
         new Thread(() -> {
@@ -73,9 +78,26 @@ public class ActionQueue {
             actionQueue.add(0, new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
                     , fragmentId, -1, "init check", 0, null));
             //
-            while(run_next(actionExecutor)) {
-                // continue
-            }
+            while (!actionQueue.isEmpty()) {
+                while (run_next(actionExecutor)) {
+                    // continue
+                }
+                // if exit due to error, forward to next text block and try to resume
+                if (!actionQueue.isEmpty()) {
+                    if (CONTINUE_ON_ERROR) {
+                        logger.info("ActionQueue attempting to resume after error");
+                    } else {
+                        break; // exit
+                    }
+                    // set to root topic
+                    Entries.rootTopic();
+                    while (!actionQueue.isEmpty()
+                            && actionQueue.get(0).action != ActionQueueEntry.ACTIONS.TEST_BLOCK) {
+                        skipped.getAndIncrement();
+                        actionQueue.remove(0);
+                    } // forward to next test block
+                } // error
+            } // resume until empty
             if (!actionExecutor.errorMsg.isEmpty()) {
                 //logger.error("{}", caller);
                 logger.error("ActionQueue error: {}", actionExecutor.errorMsg.get(0));
@@ -99,21 +121,26 @@ public class ActionQueue {
                     "===========================" ;
             if (actionExecutor.errorMsg.isEmpty()) {
                 logger.info(msg
-                    , initialSize - actionQueue.size() - actionExecutor.errorMsg.size()
+                    , initialSize - actionQueue.size() - actionExecutor.errorMsg.size() - skipped.get()
                     , actionExecutor.errorMsg.size()
-                    , actionQueue.size()
+                    , actionQueue.size() + skipped.get()
                     , initialSize
                     , caller
                 );
             } else {
                 logger.error(msg
-                        , initialSize - actionQueue.size() - actionExecutor.errorMsg.size()
+                        , initialSize - actionQueue.size() - actionExecutor.errorMsg.size() - skipped.get()
                         , actionExecutor.errorMsg.size()
-                        , actionQueue.size()
+                        , actionQueue.size() + skipped.get()
                         , initialSize
                         , this
                 );
             }
+            MainActivity.notifyUser("ActionQueue " + (actionExecutor.errorMsg.isEmpty() ? "PASSED" : "FAILED")
+                    + ": executed " + (initialSize - actionQueue.size() - actionExecutor.errorMsg.size() - skipped.get())
+                    + " actions, " + actionExecutor.errorMsg.size() + " errors, "
+                    + (actionQueue.size() + skipped.get()) + " skipped of " + initialSize + " total"
+            );
             logger.info("ActionQueue ended 4");
         }).start();
     }
@@ -161,6 +188,12 @@ public class ActionQueue {
         return click(viewId, 0);
     }
 
+    public ActionQueue click(String text) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.CLICK
+                , fragmentId, TO_BE_FOUND, text, 0, null));
+        return this;
+    }
+
     public ActionQueue longClick( int viewId, int delayMs) {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.LONG_CLICK
                 , fragmentId, viewId, null, delayMs, null));
@@ -169,6 +202,12 @@ public class ActionQueue {
 
     public ActionQueue longClick( int viewId) {
         return longClick(viewId, 0);
+    }
+
+    public ActionQueue longClick(String text) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.LONG_CLICK
+                , fragmentId, TO_BE_FOUND, text, 0, null));
+        return this;
     }
 
     public ActionQueue setText( int viewId, String text) {
@@ -227,6 +266,11 @@ public class ActionQueue {
         return this;
     }
 
+    public ActionQueue waitForVisible( String text) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
+                , fragmentId, TO_BE_FOUND , text, 0, null));
+        return this;
+    }
 
 
     public ActionQueue delay(long waitTimeMs) {

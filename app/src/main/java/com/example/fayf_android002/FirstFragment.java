@@ -1,5 +1,6 @@
 package com.example.fayf_android002;
 
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -371,6 +372,16 @@ public class FirstFragment extends Fragment {
                     } else {
                         btn.setText(entry.content);
                     }
+                    if (Entries.isTopic(new EntryKey( topic, nodeId))) {
+                        btn.setContentDescription("Topic: " + entry.content);
+                        btn.setTextAppearance(R.style.TopicButtonStyle);
+                        btn.setIconResource(R.drawable.baseline_chevron_right_24);
+                    } else {
+                        btn.setContentDescription("Note: " + entry.content);
+                        btn.setTextAppearance(R.style.NoteButtonStyle);
+                        btn.setIconResource(R.drawable.ic_baseline_note_24);
+                    }
+
                     btn.setVisibility(View.VISIBLE);
                     // make button height larger
                     MaterialButton btn_m = (MaterialButton) button;

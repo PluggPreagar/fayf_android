@@ -14,7 +14,7 @@ public class RuntimeTest {
     public static void initSelfTest() {
         // Placeholder for any initialization logic needed before running tests
         Config.TENANT.setValue("RuntimeTest");
-        Entries.clearAllEntries();
+        Entries.resetEntries();
         Entries.setEntry("/", "t1", "c1");
         Entries.setEntry("/", "t2", "c2 >");
         Entries.setEntry("/", "t3", "c3");
@@ -22,7 +22,6 @@ public class RuntimeTest {
         Entries.setEntry("/t2", "t2.2", "c2.2");
         Entries.setEntry("/_/config", "dark_mode", "false");
         Entries.setEntry("/_/config", "test_string", "default_value");
-        Entries.checkDataIntegrity();
     }
 
 
@@ -36,42 +35,32 @@ public class RuntimeTest {
 
         queue.testBlock("config toggle boolean - dark_mode")
                 .click(R.id.action_settings)
-                .waitForVisible(R.id.button1, "dark_mode: false")
-                .click(R.id.button1)
+                .waitForVisible(R.id.button2, "dark_mode: false")
+                .click(R.id.button2)
                 .delay(500)
-                .waitForVisible(R.id.button1, "dark_mode: true")
+                .waitForVisible(R.id.button2, "dark_mode: true")
                 .delay(500)
-                .click(R.id.button1)
+                .click(R.id.button2)
                 .delay(500)
-                .waitForVisible(R.id.button1, "dark_mode: false")
+                .waitForVisible(R.id.button2, "dark_mode: false")
+                .doc("navigating to hidden = non-existing entry path to force root-topic")
+                .clickUp() // TODO one clickUp should go to root if no parent
                 .clickBack()
                 .clickBack()
-        ;
-
-        queue.testBlock("config toggle boolean - dark_mode - RETRY")
-                .click(R.id.action_settings)
-                .waitForVisible(R.id.button1, "dark_mode: false")
-                .click(R.id.button1)
-                .delay(500)
-                .waitForVisible(R.id.button1, "dark_mode: true")
-                .delay(500)
-                .click(R.id.button1)
-                .delay(500)
-                .waitForVisible(R.id.button1, "dark_mode: false")
-                .clickBack()
-                .clickBack()
+                .waitForVisible("c1")
         ;
 
         queue.testBlock("config set value directly - test_string")
-                .click(R.id.action_settings)
-                .waitForVisible(R.id.button2, "test_string: default_value")
-                .click(R.id.button1).doc("click with no effect on non-boolean")
-                .delay(500)
-                .longClick(R.id.button2).waitForVisible(R.id.editext_second)
+                .click(R.id.action_settings) // TODO: do not hard code button IDs, find by text or entryKey
+                .waitForVisible( "test_string: default_value")
+                .click("test_string: default_value").doc("click on config - edit value")
+                //.delay(500)
+                //.longClick("test_string: default_value")
+                .waitForVisible(R.id.editext_second)
                 .isText(R.id.editext_second, "default_value")
                 .setText(R.id.editext_second, "new_value")
                 .click(R.id.button_send)
-                .waitForVisible(R.id.button2, "test_string: new_value")
+                .waitForVisible("test_string: new_value")
                 .clickBack()
                 .clickBack()
         ;

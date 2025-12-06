@@ -3,7 +3,9 @@ package com.example.fayf_android002.RuntimeTest;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import com.example.fayf_android002.MainActivity;
+import org.w3c.dom.Text;
 
 public class UtilDebug {
 
@@ -123,6 +125,43 @@ public class UtilDebug {
     }
 
 
+
+    public static int getView(String text) {
+        View view = getView(null, text);
+        return null != view ? view.getId() : View.NO_ID;
+    }
+
+
+    public static View getView(View view, String text) {
+        View matchingView = null;
+        String viewText = null;
+        if (view == null) {
+            view = MainActivity.getInstance().findViewById(android.R.id.content);
+        }
+        // If the view is a ViewGroup, inspect its children
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            int childCount = viewGroup.getChildCount();
+
+            for (int i = 0; i < childCount; i++) {
+                matchingView = getView(viewGroup.getChildAt(i), text);
+                if (matchingView != null)
+                    break;
+            }
+        } else if (view instanceof android.widget.TextView) {
+            TextView textView = (TextView) view;
+            viewText = textView.getText().toString();
+        } else if (view instanceof android.widget.Button) {
+            android.widget.Button button = (android.widget.Button) view;
+            viewText = button.getText().toString();
+        } else {
+            // Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
+        }
+        if (null != viewText &&  viewText.equals(text)){
+            matchingView = view;
+        }
+        return matchingView;
+    }
 
 
 

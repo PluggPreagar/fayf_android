@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import androidx.annotation.IdRes;
 import androidx.core.internal.view.SupportMenuItem;
 import androidx.fragment.app.FragmentActivity;
 import com.example.fayf_android002.Entry.Entries;
@@ -30,6 +31,15 @@ public class ActionExecutor {
 
     private String logName(View view) {
         return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
+    }
+
+    private String logName(@IdRes int viewId) {
+        View view = UtilDebug.getView(viewId);
+        if ( null != view ) {
+            return logName(view);
+        } else {
+            return String.valueOf(viewId );
+        }
     }
 
     @SuppressLint("RestrictedApi")
@@ -127,8 +137,15 @@ public class ActionExecutor {
     }
 
     private View getViewOptional(ActionQueueEntry action) {
+        if ( action.viewId == ActionQueue.TO_BE_FOUND ) {
+            // search view by text
+            int viewId = UtilDebug.getView(action.text);
+            if ( viewId > View.NO_ID ) {
+                action.viewId = viewId;
+            }
+        }
         Fragment fragment = getFragment(action);
-        return fragment.requireView().findViewById(action.viewId);
+        return  action.viewId < View.VISIBLE ? null : fragment.requireView().findViewById(action.viewId);
     }
     private View getView(ActionQueueEntry action) {
         View view = getViewOptional(action);
@@ -203,7 +220,12 @@ public class ActionExecutor {
     }
 
     private void executeLongClick(ActionQueueEntry action, ActionQueue actionQueue) {
-        getActivity(action).runOnUiThread(() -> UtilDebug.getView(action.viewId).performLongClick());
+        View view = UtilDebug.getView(action.viewId);
+        if ( null == view ) {
+            assertFail("View is null for LONG_CLICK action: " + action.viewId);
+        } else {
+            getActivity(action).runOnUiThread(() -> view.performLongClick());
+        }
     }
 
     private void executeSetText(ActionQueueEntry action, ActionQueue actionQueue) {
@@ -274,12 +296,12 @@ public class ActionExecutor {
     }
 
     private void executeWaitForVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = UtilDebug.getView(action.viewId);
+        View view = getView(action);
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
         while (System.currentTimeMillis() - startTime < timeout) {
             if (null == view) {
-                view = UtilDebug.getView(action.viewId);
+                view = getView(action);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
                     assertTrue(true, logName(view) + " is visible.", null, null);
@@ -302,8 +324,10 @@ public class ActionExecutor {
             }
         }
 
-        assertFail("View did not become visible within timeout: " + action.viewId
-                + ( null != action.text ? " with text: '" + action.text + "'" : ""));
+        assertFail("View " + logName(action.viewId)
+                + ( null != action.text ? " '" + action.text + "'" : "")
+                + " not visible (waited: " + timeout + " ms)"
+        );
         UtilDebug.inspectView();
         //throw new AssertionError("View did not become visible within timeout: " + action.viewId);
     }

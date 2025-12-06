@@ -5,6 +5,7 @@ import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
+import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.google.android.material.button.MaterialButton;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class ButtonTouchable extends MaterialButton {
     public boolean performClick() {
         super.performClick();
         UtilDebug.logCompactCallStack("ButtonTouchable performClick");
+        assert entryKey != null;
         String fullPath = entryKey.getFullPath();
         logger.info("ButtonTouchable clicked ({}).", fullPath);
         if (Entries.sizeTopic(entryKey) > 0) {
@@ -55,8 +57,12 @@ public class ButtonTouchable extends MaterialButton {
                 config.toggleValue(); // nodeId is the config key
                 // force refresh button text - refresh fragment
                 fragment.updateButtonsUIThread();
+            } else if (Config.TENANT.is(config) || config.name().startsWith("TEST_") ) {
+                logger.warn("Edit Config {} by click.", entryKey.getFullPath());
+                fragment.navigateToEdit(entryKey); // navigate to edit this entry
             } else {
-                logger.info("No toggle action for non-boolean config entry {}.", entryKey.getFullPath());
+                logger.error("FAIL - Edit config entry {} not allowed!", entryKey.getFullPath());
+                MainActivity.notifyUser("Your are not allowed to edit this config entry.");
             }
         } else {
             logger.info("Do not enter leaf node (no children for {}).", entryKey.getFullPath());

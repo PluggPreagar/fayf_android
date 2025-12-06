@@ -142,11 +142,6 @@ public class Entries {
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             DataStorageLocal.saveEntries(entryTree, context);
         }
-
-        // check if current topic exists after load
-        if (null == entryTree.get(currentEntryKey)) {
-            currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
-        }
         // check data integrity
         checkDataIntegrity();
         // new DataStorageLocal().saveEntries(entries);
@@ -155,6 +150,22 @@ public class Entries {
 
     public static void checkDataIntegrity() {
         EntryTree entryTree = Entries.entryTree;
+        // check if current topic exists after load
+        if (null == entryTree.get(currentEntryKey)) {
+            currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
+        }
+        // ensure Config entries exist and are changeable
+        Config[] configs = Config.values();
+        for (Config config : configs) {
+            EntryKey configEntryKey = new EntryKey(Config.CONFIG_PATH, config.getKey());
+            Entry configEntry = entryTree.get(configEntryKey);
+            if (null == configEntry) {
+                // create entry with default value
+                entryTree.set(configEntryKey, String.valueOf(config.getValue()));
+                logger.info("Created missing config entry for {} with default value '{}'"
+                        , configEntryKey.getFullPath(), config.getValue());
+            }
+        }
         // entry content should have ">"-suffix for topics
         for (Map.Entry<String, TreeMap<String, Entry>> topicEntry : entryTree.entries.entrySet()) {
             //  /
@@ -231,8 +242,9 @@ public class Entries {
         FOR TEST
      */
 
-    public static EntryTree clearAllEntries() {
+    public static EntryTree resetEntries() {
         entryTree = new EntryTree();
+        checkDataIntegrity(); // ensure config entries exist
         return entryTree;
     }
 
@@ -241,9 +253,17 @@ public class Entries {
         HELPER
      */
 
+    public static void rootTopic() {
+        setCurrentEntryKey( EntryTree.ROOT_ENTRY_KEY );
+    }
+
     public static void upOneTopicLevel() {
         // get parent topic -> topic =  fullpath of parent
         EntryKey key = new EntryKey( currentEntryKey.topic);
+        if (!isTopic(key)) {
+            logger.debug("upOneTopicLevel: current entry is not a topic, go to root");
+            key = EntryTree.ROOT_ENTRY_KEY;
+        }
         setCurrentEntryKey( key );
     }
 
@@ -326,6 +346,15 @@ public class Entries {
     }
 
     public static void setEntry(EntryKey entryKey, String content, Context context) {
+        assert null != entryKey;
+        assert !entryKey.topic.isEmpty();
+        assert !entryKey.nodeId.isEmpty();
+        assert null != content;
+        if (content.isEmpty()){
+            logger.info("Removing Entry : {} with empty content ", Entries.toString(entryKey) );
+            entryTree.remove(entryKey);
+            return;
+        }
         Entry entry = entryTree.set(entryKey, content);
         checkDataIntegrity(entryKey, entry);
         // check if first parent
@@ -335,11 +364,12 @@ public class Entries {
             checkDataIntegrity(parentKey, Entries.getEntry(parentKey));
         }
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
-            logger.info("SKIPP upload Entry (volatile tenant {} ) : {} = \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
+            logger.info("SKIPP upload Entry (volatile tenant {} ) : {} with \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
         } else if (entryKey.topic.startsWith(Config.CONFIG_PATH)) {
-            logger.debug("SKIPP upload Config Entry : {} = \"{}\" ", Entries.toString(entryKey), content);
+            logger.debug("SKIPP upload Config Entry : {} with \"{}\" ", Entries.toString(entryKey), content);
         } else {
             new DataStorageWeb().saveEntry(entryKey, entry);
+            logger.info("Uploaded Entry : {} with \"{}\" ", Entries.toString(entryKey), content);
         }
     }
 

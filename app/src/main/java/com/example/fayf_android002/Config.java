@@ -8,19 +8,20 @@ import org.slf4j.LoggerFactory;
 
 public enum Config {
 
+    VERSION("version", "1.0.0"),
+    DARK_MODE("dark_mode", false),
+    TEST_STRING("test_string", "default_value"),
     ENABLE_NOTIFICATIONS("enable_notifications", true),
     SHOW_LOGS("show_logs", false),
-    DARK_MODE("dark_mode", false),
     AUTO_SYNC("auto_sync", true),
     LANGUAGE("language", "en"),
 
-    TENANT("tenant", "tst5"),
+    TENANT("tenant", "tst"),
 
     SYSTEM("system", "sid_example"),
 
     RUN_SELF_TEST("self_test", false),
 
-    TEST_STRING("test_string", "default_value"),
     ;
 
     static Logger logger = LoggerFactory.getLogger(Config.class);
@@ -88,16 +89,26 @@ public enum Config {
 
 
     public static void set(String key, String value) {
-        Config config = Config.fromKey(key);// validate key
-        config.value = value; // use instance method
+        Config configChanged = Config.fromKey(key);// validate key
+        if (configChanged.value.equals(value)) {
+            logger.debug("Config '{}' unchanged with value '{}'", key, value);
+            return; // no change
+        }
+        configChanged.value = value; // use instance method
         Entries.setEntry(new EntryKey(CONFIG_PATH, key), value, null);
-        logger.info("configuration set '{}' to value '{}'", key, value);
+        logger.info("Config set '{}' to value '{}'", key, value);
+        if (configChanged.is(TENANT)) {
+            // reset Entries to apply new tenant, and reload all entries
+            logger.warn("Config TENANT changed - reloading all entries for new tenant '{}'", value);
+            Entries.resetEntries();
+            Entries.load_async(MainActivity.getInstance());
+        }
     }
 
     public static String get(String key) {
         Config config = Config.fromKey(key);// validate key
         String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(config.value)); // validate key
-        logger.info("configuration read '{}' with value '{}'", key,content);
+        logger.info("Config read '{}' with value '{}'", key,content);
         return content;
     }
 
@@ -109,9 +120,12 @@ public enum Config {
                 ||  Util.asBoolean(String.valueOf(config.value))
                 ? "false" : "true";
         Entries.setEntry(currentTopicEntry, newValue, null);
-        logger.info("configuration toggled '{}' to '{}'", key, newValue);
+        logger.info("Config toggled '{}' to '{}'", key, newValue);
         return newValue;
     }
 
 
+    public boolean is(Config config) {
+        return null != config && this.name().equals(config.name());
+    }
 }

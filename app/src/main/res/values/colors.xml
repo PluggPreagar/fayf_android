@@ -39,5 +39,6 @@
     <color name="red">#FFB00020</color>
     <color name="orange_orange">#FFFFA726</color>
     <color name="orange_yellow_2">#FFFFEB3B</color>
-
+    <color name="light_blue">#FF81D4FA</color>
+    <color name="transparent">#00000000</color>
 </resources>
