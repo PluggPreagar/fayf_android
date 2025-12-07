@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<com.example.fayf_android002.UI.CustomNestedScrollView
         android:id="@+id/ButtonScrollView"
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -45,7 +45,7 @@
                 android:layout_width="0dp"
                 android:layout_weight=".80"
                 android:layout_height="wrap_content"
-                android:text="aaaK"
+                android:text="to be initialized"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 />
@@ -265,4 +265,4 @@
                 />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.core.widget.NestedScrollView>
+</com.example.fayf_android002.UI.CustomNestedScrollView>

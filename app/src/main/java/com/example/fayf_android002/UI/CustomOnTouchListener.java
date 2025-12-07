@@ -1,19 +1,28 @@
-package com.example.fayf_android002;
+package com.example.fayf_android002.UI;
 
 import android.animation.StateListAnimator;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.UI.TextViewAppender;
+import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.R;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OnTouchListener implements View.OnTouchListener {
 
-    private final int LONG_PRESS_DURATION = 500;
-    Logger logger = LoggerFactory.getLogger(OnTouchListener.class);
+public class CustomOnTouchListener implements View.OnTouchListener {
+
+    private final int LONG_PRESS_DURATION = 750;
+    Logger logger = LoggerFactory.getLogger(CustomOnTouchListener.class);
 
     private static final int MOVE_THRESHOLD_START = 100;
     private static final int MOVE_THRESHOLD_MOVING = 5;
@@ -25,59 +34,43 @@ public class OnTouchListener implements View.OnTouchListener {
     private MotionEvent lastEvent;
     private ViewGroup.MarginLayoutParams params_initial = null ;
     private StateListAnimator sla_initial = null;
-    private int x_start;
+    private int x_start = -1;
+    private int y_start = -1;
 
     private final Fragment fragment;
     private View  view;
     protected boolean longPressDetected = false;
-    private float deltaX = 0;
-    private float deltaY = 0;
+    protected float deltaX = 0;
+    protected float deltaY = 0;
     private float velocityX = 0;
     private float velocityY = 0;
     protected float swipeVelocity = 0;
-    protected static boolean isDirectionX = false; // need MainActivity to get direction
+    public static boolean isDirectionX = false; // need MainActivity to get direction
+    protected boolean touching;
     protected boolean isMoveStarted = false;
+    protected boolean isMoving;
     private ViewGroup.MarginLayoutParams params = null;
-    private int LONG_PRESS_RELEASE_AUTO_TIMEOUT;
-    private boolean touching;
+    protected int LONG_PRESS_RELEASE_AUTO_TIMEOUT;
+    private int max_margin = 0;
 
-    public OnTouchListener(Fragment ma) {
+    public CustomOnTouchListener(Fragment ma) {
         this.fragment = ma;
     }
 
-    public boolean onTouch_(View v, MotionEvent event) {
 
-        logger.info("OnTouchListener onTouch event: {}", event.toString());
-
-        /*
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            float diffX = e2.getX() - e1.getX();
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                    if (diffX > 0) {
-                        onSwipeRight();
-                    } else {
-                        onSwipeLeft();
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-     */
-        return true;
-    }
 
     // calculate velocity and direction
     private boolean calculateVelocityAndDirection(MotionEvent e1, MotionEvent e2){
-        float deltaXcur = e2.getX() - e1.getX();
-        float deltaYcur = e2.getY() - e1.getY();
+        float deltaXcur = e2.getRawX() - e1.getRawX();
+        float deltaYcur = e2.getRawY() - e1.getRawY();
+        logger.trace("calculateVelocityAndDirection: dXcur={}, dYcur={}",
+                String.format("%4d", (int) deltaXcur),
+                String.format("%4d", (int) deltaYcur)
+        );
         deltaX += deltaXcur;
         deltaY += deltaYcur;
-        // float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
-        float absDeltaMax = Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur));
+        float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+        //float absDeltaMax = Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur));
         if (absDeltaMax < (isMoveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
             logger.info("move no: .delta*={} < {}", absDeltaMax , MOVE_THRESHOLD_START);
             return false; // debounce move detection
@@ -97,10 +90,13 @@ public class OnTouchListener implements View.OnTouchListener {
             if (velocityAbs > swipeVelocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
                 swipeVelocity = velocityAbs;
             }
-            logger.info("moved  : .deltaXcur={}, .deltaYcur={}, velocity={}, isDirectionX={} (action={})"
-                    , deltaXcur, deltaYcur, swipeVelocity, isDirectionX
+            logger.info("moved  : dX={}, dY={}, v={}, isDirX={} ({})",
+                    String.format("%4d", (int) deltaX),
+                    String.format("%4d", (int) deltaY),
+                    String.format("%4d", (int) swipeVelocity),
+                    isDirectionX,
                     // lookup MotionEvent action names
-                    , e2.getAction() == MotionEvent.ACTION_DOWN ? "DOWN"     // 0
+                    e2.getAction() == MotionEvent.ACTION_DOWN ? "DOWN"     // 0
                             : e2.getAction() == MotionEvent.ACTION_UP ? "UP"     // 1
                             : e2.getAction() == MotionEvent.ACTION_MOVE ? "MOVE" // 2
                             : "OTHER"
@@ -131,11 +127,15 @@ public class OnTouchListener implements View.OnTouchListener {
                 if (e.getAction() == MotionEvent.ACTION_MOVE) {
                     onLongClickDuringMove(); // raise only once
                 }
+            } else {
+                logger.info("No long press detected, duration: {} ms (to fast)", pressDuration);
             }
+        } else {
+            logger.info("No long press detected, move started or already detected");
         }
     }
 
-    private void checkLongPressByTimeout(OnTouchListener listener){
+    private void checkLongPressByTimeout(CustomOnTouchListener listener){
         if (!listener.isMoveStarted && !listener.longPressDetected & null !=listener.firstEvent) {
             // make sure no move happened
             // and still in touch
@@ -146,40 +146,77 @@ public class OnTouchListener implements View.OnTouchListener {
         }
     }
 
+    /*
+        allow async evaluation of long press after timeout
+     */
+    private boolean getTouching(){
+        return touching;
+    }
+
+    private boolean isMoveStarted(){
+        return isMoveStarted;
+    }
+
+    private boolean isDirectionX(){
+        return isDirectionX;
+    }
+
+
     private void initLongPressCheckByTimeout(View v){
         LONG_PRESS_RELEASE_AUTO_TIMEOUT = 2000;
         new android.os.Handler().postDelayed(() -> {
             checkLongPressByTimeout(this);
         }, LONG_PRESS_RELEASE_AUTO_TIMEOUT);
         new android.os.Handler().postDelayed(() -> {
-            if (touching) { // only if not yet released - that would have triggered onLongClick already
-                if (!isMoveStarted || isDirectionX) {
+            if (getTouching()) { // only if not yet released - that would have triggered onLongClick already
+                if (!isMoveStarted()) {
                     onLongPressDelayReached();
                 } else {
                     logger.info("Long press delay reached, but move for scrolling - not triggering long press visual");
                 }
+            } else {
+                logger.info("Long press delay reached, but touch already released");
             }
         }, LONG_PRESS_DURATION);
     }
 
     public boolean onTouch(View v, MotionEvent event){
+        // run on separate thread to not block UI
+        // Create a copy of the MotionEvent to ensure thread safety
+        MotionEvent eventCopy = MotionEvent.obtain(event);
+        logger.trace("onTouch called {}", eventCopy.toString());
+        new Handler(Looper.getMainLooper()).post(() -> {
+            logger.trace("onTouch posted to main thread {}", eventCopy.toString());
+            onTouch_(v, eventCopy);
+            eventCopy.recycle(); // recycle the copied event
+        });
+        return true; // consume event
+    }
+
+
+    public boolean onTouch_(View v, MotionEvent event){
         // move btn to left
+        logger.trace("onTouch_ called {}", event.toString());
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             logger.info("Action Down detected {}", event.toString());
-            Entries.settingTouchInProgress(v);
+            registerTouchInProgress(v);
+            // reset everything
             swipeVelocity = 0;
             view = v;
+            max_margin = null == v ? 0 : (int) (0.75 * v.getWidth());
             sla_initial = null;
+            isMoving = false;
+            isMoveStarted = false; // reset move
             isDirectionX = false; // reset direction
             touching = true;
             firstEvent = MotionEvent.obtain(event); // store initial event as copy
-            x_start = (int) event.getX(); // as event has no fixed values -- REMOVE ??
+            x_start = (int) event.getRawX(); // as event has no fixed values -- REMOVE ??
+            y_start = (int) event.getRawX();
+            deltaX = 0;
+            deltaY = 0;
             lastEvent = firstEvent; // store last event as copy
-            // fixate button size
-            params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-            params_initial = new ViewGroup.MarginLayoutParams(params); // store copy of initial params
-            params.height = v.getHeight(); // keep height - even if it is wrap content on shrink
-            v.setLayoutParams(params);
+            longPressDetected = false;
+            fixateLayout(v);
             initLongPressCheckByTimeout(v);
         } else if (null == firstEvent) {
             logger.warn("First event is null on move/up action");
@@ -187,30 +224,33 @@ public class OnTouchListener implements View.OnTouchListener {
             if (calculateVelocityAndDirection(lastEvent, event)) {
                 // debounce
                 lastEvent = MotionEvent.obtain(event); // store last event as copy
+                float dXMarginLeft = 0;
                 // move button according to deltaX - absolute
                 if (isDirectionX) {
-                    params.leftMargin = deltaX > 0 ? (int) deltaX : 0;
-                    params.rightMargin = deltaX < 0 ? (int) -deltaX : 0;
+                    if (Math.abs(deltaX) > MOVE_THRESHOLD_START) {
+                        if ( 0 == max_margin || Math.abs(deltaX) < max_margin ) {
+                            // keep minimum size
+                            dXMarginLeft = params.leftMargin;
+                            params.leftMargin = deltaX > 0 ? (int) deltaX : 0;
+                            params.rightMargin = deltaX < 0 ? (int) -deltaX : 0;
+                            dXMarginLeft = params.leftMargin - dXMarginLeft; // actual change to compensate changing starting point
+                        }
+                    }
                 }
                 // change color of button if moved more than threshold
-                if (isDirectionX && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START)) {
-                    v.setBackgroundColor(
-                            deltaX < 0 ?
-                                    (MOVE_TRIGGER_THRESHOLD < -deltaX ?
-                                            fragment.requireContext().getColor(R.color.red) :
-                                            fragment.requireContext().getColor(R.color.orange_orange))
-                                    : (MOVE_TRIGGER_THRESHOLD < deltaX ?
-                                    fragment.requireContext().getColor(R.color.teal_700) :
-                                    fragment.requireContext().getColor(R.color.teal_200))
-                    );
+                if (isDirectionX && isMoveStarted && !isMoving
+                        && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START)) {
+                    isMoving = true; // onMoving may reset isMoving
+                    onMovingX( v, (deltaX < 0 ? - 1 : 1)
+                            *  (Math.abs(deltaX) < MOVE_TRIGGER_THRESHOLD ? 1 : 2));
+                    logger.info("moved : dX={} -> button color change {}", deltaX, UtilDebug.getBackgroundColorOfButton(v) );
                 }
                 ;
-
-                v.setLayoutParams(params);
+                updateLayout(v, dXMarginLeft);
             }
             // iterate
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            logger.info("Action Up detected {}", event.toString());
+            logger.debug("Action Up detected {}", event.toString());
             touching = false;
             calculateLongPress(event); // check for long press on release, if moved it already was checked
             calculateVelocityAndDirection(lastEvent, event);
@@ -250,15 +290,15 @@ public class OnTouchListener implements View.OnTouchListener {
             } else {
                 onClick();
             }
-            Entries.settingTouchInProgressReset(v); // reset
+            unregisterTouchInProgress(v); // reset
             resetPosition(v);
             firstEvent = null; // reset
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-            logger.info("Action Cancel detected {} .. wait vor dispatched events", event.toString());
+            logger.info("Action Cancel detected .. wait vor dispatched events {} ", event.toString());
         } else {
             logger.warn("Unknown action detected: {}", event.toString());
             touching = false;
-            Entries.settingTouchInProgressReset(v); // reset
+            unregisterTouchInProgress(v); // reset
             resetPosition(v);
             firstEvent = null; // reset
         }
@@ -267,7 +307,43 @@ public class OnTouchListener implements View.OnTouchListener {
         //return true; // consume event
     }
 
+    protected void fixateLayout(View v) {
+        // fixate button size
+        params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+        params_initial = new ViewGroup.MarginLayoutParams(params); // store copy of initial params
+        params.height = v.getHeight(); // keep height - even if it is wrap content on shrink
+        updateLayout(v, 0);
+    }
+
+    public void updateLayout(View v, float dXMarginLeft) {
+        MainActivity.getInstance().runOnUiThread (() -> {
+            updateLayout_(v, dXMarginLeft);
+        });
+    }
+
+    protected void updateLayout_(View v, float dXMarginLeft) {
+        logger.info("updateLayout called - margin l/r {}, {}", params.leftMargin, params.rightMargin);
+        v.setLayoutParams(params);
+    }
+
+    protected void registerTouchInProgress(View v) {
+        Entries.registerTouchInProgress(v);
+    }
+
+    protected void unregisterTouchInProgress(View v) {
+        Entries.unregisterTouchInProgress(v);
+    }
+
     public void resetPosition(View v){
+        MainActivity.getInstance().runOnUiThread (() -> {
+            // run on UI thread
+            resetPosition_(v);
+        });
+    }
+
+
+    public void resetPosition_(View v){
+        logger.info("resetPosition called {}, {}", params.leftMargin, params.rightMargin);
         // reset button position
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
         if (params.leftMargin>0) params.leftMargin = Math.max(params.leftMargin/2, 5) - 5;
@@ -281,11 +357,14 @@ public class OnTouchListener implements View.OnTouchListener {
                   resetPosition(v);
                 });
             }, 50);
-        }  else if (params_initial != null) {
-            v.setStateListAnimator(sla_initial); // restore elevation change on touch
-            // or keep color change until next render ?
-            //v.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_200)); // will be reset by next render, after aktion
-            // v.setLayoutParams(params_initial);
+        }  else{
+            if (params_initial != null) {
+                v.setStateListAnimator(sla_initial); // restore elevation change on touch
+                // or keep color change until next render ?
+                //v.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_200)); // will be reset by next render, after aktion
+                // v.setLayoutParams(params_initial);
+            }
+            onMovingX( v, 0); // reset color
         }
 
 
@@ -319,7 +398,7 @@ public class OnTouchListener implements View.OnTouchListener {
 
     public void onClick() {
         // Override this method in your fragment or activity
-        logger.info(TextViewAppender.appendLog("Click detected"));
+        logger.info("Click detected");
     }
 
     public void onLongClickDuringMove() {
@@ -349,12 +428,62 @@ public class OnTouchListener implements View.OnTouchListener {
 
     public void onLongPressDelayReached() {
         // Override this method in your fragment or activity
-        logger.info("Long Press Delay Reached detected");
+        logger.info("long press delay reached detected -> show visual effect");
         if (null == sla_initial) {
+            // only apply once
             sla_initial = view.getStateListAnimator();
-            view.setStateListAnimator(null); // disable elevation change on touch
-            view.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_500));
+            //view.setStateListAnimator(null); // disable elevation change on touch
+            //view.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_500));
+            //view.setElevation(20f);
+            logger.info("long press visual effect applied - background color {}", view.getBackground());
+            onHover( view); // strong color
         }
+    }
+
+
+    public void onMovingX(View v, int intensity) {
+        MainActivity.getInstance().runOnUiThread (() -> {
+            onMovingX_(v, intensity);
+        });
+    }
+
+    public void onMovingX_(View v, int intensity) {
+        // Override this method in your fragment or activity
+        int color = intensity < -1 ? R.color.red_700
+                : intensity < 0 ? R.color.red_200
+                : intensity < 1 ? R.color.black
+                : intensity < 2 ? R.color.teal_200
+                : R.color.teal_700;
+        logger.info("onMovingX intensity={} -> color {}", intensity, color);
+        //int colorId = fragment.requireContext().getColor(color);
+        int colorId = ContextCompat.getColor(fragment.requireContext(), color);
+        //v.setStateListAnimator(null);
+        //v.setBackgroundColor(Color.RED); // orange
+        //((Button) v).setTextColor(Color.RED);
+        ((Button) v).setTextColor(colorId); // works
+        //((Button) v).setShadowLayer(5, 4, 4, colorId);
+        //((Button) v).setBackgroundColor(colorId); // does not work ...
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(Color.TRANSPARENT); // Background color
+        if (intensity == 0) {
+            border.setStroke(0, Color.TRANSPARENT ); // Border width and color
+        } else {
+            border.setStroke(4, colorId); // Border width and color
+            border.setCornerRadius(32); // Optional: Rounded corners
+        }
+        v.setBackground(null);
+        ((Button) v).setBackground(border);
+    }
+
+
+    public void onHover(View v) {
+        int colorId = ContextCompat.getColor(fragment.requireContext(), R.color.orange_orange);
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(Color.TRANSPARENT); // Background color
+        border.setStroke(4, colorId); // Border width and color
+        border.setCornerRadius(32); // Optional: Rounded corners
+        v.setBackground(null);
+        ((Button) v).setBackground(border);
     }
 
 

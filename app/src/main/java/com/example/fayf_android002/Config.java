@@ -9,14 +9,14 @@ import org.slf4j.LoggerFactory;
 public enum Config {
 
     VERSION("version", "1.0.0"),
-    DARK_MODE("dark_mode", false),
+    DARK_MODE_YN("dark_mode_YN", false),
     TEST_STRING("test_string", "default_value"),
-    ENABLE_NOTIFICATIONS("enable_notifications", true),
-    SHOW_LOGS("show_logs", false),
-    AUTO_SYNC("auto_sync", true),
+    ENABLE_NOTIFICATIONS_YN("enable_notifications_YN", true),
+    SHOW_LOGS("show_logs_0to3", 0),
+    AUTO_SYNC_YN("auto_sync_YN", true),
     LANGUAGE("language", "en"),
 
-    TENANT("tenant", "tst"),
+    TENANT("tenant", "tst5"),
 
     SYSTEM("system", "sid_example"),
 
@@ -38,6 +38,7 @@ public enum Config {
         this.defaultValue = defaultValue;
         this.value = defaultValue;
     }
+
 
 
     public String getKey() {
@@ -116,12 +117,47 @@ public enum Config {
         Config config = Config.fromKey(key);// validate key
         EntryKey currentTopicEntry = new EntryKey(CONFIG_PATH, key);
         Entry entry = Entries.getEntry(currentTopicEntry); // validate key
-        String newValue = (null != entry && Util.asBoolean(entry.getContent()))
-                ||  Util.asBoolean(String.valueOf(config.value))
-                ? "false" : "true";
+        String newValue = toggle(key, null != entry ? entry.getContent() : null, config.getDefaultValue());
         Entries.setEntry(currentTopicEntry, newValue, null);
         logger.info("Config toggled '{}' to '{}'", key, newValue);
         return newValue;
+    }
+
+
+    public static String toggle(String key, String currentValue, Object defaultValue) {
+        String newValue = "";
+        if (key.endsWith("_YN") || defaultValue instanceof Boolean) {
+            newValue = (null != currentValue ? Util.asBoolean(currentValue)
+                        : Util.asBoolean(String.valueOf(defaultValue)))
+                    ? "false" : "true";
+        } else if (defaultValue instanceof Integer
+                || key.contains("to") && key.replaceAll("[0-9]+","i").endsWith("_itoi")) {
+            // extract int values from key like int_0to3 or int_1to5
+            String[] split = key.replaceAll(".*_", "").split("to");
+            int lowerBound = 2 == split.length ? Util.parseIntOr(split[0], 0) : 0;
+            int upperBound = 2 == split.length ? Util.parseIntOr(split[1], 3) : 3;
+            int intValue = defaultValue instanceof Integer ? (Integer) defaultValue : lowerBound;
+            try {
+                intValue = Integer.parseInt(currentValue);
+            } catch (Exception e) {
+                // ignore
+            }
+            intValue = (intValue + 1) % (upperBound  + 1); // cycle 0 to 3
+            newValue = String.valueOf(intValue);
+        } else {
+            logger.warn("Config toggle not supported for key '{}' with current value '{}'", key, currentValue);
+            newValue = currentValue != null ? currentValue : String.valueOf(defaultValue);
+
+        }
+        return newValue;
+    }
+
+
+    public static String DisplayName(String nodeId) {
+        String name = nodeId
+                .replace("_YN$", "")
+                .replaceFirst("_[0-9]+to[0-9]+$", "");
+        return name;
     }
 
 

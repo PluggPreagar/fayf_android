@@ -20,7 +20,7 @@ public class RuntimeTest {
         Entries.setEntry("/", "t3", "c3");
         Entries.setEntry("/t2", "t2.1", "c2.1");
         Entries.setEntry("/t2", "t2.2", "c2.2");
-        Entries.setEntry("/_/config", "dark_mode", "false");
+        Entries.setEntry("/_/config", "dark_mode_YN", "false");
         Entries.setEntry("/_/config", "test_string", "default_value");
     }
 
@@ -32,6 +32,9 @@ public class RuntimeTest {
         UtilDebug.inspectView();
 
         ActionQueue queue = new ActionQueue(R.id.FirstFragment);
+
+        // TODO handle 404 - "empty entries" , "to be initialized"-Fragment
+
 
         queue.testBlock("config toggle boolean - dark_mode")
                 .click(R.id.action_settings)
@@ -99,36 +102,6 @@ public class RuntimeTest {
         queue.run();
     }
 
-    public void runTests2(FragmentManager fragmentManager) {
 
-        RuntimeTester runtimeTester = new RuntimeTester(fragmentManager);
-        logger.info("Running runtime tests...");
-
-        // Check if a first Fragment is visible
-        boolean isFirstFragmentVisible = runtimeTester.isFragmentVisible(R.id.FirstFragment);
-        logger.info("Is FirstFragment visible? " + isFirstFragmentVisible);
-
-        // check if Button1 in FirstFragment is visible
-        boolean isButton1Visible = runtimeTester.isViewVisible(R.id.FirstFragment, R.id.button1);
-        logger.info("Is button1 in FirstFragment visible? " + isButton1Visible);
-
-        // Get text from a Button in the FirstFragment
-        String buttonText = Util.optional(runtimeTester.getTextFromView(R.id.FirstFragment, R.id.button1),"");
-        logger.info("Text of button1 in FirstFragment: " + buttonText);
-
-        // check if Button1 in FirstFragment can be clicked
-        try {
-            runtimeTester.performAction(R.id.FirstFragment, R.id.button1);
-            logger.info("Button1 in FirstFragment clicked successfully.");
-        } catch (Exception e) {
-            logger.error("Failed to click Button1 in FirstFragment.", e);
-        }
-
-
-        // Check if a view is visible in the SecondFragment
-        boolean isVisible = runtimeTester.isViewVisible(R.id.SecondFragment, R.id.editext_second);
-        logger.info("Is edittext_second visible in SecondFragment? " + isVisible);
-
-    }
 
 }

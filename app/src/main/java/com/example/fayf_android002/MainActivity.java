@@ -14,6 +14,7 @@ import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
+import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         TextViewAppender.initialize(logTextView);
         TextViewAppender.setupSLF4J();
 
-        logger.info( TextViewAppender.appendLog( "MainActivity onCreate() called" ) );
+        logger.info( "MainActivity onCreate() called" );
 
         setSupportActionBar(binding.toolbar);
 
@@ -245,10 +246,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return true;
         } else if (id == R.id.toggle_log) {
             Config.SHOW_LOGS.toggleValue();
-            if (Config.SHOW_LOGS.asBoolean()) {
+            if (Integer.valueOf( Config.SHOW_LOGS.getValue()) > 0) {
                 Toast.makeText(this, "Logs shown", Toast.LENGTH_SHORT).show();
                 binding.logScrollView.setVisibility(View.VISIBLE);
-
             } else {
                 Toast.makeText(this, "Logs hidden", Toast.LENGTH_SHORT).show();
                 binding.logScrollView.setVisibility(View.GONE);
@@ -320,13 +320,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         // forward touch event to child views
+        logger.debug("MainActivity onTouch: event: " + event.toString());
         View viewTouchedInProgress = Entries.getViewTouchedInProgress();
         if (viewTouchedInProgress != null ) {
             // prevent scrolling once Direction is Set
             // true to consume event here -> prevent scrollview from scrolling
             boolean b = viewTouchedInProgress.dispatchTouchEvent(event);
             // TODO KLUDGE - check direction
-            boolean b2 = OnTouchListener.isDirectionX;
+            boolean b2 = CustomOnTouchListener.isDirectionX;
             Log.d(TAG, "MainActivity onTouch: forwarded, returned: " + b +" is:" + b2 + " event: " + event.toString());
             return b2;
         } else {

@@ -1,11 +1,11 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.example.fayf_android002.MainActivity;
-import org.w3c.dom.Text;
 
 public class UtilDebug {
 
@@ -187,6 +187,18 @@ public class UtilDebug {
         }
 
         Log.d(TAG, compactStack.toString());
+    }
+
+    public static String getBackgroundColorOfButton(View view){
+        String colorInfo = "N/A";
+        if (view != null) {
+            Drawable background = view.getBackground();
+            colorInfo = background.toString();
+            Log.d(TAG, "Background of view " + getResourceName(view) + " (" + view.getId() + "): " + background.toString());
+        } else {
+            Log.d(TAG, "View is null.");
+        }
+        return colorInfo;
     }
 
 }

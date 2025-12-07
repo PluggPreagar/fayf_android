@@ -1,6 +1,5 @@
 package com.example.fayf_android002;
 
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +16,7 @@ import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
+import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.button.MaterialButton;
@@ -57,6 +57,12 @@ public class FirstFragment extends Fragment {
 
         //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
         Entries.setOnTopicChangedListener(FIRST_FRAGMENT, entry -> {
+            if (!this.isVisible()) {
+                // somehow I removed the listener on onDestroyView
+                // but it missed the onCreateView call to re-listen
+                logger.info("Topic changed callback received, but Fragment not visible, skipping UI update");
+                return; //rather than set/reset listener on onResume/onPause
+            }
             logger.info("Topic changed callback received: {}", null == entry ? "NONE" : entry.getFullPath());
             updateButtonsUIThread();
         });
@@ -348,6 +354,7 @@ public class FirstFragment extends Fragment {
                 , Entries.toString(Entries.getCurrentEntryKey())
                 , offset, limit, Entries.getCurrentTopicSize());
         Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
+        int idx = 0;
         if (!entriesIterator.hasNext()) {
             logger.info("No entries found for topic: {}, offset: {}", topic, offset);
             //Entries.upOneTopicLevel(); // will trigger callback to update buttons again --> RECURSIVE LOOP !!
@@ -355,7 +362,6 @@ public class FirstFragment extends Fragment {
             Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
         } else {
 
-            int idx = 0;
             while (entriesIterator.hasNext() && limit > 0) {
                 Map.Entry<String, Entry> e = entriesIterator.next();
                 String nodeId = e.getKey();
@@ -366,9 +372,12 @@ public class FirstFragment extends Fragment {
                 // iterate over Buttons in ButtonList
                 View button = buttonList.getChildAt(idx);
                 if (button instanceof ButtonTouchable) {
+
                     ButtonTouchable btn = (ButtonTouchable) button;
+                    btn.setEntry(new EntryKey( topic, nodeId), this); // set entry and fragment reference, allow runtime test
+
                     if (topic.startsWith(Config.CONFIG_PATH)) {
-                        btn.setText("" + nodeId + ": " + entry.content);
+                        btn.setText("" + Config.DisplayName( nodeId ) + ": " + entry.content);
                     } else {
                         btn.setText(entry.content);
                     }
@@ -393,20 +402,18 @@ public class FirstFragment extends Fragment {
                     params.bottomMargin = 10;
                     button.setLayoutParams(params);
 
-                    btn.setEntry(new EntryKey( topic, nodeId), this); // set entry and fragment reference, allow runtime test
-
-                    btn.setOnTouchListener(new OnTouchListener(this) {
+                    btn.setOnTouchListener(new CustomOnTouchListener(this) {
 
                         @Override
                         public void onClick() {
                             Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                            // btn.performClick(); // Fragment calls updateButtonsUIThread() after changing topic
+                            btn.performClick(); // Fragment calls updateButtonsUIThread() after changing topic
                             // updateButtonsUIThread(); // TODO should be called from Entries after topic change
                         }
                         @Override
                         public void onLongClick() {
                             Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                            // btn.performLongClick();
+                            btn.performLongClick();
                         }
 
                         @Override
@@ -424,21 +431,24 @@ public class FirstFragment extends Fragment {
                     });
 
 
-                } //
+                } else {
+                    logger.warn("Button at index {} is not ButtonTouchable, but {}", idx, button.getClass().getName());
+                }
 
                 limit--;
                 idx++;
             }
-            logger.info("{} Buttons updated, hiding remaining buttons if any", idx);
-            while (limit > 0) {
-                if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
-                    logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
-                    break;
-                }
-                buttonList.getChildAt(idx).setVisibility(View.GONE);
-                limit--;
-                idx++;
+        }
+
+        logger.info("{} Buttons updated, hiding remaining buttons if any", idx);
+        while (limit > 0) {
+            if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
+                logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
+                break;
             }
+            buttonList.getChildAt(idx).setVisibility(View.GONE);
+            limit--;
+            idx++;
         }
 
 
@@ -475,8 +485,8 @@ public class FirstFragment extends Fragment {
         super.onDestroyView();
         logger.info("FirstFragment onDestroyView() called");
         binding = null;
-        Entries.setOnTopicChangedListener(FIRST_FRAGMENT, null); // remove listener
     }
+
 
 
 

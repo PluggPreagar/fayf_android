@@ -53,13 +53,13 @@ public class Entries {
 
     private static View viewTouchedInProgress = null;
 
-    public static void settingTouchInProgress(View v) {
-        logger.debug("settingTouchInProgress: {} ", v.getId());
+    public static void registerTouchInProgress(View v) {
+        logger.debug("registerTouchInProgress: {} ", v.getId());
         viewTouchedInProgress = v;
     }
 
-    public static void settingTouchInProgressReset(View v) {
-        logger.debug("settingTouchInProgress: {} reset ", v.getId());
+    public static void unregisterTouchInProgress(View v) {
+        logger.debug("unregisterTouchInProgress: {} reset ", v.getId());
         viewTouchedInProgress = null;
     }
 
@@ -134,13 +134,11 @@ public class Entries {
         }
         if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
             entryTree.set(new DataStorageWeb().readData());
-            // keep config defaults
-            for (Config config : Config.values()) {
-                Config.set(config.getKey(), config.getValue());
-            }
             //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
-            DataStorageLocal.saveEntries(entryTree, context);
+            if (entryTree.entries.size() > 0) {
+                DataStorageLocal.saveEntries(entryTree, context);
+            }
         }
         // check data integrity
         checkDataIntegrity();
@@ -151,7 +149,7 @@ public class Entries {
     public static void checkDataIntegrity() {
         EntryTree entryTree = Entries.entryTree;
         // check if current topic exists after load
-        if (null == entryTree.get(currentEntryKey)) {
+        if (null == currentEntryKey ||  null == entryTree.get(currentEntryKey)) {
             currentEntryKey = EntryTree.ROOT_ENTRY_KEY;
         }
         // ensure Config entries exist and are changeable

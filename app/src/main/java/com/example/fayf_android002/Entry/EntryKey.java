@@ -10,7 +10,7 @@ public class EntryKey {
     public String nodeId;
 
     public EntryKey(String topic, String nodeId) {
-        this.topic = topic;
+        this.topic = sanitizeTopic(topic); // ensure "" -> "/"
         this.nodeId = nodeId;
     }
 

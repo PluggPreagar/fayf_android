@@ -45,7 +45,10 @@ public class DataStorageWeb {
                     }
                 }
             } else {
-                logger.error("Failed to fetch data. HTTP response code: {}", responseCode);
+                logger.error("Failed to fetch data. {} \n Url: {}"
+                        , responseCode
+                        , urlString
+                );
             }
         } catch (Exception e) {
             e.printStackTrace();

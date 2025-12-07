@@ -1,8 +1,8 @@
 package com.example.fayf_android002.UI;
 
+import android.view.MotionEvent;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.FirstFragment;
 import com.example.fayf_android002.MainActivity;
@@ -17,7 +17,7 @@ public class ButtonTouchable extends MaterialButton {
     private EntryKey entryKey = null; // entry associated with this button
     private FirstFragment fragment = null; // fragment containing this button
 
-    com.example.fayf_android002.OnTouchListener touchListener = null;
+    OnTouchListener touchListener = null;
 
     // constructor with context, attribute set
     public ButtonTouchable(android.content.Context context, android.util.AttributeSet attrs) {
@@ -34,16 +34,35 @@ public class ButtonTouchable extends MaterialButton {
         super(context);
     }
 
-
-    public void setTouchListener(com.example.fayf_android002.OnTouchListener listener) {
-        this.touchListener = listener; // access for test
-        super.setOnTouchListener(touchListener);
+    public void setText(String text) {
+        super.setText(text);
+        assert entryKey != null;
     }
+
+    @Override
+    public void setOnTouchListener(OnTouchListener listener) {
+        this.touchListener = listener;
+        super.setOnTouchListener(listener);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (touchListener != null) {
+            // forward to CustomOnTouchListener
+            touchListener.onTouch(this, event);
+        }
+        return super.onTouchEvent(event);
+    }
+
 
     @Override
     public boolean performClick() {
         super.performClick();
         UtilDebug.logCompactCallStack("ButtonTouchable performClick");
+        if (null == entryKey) {
+            logger.error("ButtonTouchable is not initialized!");
+            return true; // indicate the click was handled
+        }
         assert entryKey != null;
         String fullPath = entryKey.getFullPath();
         logger.info("ButtonTouchable clicked ({}).", fullPath);
@@ -73,6 +92,11 @@ public class ButtonTouchable extends MaterialButton {
     @Override
     public boolean performLongClick() {
         super.performLongClick();
+        if (null == entryKey) {
+            logger.error("ButtonTouchable is not initialized!");
+            return true; // indicate the click was handled
+        }
+        assert entryKey != null;
         logger.info("ButtonTouchable long-clicked.");
         fragment.navigateToEdit(entryKey); // navigate to edit this entry
         // Custom behavior can be added here
