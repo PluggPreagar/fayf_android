@@ -50,4 +50,5 @@
     <string name="action_load_from_web">Download Data</string>
     <string name="send_toast">Entry saved.</string>
     <string name="toggle_log">Toggle Log</string>
+    <string name="tenant_changed_reload_toast">Change Tenant</string>
 </resources>

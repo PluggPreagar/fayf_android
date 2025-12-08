@@ -141,6 +141,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // and still in touch
             listener.longPressDetected = true;
             fragment.requireActivity().runOnUiThread(() -> {
+                logStatusDetail();
                 listener.onLongClick();
             });
         }
@@ -196,7 +197,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
     public boolean onTouch_(View v, MotionEvent event){
         // move btn to left
-        logger.trace("onTouch_ called {}", event.toString());
+        logger.info("onTouch_ called {}", event.toString().substring(0,100));
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             logger.info("Action Down detected {}", event.toString());
             registerTouchInProgress(v);
@@ -223,6 +224,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             if (calculateVelocityAndDirection(lastEvent, event)) {
                 // debounce
+                if (null != lastEvent){
+                    lastEvent.recycle(); // recycle previous last event
+                }
                 lastEvent = MotionEvent.obtain(event); // store last event as copy
                 float dXMarginLeft = 0;
                 // move button according to deltaX - absolute
@@ -251,6 +255,8 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // iterate
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             logger.debug("Action Up detected {}", event.toString());
+            // log all variables
+            logStatusDetail();
             touching = false;
             calculateLongPress(event); // check for long press on release, if moved it already was checked
             calculateVelocityAndDirection(lastEvent, event);
@@ -295,6 +301,25 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             firstEvent = null; // reset
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
             logger.info("Action Cancel detected .. wait vor dispatched events {} ", event.toString());
+            // schedule reset after short delay to allow dispatched events to arrive
+            long cancelTime =  event.getEventTime();
+            new android.os.Handler().postDelayed(() -> {
+                fragment.requireActivity().runOnUiThread(() -> {
+                    if (cancelTime < event.getEventTime()) {
+                        logger.info("Action Cancel ignored - later event detected {}", lastEvent.toString());
+                        return; // ignore cancel as later event detected
+                    }
+                    unregisterTouchInProgress(v); // reset
+                    resetPosition(v);
+                    firstEvent = null; // reset
+                });
+            }, 100);
+            // --- always reset after cancel
+            // TODO ... handle forwarded from CustomNestedScrollView ?
+            touching = false;
+            unregisterTouchInProgress(v); // reset
+            resetPosition(v);
+            firstEvent = null; // reset
         } else {
             logger.warn("Unknown action detected: {}", event.toString());
             touching = false;
@@ -306,6 +331,20 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         //return false; // allow other events like onClick to be processed
         //return true; // consume event
     }
+
+
+    protected void logStatusDetail(){
+        logger.info("CustomOnTouchListener status: " +
+                "isMoving=" + isMoving +
+                ", isMoveStarted=" + isMoveStarted +
+                ", isDirectionX=" + isDirectionX +
+                ", longPressDetected=" + longPressDetected +
+                ", deltaX=" + deltaX +
+                ", deltaY=" + deltaY +
+                ", swipeVelocity=" + swipeVelocity
+        );
+    }
+
 
     protected void fixateLayout(View v) {
         // fixate button size

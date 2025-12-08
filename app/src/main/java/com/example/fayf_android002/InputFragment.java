@@ -25,6 +25,7 @@ public class InputFragment extends Fragment {
     Logger logger = LoggerFactory.getLogger(InputFragment.class);
 
     private FragmentSecondBinding binding;
+    private String oldValue = "";
 
     @Override
     public View onCreateView(
@@ -56,8 +57,9 @@ public class InputFragment extends Fragment {
         */
 
         Entry entry = Entries.getCurrentEntry();
-        binding.editextSecond.setText( null == entry ? "" : entry.content);
-        binding.editextSecond.setSelection( binding.editextSecond.getText().length() );
+        oldValue = null == entry ? "" : entry.content;
+        binding.editextSecond.setText(oldValue);
+        binding.editextSecond.setSelection( binding.editextSecond.getText().length());
         binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
         // set TextView to entry content
         binding.textViewHidden.setVisibility(View.GONE); // hide edit text for now
@@ -96,10 +98,18 @@ public class InputFragment extends Fragment {
 
     public void onSendEntry(){
         String newContent = binding.editextSecond.getText().toString();
-        EntryKey entry = Entries.getCurrentEntryKey();
-        Entries.setEntry(entry, newContent, getContext());
-        logger.info("Entry updated: {}", entry.getFullPath());
+        EntryKey entryKey = Entries.getCurrentEntryKey();
+        Entries.setEntry(entryKey, newContent, getContext());
+        logger.info("Entry updated: {}", entryKey.getFullPath());
         Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
+        // Tenant-Change forces reload in Entries.setEntry
+        if (!oldValue.equals(newContent)
+                && entryKey.topic.startsWith(Config.CONFIG_PATH)
+                && entryKey.nodeId.equals(Config.TENANT.name()) ) {
+            Toast.makeText(getActivity(), getString(R.string.tenant_changed_reload_toast), Toast.LENGTH_LONG).show();
+            Entries.rootTopic();
+            Entries.load_async(MainActivity.getInstance());
+        }
         backToFirstFragment();
     }
 

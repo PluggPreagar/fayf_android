@@ -98,6 +98,7 @@ public class ButtonTouchable extends MaterialButton {
         }
         assert entryKey != null;
         logger.info("ButtonTouchable long-clicked.");
+        UtilDebug.logCompactCallStack();
         fragment.navigateToEdit(entryKey); // navigate to edit this entry
         // Custom behavior can be added here
         return super.performLongClick();

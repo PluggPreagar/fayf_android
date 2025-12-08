@@ -16,7 +16,7 @@ public enum Config {
     AUTO_SYNC_YN("auto_sync_YN", true),
     LANGUAGE("language", "en"),
 
-    TENANT("tenant", "tst5"),
+    TENANT("tenant", "tst"),
 
     SYSTEM("system", "sid_example"),
 
