@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
@@ -20,13 +21,15 @@ import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.button.MaterialButton;
+import kotlin.jvm.Synchronized;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map;
 
-public class FirstFragment extends Fragment {
+public class FirstFragment extends Fragment implements NestedScrollView.OnScrollChangeListener {
 
     private final String FIRST_FRAGMENT = "FirstFragment";
     Logger logger = LoggerFactory.getLogger(FirstFragment.class);
@@ -34,6 +37,7 @@ public class FirstFragment extends Fragment {
     private FragmentFirstBinding binding;
 
     private boolean blockRekursiveScroll = true;
+    private NestedScrollView scrollView = null;
 
     @Override
     public View onCreateView(
@@ -63,8 +67,7 @@ public class FirstFragment extends Fragment {
                 logger.info("Topic changed callback received, but Fragment not visible, skipping UI update");
                 return; //rather than set/reset listener on onResume/onPause
             }
-            logger.info("Topic changed callback received: {}", null == entry ? "NONE" : entry.getFullPath());
-            updateButtonsUIThread();
+            onTopicChanged(entry);
         });
 
         // on overscroll the bottom of button list
@@ -129,9 +132,11 @@ public class FirstFragment extends Fragment {
 
     }
 
+
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
+        binding.ButtonScrollView.setOnScrollChangeListener(this);
         UtilDebug.inspectView();
 
 /*
@@ -154,7 +159,22 @@ public class FirstFragment extends Fragment {
             updateButtonsUIThread();
         }
 */
-       // binding.button1.requestFocus();
+        // binding.button1.requestFocus();
+    }
+
+    private void onTopicChanged(EntryKey entryKey) {
+        logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
+        updateButtonsUIThread();
+        binding.ButtonScrollView.post(() ->
+                {
+                    /*
+                    logger.debug("Scrolling to top after topic change");
+                    binding.ButtonScrollView.fullScroll(View.FOCUS_UP);
+                    binding.ButtonScrollView.scrollTo(0, 0);
+
+                     */
+                } // scroll to top
+        );
     }
 
     public void onResume() {
@@ -334,7 +354,11 @@ public class FirstFragment extends Fragment {
     }
 
     public void updateButtons( int offset) {
-        UtilDebug.logCompactCallStack("FirstFragment.updateButtons()");
+        int limit = 20; // buttonList.getChildCount();
+        logger.info("Updating buttons for topic: {} , offset: {}, limit: {} max: {} "
+                , Entries.toString(Entries.getCurrentEntryKey())
+                , offset, limit, Entries.getCurrentTopicSize());
+        UtilDebug.logCompactCallStack("FirstFragment.updateButtons(" + offset + ")");
         ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
         if (buttonList == null) {
             logger.error("ButtonList ViewGroup not found in MainActivity");
@@ -348,11 +372,7 @@ public class FirstFragment extends Fragment {
             logger.info("updateButtons() skipped - TEST");
             return;
         }
-        int limit = 20; // buttonList.getChildCount();
         String topic = Entries.getCurrentEntryKey().getFullPath();
-        logger.info("Updating buttons for topic: {} , offset: {}, limit: {} max: {} "
-                , Entries.toString(Entries.getCurrentEntryKey())
-                , offset, limit, Entries.getCurrentTopicSize());
         Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
         int idx = 0;
         if (!entriesIterator.hasNext()) {
@@ -406,24 +426,24 @@ public class FirstFragment extends Fragment {
 
                         @Override
                         public void onClick() {
-                            Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
                             btn.performClick(); // Fragment calls updateButtonsUIThread() after changing topic
                             // updateButtonsUIThread(); // TODO should be called from Entries after topic change
                         }
                         @Override
                         public void onLongClick() {
-                            Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
                             btn.performLongClick();
                         }
 
                         @Override
                         public void onSwipeRight() {
-                            Toast.makeText(getActivity(), "Swiped right on entry: " + entry.content, Toast.LENGTH_SHORT).show();
+                            MainActivity.notifyUser("Swiped right on entry: " + entry.content);
                             //Entries.setTopicEntry(entry); // set topic to this entry
                         }
                         @Override
                         public void onSwipeLeft() {
-                            Toast.makeText(getActivity(), "Swiped left on entry: " + entry.content, Toast.LENGTH_SHORT).show();
+                            MainActivity.notifyUser("Swiped left on entry: " + entry.content);
                             //navigateToEdit(entry); // navigate to edit this entry
                         }
 
@@ -487,7 +507,50 @@ public class FirstFragment extends Fragment {
         binding = null;
     }
 
+    /*
+            S C R O L L V I E W
+     */
 
+    // prevent self bounce
 
+    static boolean recursionGuard = false;
+    @Override
+    public void onScrollChange(@NonNull @NotNull NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+        // TODO  KLUDGE - reset recursion guard by delay - prevent bounce (when updating buttons triggers onScrollChange again)
+        v.postDelayed(() -> recursionGuard = false, 200); // always reset after 200ms - KLUDGE ensure to get it back again ...
+        if (recursionGuard){ // KLUDGE
+            logger.warn("onScrollChange recursionGuard active, skipping");
+            UtilDebug.logCompactCallStack("FirstFragment.onScrollChange() recursionGuard");
+            return;
+        }
+        recursionGuard = true;
+        // Detect scrollview top and bottom
+        View view = v.getChildAt(v.getChildCount() - 1);
+        int topDetector = v.getScrollY();
+        int bottomDetector = view.getBottom() - (v.getHeight() + v.getScrollY());
+        int offsetMove = 0;
+        if(topDetector <= 0){
+            // v.scrollTo(0,v.getBottom()/2);
+            Toast.makeText( MainActivity.getInstance(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
+            offsetMove = -1;
+        }
+        if(bottomDetector == 0 ){
+            //v.scrollTo(0,v.getBottom()/2);
+            Toast.makeText( MainActivity.getInstance(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
+            offsetMove = 1;
+        }
+        if (offsetMove != 0) {
+            UtilDebug.logCompactCallStack("FirstFragment.onScrollChange()");
+            offsetMove *= 5; // load 5 entries
+            if (Entries.changeOffsetBy(offsetMove)) {
+                logger.info("Loading more entries after overscroll at {}",
+                        offsetMove > 0 ? "bottom" : "top");
+            } else {
+                logger.info("No more entries to load after overscroll at {}",
+                        offsetMove > 0 ? "bottom" : "top");
+            }
+            updateButtonsUIThread();
+        }
+    }
 
 }
