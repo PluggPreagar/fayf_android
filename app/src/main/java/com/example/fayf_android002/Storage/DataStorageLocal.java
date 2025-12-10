@@ -2,11 +2,13 @@ package com.example.fayf_android002.Storage;
 
 import android.content.Context;
 import com.example.fayf_android002.Config;
+import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -33,7 +35,7 @@ public class DataStorageLocal {
         }
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
-            oos.writeObject(entries);
+            oos.writeObject(entries.entries);
             logger.info("Entries saved to file: {} ({} entries)", filePath, entries.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,7 +51,7 @@ public class DataStorageLocal {
         EntryTree entries = new EntryTree();
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream( context.openFileInput( filePath)))) {
-            entries = (EntryTree) ois.readObject();
+            entries.entries = (TreeMap<String, TreeMap<String, Entry>>) ois.readObject();
             logger.info("Entries loaded from file: {} ({} entries)", filePath, entries.size());
         } catch (Exception e) {
             e.printStackTrace();

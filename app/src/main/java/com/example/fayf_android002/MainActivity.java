@@ -15,6 +15,7 @@ import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
+import com.example.fayf_android002.UI.MotionEventFixed;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
@@ -23,8 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import static android.content.ContentValues.TAG;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener,
-        ViewTreeObserver.OnScrollChangedListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     public static final Logger logger = LoggerFactory.getLogger(MainActivity.class);
 
@@ -68,8 +68,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
-        //Config.TENANT.setValue("tst5");
-        //Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
+        Config.TENANT.setValue("tst5");
+        Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
 
         // init self-test entries if started
         // prevent auto-load from storage
@@ -120,13 +120,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         switchToFirstFragment();
 
-        /* added for scrollview */
-/*
-        scrollView = findViewById(R.id.ButtonScrollView);
-        scrollView.setOnTouchListener(this);
-        scrollView.getViewTreeObserver().addOnScrollChangedListener(this);
-*/
     }
+
 
     private void loadFragment(Fragment fragment) {
         logger.info("Loading fragment: {}", fragment.getClass().getSimpleName());
@@ -148,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // called in runOnUiThread from onTopicChangedListener
         logger.info("Refreshing MainActivity UI for topic: {}", Entries.getCurrentEntryKey().getFullPath());
         updateActionBarTitle( );
-        //
+         //
         UtilDebug.logCompactCallStack("MainActivity refresh");
         // UtilDebug.inspectView();
     }
@@ -232,7 +227,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }).start();
             return true;
-        } else if (id == R.id.action_refresh) {
+    } else if (id == R.id.action_check) {
+        Entries.setCurrentEntryKey(new EntryKey("/_/check"));
+    } else if (id == R.id.action_refresh) {
             logger.info("Refresh UI");
             // force refresh of FirstFragment
             runOnUiThread(() -> {
@@ -292,40 +289,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
 
-    /*
-            S C R O L L V I E W
-     */
-
-    // prevent self bounce
-
-
-    boolean recursionGuard = false;
-    public void onScrollChanged(){
-        //if (recursionGuard) return;
-        recursionGuard = true;
-        // Detect scrollview top and bottom
-        View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
-        int topDetector = scrollView.getScrollY();
-        int bottomDetector = view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY());
-        if(bottomDetector == 0 ){
-            //scrollView.scrollTo(0,scrollView.getBottom()/2);
-            Toast.makeText(getBaseContext(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
-        }
-        if(topDetector <= 0){
-            // scrollView.scrollTo(0,scrollView.getBottom()/2);
-            Toast.makeText(getBaseContext(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
-        }
-        recursionGuard = false;
-    }
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         // forward touch event to child views
         logger.debug("MainActivity onTouch: event: " + event.toString());
-        View viewTouchedInProgress = Entries.getViewTouchedInProgress();
+        CustomOnTouchListener viewTouchedInProgress = Entries.getViewTouchedInProgress();
         if (viewTouchedInProgress != null ) {
             // prevent scrolling once Direction is Set
             // true to consume event here -> prevent scrollview from scrolling
-            boolean b = viewTouchedInProgress.dispatchTouchEvent(event);
+            boolean b = viewTouchedInProgress.onTouch( new MotionEventFixed( event) );
             // TODO KLUDGE - check direction
             boolean b2 = CustomOnTouchListener.isDirectionX;
             Log.d(TAG, "MainActivity onTouch: forwarded, returned: " + b +" is:" + b2 + " event: " + event.toString());

@@ -9,36 +9,42 @@ import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class TextViewAppender {
     private static final Logger log = LoggerFactory.getLogger(TextViewAppender.class);
     private static TextView logTextView;
     private static final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    private static List<String> logLines = Collections.synchronizedList(new ArrayList<>());
+    private static long nextTimestampToFlush = 0;
+
     public static void initialize(TextView textView) {
         logTextView = textView;
     }
 
     public static String appendLog(String message) {
-        if (logTextView != null) {
-            uiHandler.post(() -> {
-                // insert at beginning - top to bottom
-                logTextView.setText(String.format("%s\n%s", message, logTextView.getText().toString()));
-                // trim to newest 1000 lines
-                int maxLines = 300;
-                int lineCount = logTextView.getLineCount();
-                if (lineCount > maxLines) {
-                    String text = logTextView.getText().toString();
-                    List<String> split = Arrays.asList(text.split("\n"));
-                    // keep only the newest maxLines lines
-                    if (split.size() > maxLines) {
-                        split = split.subList(0, maxLines - 20);
-                        logTextView.setText(String.join("\n", split));
-                    }
-                }
-            });
+        logLines.add(message);
+        while (logLines.size() > 500) {
+            // remove oldest 50 lines
+            logLines.subList(0, 50).clear();
+        }
+        long currentTime = System.currentTimeMillis();
+        if (logTextView != null
+                && logTextView.getVisibility() == TextView.VISIBLE
+                && currentTime > nextTimestampToFlush) {
+            // Delay update in 500ms - Batch updates to avoid UI lag
+            nextTimestampToFlush = currentTime + 500;
+            uiHandler.postDelayed(() -> {
+                // still have issues with concurrent modification exception, so make a copy
+                ArrayList<String> logLinesCopy = new ArrayList<>(logLines);
+                String join = String.join("\n", logLinesCopy);
+                logTextView.setText(join);
+            }, 500);
         }
         return message;
     }

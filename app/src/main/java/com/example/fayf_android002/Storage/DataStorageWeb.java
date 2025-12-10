@@ -20,9 +20,6 @@ public class DataStorageWeb {
 
     String DELETE_SUFFIX = "--";
 
-    public EntryTree readData() {
-        return readData(Config.SYSTEM.getValue(), Config.TENANT.getValue());
-    }
 
     // Fetch CSV data from a URL
     public EntryTree readData(String sid, String tid) {
@@ -78,11 +75,15 @@ public class DataStorageWeb {
     }
 
     public void saveEntry(EntryKey entryKey, Entry entry) {
-        saveEntry(entryKey, entry, Config.SYSTEM.getValue(), Config.TENANT.getValue());
+        new Thread(() ->
+                saveEntry(entryKey, entry, Config.SYSTEM.getValue(), Config.TENANT.getValue())
+        ).start();
     }
 
     public void saveEntry(EntryKey entryKey, Entry entry, String sid, String tid) {
-
+        assert sid != null ;
+        assert tid != null ;
+        assert !sid.isEmpty();
         String urlString = "https://fayf.info/entry/add?sid=" + sid + "&tid=" + tid +
                 "&entry=" +  Util.encodeToUrlParam( buildStringRepresentation(entryKey, entry) );
 

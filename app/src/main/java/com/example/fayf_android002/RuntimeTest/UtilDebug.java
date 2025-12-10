@@ -2,10 +2,13 @@ package com.example.fayf_android002.RuntimeTest;
 
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.example.fayf_android002.MainActivity;
+
+import static android.view.MotionEvent.*;
 
 public class UtilDebug {
 
@@ -187,6 +190,21 @@ public class UtilDebug {
         }
 
         Log.d(TAG, compactStack.toString());
+    }
+
+    public static String eventToStr(MotionEvent event) {
+        if (event == null) {
+            return "MotionEvent: null";
+        }
+        return "MotionEvent: ACTION_"
+                +((ACTION_DOWN == event.getAction()) ? "DOWN" :
+                        ((ACTION_UP == event.getAction()) ? "UP" :
+                                ((ACTION_MOVE == event.getAction()) ? "MOVE" :
+                                        ((ACTION_CANCEL == event.getAction()) ? "CANCEL" :
+                                                Integer.toString(event.getAction()))))
+                ) +
+                " " + event.getX() +
+                ", " + event.getY();
     }
 
     public static String getBackgroundColorOfButton(View view){

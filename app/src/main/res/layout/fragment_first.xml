@@ -63,7 +63,7 @@
                 />
         <com.example.fayf_android002.UI.ButtonTouchable
                 app:layout_constraintTop_toBottomOf="@id/button2"
-                style="@style/NoteButtonStyle"
+                style="@style/TopicButtonStyle"
                 android:id="@+id/button3"
                 android:layout_width="0dp"
                 android:layout_weight=".80"
@@ -72,9 +72,10 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 />
+
         <com.example.fayf_android002.UI.ButtonTouchable
                 app:layout_constraintTop_toBottomOf="@id/button3"
-                style="@style/ButtonStyle.Light"
+                style="@style/NoteButtonStyle"
                 android:id="@+id/button4"
                 android:layout_width="0dp"
                 android:layout_weight=".80"

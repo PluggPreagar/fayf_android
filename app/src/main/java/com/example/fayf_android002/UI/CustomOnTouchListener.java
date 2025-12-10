@@ -30,8 +30,8 @@ public class CustomOnTouchListener implements View.OnTouchListener {
     private static final int MOVE_TRIGGER_THRESHOLD = 100;
 
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-    private MotionEvent firstEvent;
-    private MotionEvent lastEvent;
+    private MotionEventFixed firstEvent;
+    private MotionEventFixed lastEvent;
     private ViewGroup.MarginLayoutParams params_initial = null ;
     private StateListAnimator sla_initial = null;
     private int x_start = -1;
@@ -57,10 +57,13 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         this.fragment = ma;
     }
 
+    public long getId() {
+        return  null == view ? View.NO_ID : view.getId();
+    }
 
 
     // calculate velocity and direction
-    private boolean calculateVelocityAndDirection(MotionEvent e1, MotionEvent e2){
+    private boolean calculateVelocityAndDirection(MotionEventFixed e1, MotionEventFixed e2){
         float deltaXcur = e2.getRawX() - e1.getRawX();
         float deltaYcur = e2.getRawY() - e1.getRawY();
         logger.trace("calculateVelocityAndDirection: dXcur={}, dYcur={}",
@@ -106,7 +109,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         return Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur)) >= MOVE_THRESHOLD_MOVING;
     }
 
-    private void calculateAbsoluteDelta(MotionEvent e2){
+    private void calculateAbsoluteDelta(MotionEventFixed e2){
         if (Math.abs(deltaX) < MOVE_THRESHOLD_START) {
             deltaX = 0;
         }
@@ -118,7 +121,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
 
     // calculate if initial touch was long press
-    private void calculateLongPress(MotionEvent e){
+    private void calculateLongPress(MotionEventFixed e){
         if (!isMoveStarted && !longPressDetected) {
             long pressDuration = e.getEventTime() - e.getDownTime();
             if (pressDuration > LONG_PRESS_DURATION) {
@@ -140,7 +143,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // make sure no move happened
             // and still in touch
             listener.longPressDetected = true;
-            fragment.requireActivity().runOnUiThread(() -> {
+            MainActivity.getInstance().runOnUiThread(() -> {
                 logStatusDetail();
                 listener.onLongClick();
             });
@@ -181,36 +184,39 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         }, LONG_PRESS_DURATION);
     }
 
+    public boolean onTouch(MotionEventFixed eventFixed) {
+        return onTouchAsync(eventFixed);
+    }
+
     public boolean onTouch(View v, MotionEvent event){
-        // run on separate thread to not block UI
-        // Create a copy of the MotionEvent to ensure thread safety
-        MotionEvent eventCopy = MotionEvent.obtain(event);
-        logger.trace("onTouch called {}", eventCopy.toString());
+        return onTouchAsync(new MotionEventFixed(event));
+    }
+
+
+    public boolean onTouchAsync(MotionEventFixed eventFixed) {
         new Handler(Looper.getMainLooper()).post(() -> {
-            logger.trace("onTouch posted to main thread {}", eventCopy.toString());
-            onTouch_(v, eventCopy);
-            eventCopy.recycle(); // recycle the copied event
+            onTouch_(view, eventFixed);
         });
         return true; // consume event
     }
 
 
-    public boolean onTouch_(View v, MotionEvent event){
+    public boolean onTouch_(View v, MotionEventFixed event){
         // move btn to left
         logger.info("onTouch_ called {}", event.toString().substring(0,100));
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             logger.info("Action Down detected {}", event.toString());
-            registerTouchInProgress(v);
             // reset everything
             swipeVelocity = 0;
             view = v;
+            Entries.registerTouchInProgress( this );
             max_margin = null == v ? 0 : (int) (0.75 * v.getWidth());
             sla_initial = null;
             isMoving = false;
             isMoveStarted = false; // reset move
             isDirectionX = false; // reset direction
             touching = true;
-            firstEvent = MotionEvent.obtain(event); // store initial event as copy
+            firstEvent = event; // store initial event as copy
             x_start = (int) event.getRawX(); // as event has no fixed values -- REMOVE ??
             y_start = (int) event.getRawX();
             deltaX = 0;
@@ -224,10 +230,6 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             if (calculateVelocityAndDirection(lastEvent, event)) {
                 // debounce
-                if (null != lastEvent){
-                    lastEvent.recycle(); // recycle previous last event
-                }
-                lastEvent = MotionEvent.obtain(event); // store last event as copy
                 float dXMarginLeft = 0;
                 // move button according to deltaX - absolute
                 if (isDirectionX) {
@@ -296,7 +298,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             } else {
                 onClick();
             }
-            unregisterTouchInProgress(v); // reset
+            Entries.unregisterTouchInProgress( this ); // reset
             resetPosition(v);
             firstEvent = null; // reset
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
@@ -304,12 +306,12 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // schedule reset after short delay to allow dispatched events to arrive
             long cancelTime =  event.getEventTime();
             new android.os.Handler().postDelayed(() -> {
-                fragment.requireActivity().runOnUiThread(() -> {
+                MainActivity.getInstance().runOnUiThread(() -> {
                     if (cancelTime < event.getEventTime()) {
                         logger.info("Action Cancel ignored - later event detected {}", lastEvent.toString());
                         return; // ignore cancel as later event detected
                     }
-                    unregisterTouchInProgress(v); // reset
+                    Entries.unregisterTouchInProgress( this); // reset
                     resetPosition(v);
                     firstEvent = null; // reset
                 });
@@ -317,13 +319,13 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // --- always reset after cancel
             // TODO ... handle forwarded from CustomNestedScrollView ?
             touching = false;
-            unregisterTouchInProgress(v); // reset
+            Entries.unregisterTouchInProgress( this); // reset
             resetPosition(v);
             firstEvent = null; // reset
         } else {
             logger.warn("Unknown action detected: {}", event.toString());
             touching = false;
-            unregisterTouchInProgress(v); // reset
+            Entries.unregisterTouchInProgress( this); // reset
             resetPosition(v);
             firstEvent = null; // reset
         }
@@ -365,13 +367,6 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         v.setLayoutParams(params);
     }
 
-    protected void registerTouchInProgress(View v) {
-        Entries.registerTouchInProgress(v);
-    }
-
-    protected void unregisterTouchInProgress(View v) {
-        Entries.unregisterTouchInProgress(v);
-    }
 
     public void resetPosition(View v){
         MainActivity.getInstance().runOnUiThread (() -> {
@@ -382,7 +377,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
 
     public void resetPosition_(View v){
-        logger.info("resetPosition called {}, {}", params.leftMargin, params.rightMargin);
+        logger.info("resetPosition (button vertically) {}, {}", params.leftMargin, params.rightMargin);
         // reset button position
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
         if (params.leftMargin>0) params.leftMargin = Math.max(params.leftMargin/2, 5) - 5;
@@ -392,7 +387,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
         if (params.leftMargin>0 || params.rightMargin>0){
             new android.os.Handler().postDelayed(() -> {
-                  fragment.requireActivity().runOnUiThread(() -> {
+                  MainActivity.getInstance().runOnUiThread(() -> {
                   resetPosition(v);
                 });
             }, 50);
@@ -400,7 +395,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             if (params_initial != null) {
                 v.setStateListAnimator(sla_initial); // restore elevation change on touch
                 // or keep color change until next render ?
-                //v.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_200)); // will be reset by next render, after aktion
+                //v.setBackgroundColor(MainActivity.getInstance().getColor(R.color.purple_200)); // will be reset by next render, after aktion
                 // v.setLayoutParams(params_initial);
             }
             onMovingX( v, 0); // reset color
@@ -472,7 +467,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             // only apply once
             sla_initial = view.getStateListAnimator();
             //view.setStateListAnimator(null); // disable elevation change on touch
-            //view.setBackgroundColor(fragment.requireContext().getColor(R.color.purple_500));
+            //view.setBackgroundColor(MainActivity.getInstance().getColor(R.color.purple_500));
             //view.setElevation(20f);
             logger.info("long press visual effect applied - background color {}", view.getBackground());
             onHover( view); // strong color
@@ -494,8 +489,8 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                 : intensity < 2 ? R.color.teal_200
                 : R.color.teal_700;
         logger.info("onMovingX intensity={} -> color {}", intensity, color);
-        //int colorId = fragment.requireContext().getColor(color);
-        int colorId = ContextCompat.getColor(fragment.requireContext(), color);
+        //int colorId = MainActivity.getInstance().getColor(color);
+        int colorId = ContextCompat.getColor(MainActivity.getInstance(), color);
         //v.setStateListAnimator(null);
         //v.setBackgroundColor(Color.RED); // orange
         //((Button) v).setTextColor(Color.RED);
@@ -516,7 +511,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
 
     public void onHover(View v) {
-        int colorId = ContextCompat.getColor(fragment.requireContext(), R.color.orange_orange);
+        int colorId = ContextCompat.getColor(MainActivity.getInstance(), R.color.orange_orange);
         GradientDrawable border = new GradientDrawable();
         border.setColor(Color.TRANSPARENT); // Background color
         border.setStroke(4, colorId); // Border width and color
@@ -524,7 +519,6 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         v.setBackground(null);
         ((Button) v).setBackground(border);
     }
-
 
 
 

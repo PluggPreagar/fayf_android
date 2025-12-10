@@ -67,9 +67,10 @@ public class ActionExecutor {
             } else if ( null != view && view instanceof View ){
                 text = logName( (View) view );
             }
-
+            Fragment fragment = RuntimeTester.findFragmentOptional(action.fragmentId);
             logger.info("-- " + action.action
-                    + " on Fragment: \"" + getFragment(action).getClass().getSimpleName() + "\""
+                    + ( null == fragment ? "<unknown-fragment> : "
+                        : " on Fragment: \"" + fragment.getClass().getSimpleName() + "\"")
                     + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" : text )
                     : "" )
             );
@@ -136,6 +137,7 @@ public class ActionExecutor {
         return fragment;
     }
 
+
     private View getViewOptional(ActionQueueEntry action) {
         if ( action.viewId == ActionQueue.TO_BE_FOUND ) {
             // search view by text
@@ -144,8 +146,8 @@ public class ActionExecutor {
                 action.viewId = viewId;
             }
         }
-        Fragment fragment = getFragment(action);
-        return  action.viewId < View.VISIBLE ? null : fragment.requireView().findViewById(action.viewId);
+        Fragment fragment = RuntimeTester.findFragmentOptional(action.fragmentId);
+        return  action.viewId < View.VISIBLE || null == fragment ? null : fragment.requireView().findViewById(action.viewId);
     }
     private View getView(ActionQueueEntry action) {
         View view = getViewOptional(action);
@@ -209,7 +211,8 @@ public class ActionExecutor {
             ) {
             getActivity(action).runOnUiThread(view::performClick);
         } else { // assume it's a MenuItem from the top menu
-            MenuItem item = MainActivity.getInstance().menu.findItem(action.viewId);
+            Menu menu = MainActivity.getInstance().menu;
+            MenuItem item = null == menu ? null : menu.findItem(action.viewId);
             if (item != null) {
                 getActivity(action).runOnUiThread(() -> MainActivity.getInstance().onOptionsItemSelected(item));
             } else {

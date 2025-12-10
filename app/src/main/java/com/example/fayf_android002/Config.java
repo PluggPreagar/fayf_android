@@ -8,19 +8,19 @@ import org.slf4j.LoggerFactory;
 
 public enum Config {
 
-    VERSION("version", "1.0.0"),
-    DARK_MODE_YN("dark_mode_YN", false),
-    TEST_STRING("test_string", "default_value"),
-    ENABLE_NOTIFICATIONS_YN("enable_notifications_YN", true),
-    SHOW_LOGS("show_logs_0to3", 0),
     AUTO_SYNC_YN("auto_sync_YN", true),
+    DARK_MODE_YN("dark_mode_YN", false),
+    ENABLE_NOTIFICATIONS_YN("enable_notifications_YN", true),
     LANGUAGE("language", "en"),
-
+    RUN_SELF_TEST("self_test", false),
+    SHOW_LOGS("show_logs_0to3", 0),
+    SYSTEM("system", "sid_example"),
+    TEST_STRING("test_string", "default_value"),
     TENANT("tenant", "tst"),
 
-    SYSTEM("system", "sid_example"),
+    VERSION("version", "1.0.0"),
 
-    RUN_SELF_TEST("self_test", false),
+
 
     ;
 
@@ -109,6 +109,10 @@ public enum Config {
     public static String get(String key) {
         Config config = Config.fromKey(key);// validate key
         String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(config.value)); // validate key
+        if (content.isEmpty()) {
+            logger.warn("Config '{}' is empty, using default value '{}'", key, config.getDefaultValue());
+            content = String.valueOf(config.getDefaultValue());
+        }
         logger.info("Config read '{}' with value '{}'", key,content);
         return content;
     }
@@ -154,10 +158,9 @@ public enum Config {
 
 
     public static String DisplayName(String nodeId) {
-        String name = nodeId
-                .replace("_YN$", "")
+        return nodeId
+                .replaceFirst("_YN$", "")
                 .replaceFirst("_[0-9]+to[0-9]+$", "");
-        return name;
     }
 
 

@@ -1,10 +1,10 @@
 package com.example.fayf_android002.Entry;
 
 import android.content.Context;
-import android.view.View;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
+import com.example.fayf_android002.UI.CustomOnTouchListener;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -51,19 +51,19 @@ public class Entries {
 
     /*    TODO move to ViewModel ? */
 
-    private static View viewTouchedInProgress = null;
+    private static CustomOnTouchListener viewTouchedInProgress = null;
 
-    public static void registerTouchInProgress(View v) {
+    public static void registerTouchInProgress(CustomOnTouchListener v) {
         logger.debug("registerTouchInProgress: {} ", v.getId());
         viewTouchedInProgress = v;
     }
 
-    public static void unregisterTouchInProgress(View v) {
+    public static void unregisterTouchInProgress(CustomOnTouchListener v) {
         logger.debug("unregisterTouchInProgress: {} reset ", v.getId());
         viewTouchedInProgress = null;
     }
 
-    public static View getViewTouchedInProgress() {
+    public static CustomOnTouchListener getViewTouchedInProgress() {
         return viewTouchedInProgress;
     }
 
@@ -127,13 +127,18 @@ public class Entries {
 
 
     private static void load(EntryTree entryTree, Context context, boolean forceWeb) {
+        String system = Config.SYSTEM.getValue();
+        String tenant = Config.TENANT.getValue();
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
             entryTree.set(DataStorageLocal.loadEntries(context));
         }
-        if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
-            entryTree.set(new DataStorageWeb().readData());
+        if (tenant.endsWith(Config.TENANT_TEST_SUFFIX)) {
+            // may have changed
+            logger.info("SKIPP load entries async for tenant '{}'", tenant);
+        } else if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
+            entryTree.set(new DataStorageWeb().readData( system, tenant ));
             //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             if (entryTree.entries.size() > 0) {
@@ -161,6 +166,11 @@ public class Entries {
                 // create entry with default value
                 entryTree.set(configEntryKey, String.valueOf(config.getValue()));
                 logger.info("Created missing config entry for {} with default value '{}'"
+                        , configEntryKey.getFullPath(), config.getValue());
+            } else if (!configEntry.getContent().equals(config.getValue())) {
+                // update entry to current value
+                configEntry.setContent(config.getValue() );
+                logger.warn("Updated config entry for {} to current value '{}'"
                         , configEntryKey.getFullPath(), config.getValue());
             }
         }

@@ -69,6 +69,10 @@ public class RuntimeTester {
         return Objects.requireNonNull(fragments.get(String.valueOf(id))).fragment;
     }
 
+    public static Fragment findFragmentOptional(int id) {
+        FragmentInfo fragmentInfo = fragments.get(String.valueOf(id));
+        return fragmentInfo != null ? fragmentInfo.fragment : null;
+    }
 
 
 

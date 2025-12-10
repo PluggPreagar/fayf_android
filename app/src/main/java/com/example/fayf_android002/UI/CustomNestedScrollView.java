@@ -6,6 +6,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import androidx.core.widget.NestedScrollView;
 import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
+import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 
 public class CustomNestedScrollView extends NestedScrollView {
@@ -27,15 +29,14 @@ public class CustomNestedScrollView extends NestedScrollView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // Pass the touch event to the parent class
-        logger.debug("CustomNestedScrollView onTouchEvent: action={}", event.toString().substring(0,50));
+        MotionEventFixed eventFixed = new MotionEventFixed(event);// for debugging
+        logger.debug("CustomNestedScrollView onTouchEvent: " + eventFixed);
         boolean handled = false; // default to not handled
         // KLUDGE
-        View viewTouchedInProgress = Entries.getViewTouchedInProgress();
+        CustomOnTouchListener viewTouchedInProgress = Entries.getViewTouchedInProgress();
         if (viewTouchedInProgress != null && false) {
             logger.debug("CustomNestedScrollView delegating onTouchEvent to viewTouchedInProgress");
-            MotionEvent eventCopy = MotionEvent.obtain(event);
-            handled = viewTouchedInProgress.onTouchEvent(event);
-            eventCopy.recycle();
+            handled = viewTouchedInProgress.onTouch(eventFixed);
         }
         if (!handled) {
             handled = super.onTouchEvent(event);

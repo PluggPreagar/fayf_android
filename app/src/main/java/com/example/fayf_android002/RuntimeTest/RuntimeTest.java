@@ -38,14 +38,14 @@ public class RuntimeTest {
 
         queue.testBlock("config toggle boolean - dark_mode")
                 .click(R.id.action_settings)
-                .waitForVisible(R.id.button2, "dark_mode: false")
-                .click(R.id.button2)
+                .waitForVisible( "dark_mode: false")
+                .click("dark_mode: false")
                 .delay(500)
-                .waitForVisible(R.id.button2, "dark_mode: true")
+                .waitForVisible( "dark_mode: true")
                 .delay(500)
-                .click(R.id.button2)
+                .click("dark_mode: true")
                 .delay(500)
-                .waitForVisible(R.id.button2, "dark_mode: false")
+                .waitForVisible( "dark_mode: false")
                 .doc("navigating to hidden = non-existing entry path to force root-topic")
                 .clickUp() // TODO one clickUp should go to root if no parent
                 .clickBack()
@@ -83,8 +83,8 @@ public class RuntimeTest {
         queue.testBlock("edit t2")
                 .longClick(R.id.button2,1000).waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, newContent)
-                .click(R.id.button_send).waitForVisible(R.id.button2)
-                .isVisible(R.id.button2, newContent + " >")
+                .click(R.id.button_send)
+                .waitForVisible(newContent + " >")
                 ;
 
         queue.testBlock("add first child to t3 - by click on fab-button during edit")
