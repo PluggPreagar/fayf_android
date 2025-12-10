@@ -7,6 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.widget.NestedScrollView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.example.fayf_android002.Entry.Entries;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private static MainActivity instance = null;
     public Menu menu = null;
+    private boolean isSubmittingQuery   = false;
 
     public static MainActivity getInstance() {
         return instance;
@@ -187,7 +189,67 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         this.menu = menu; // for Runtime-Test-Access
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        // Set a listener to detect when the SearchView is expanded
+        searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+            @Override
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                // Update the search term when the SearchView is expanded
+                searchView.setQuery(Entries.getSearchQuery(), false); // Set the desired initial query
+                return true; // Return true to expand the view
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                return true; // Return true to collapse the view
+            }
+        });
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                    // Handle search query submission
+                isSubmittingQuery = true;
+                performSearch(query);
+                searchView.clearFocus(); // hide keyboard
+                searchItem.collapseActionView(); // collapse search view -> triggers onQueryTextChange with empty text
+                isSubmittingQuery = false;
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // Handle text changes in the search bar
+                if (isSubmittingQuery) {
+                    // ignore text change events triggered by query submission
+                    return true;
+                }
+                filterResults(newText);
+                return true;
+            }
+    });
+
+    super.onCreateOptionsMenu(menu);
+
+
         return true;
+    }
+
+    private void performSearch(String query) {
+        logger.info("Search submitted: {}", query);
+    }
+
+    private void filterResults(String newText) {
+        // Implement filtering logic here
+        // only if searchView is expanded - otherwise ignore, as collpasing triggers empty text change
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        logger.info("Search text changed: {}", newText);
+        Entries.setSearchQuery(newText);
+        Entries.setCurrentEntryKey( Entries.getCurrentEntryKey());
     }
 
     @Override

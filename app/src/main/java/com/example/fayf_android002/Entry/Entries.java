@@ -2,6 +2,7 @@ package com.example.fayf_android002.Entry;
 
 import android.content.Context;
 import com.example.fayf_android002.Config;
+import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
@@ -32,6 +33,15 @@ public class Entries {
 
     private static int offset = 0;
     static final int PAGE_SIZE_MIN = 20;
+    private static String searchQuery="";
+
+    public static void setSearchQuery(String newText) {
+        searchQuery = newText;
+    }
+
+    public static CharSequence getSearchQuery() {
+        return searchQuery;
+    }
 
 
 
@@ -145,6 +155,8 @@ public class Entries {
                 DataStorageLocal.saveEntries(entryTree, context);
             }
         }
+        searchQuery = "";
+        offset = 0;
         // check data integrity
         checkDataIntegrity();
         // new DataStorageLocal().saveEntries(entries);
@@ -291,11 +303,32 @@ public class Entries {
 
     public static Iterator<Map.Entry<String, Entry>> getEntriesIterator(int offset) {
         TreeMap<String, Entry> entry = entryTree.getTopic(currentEntryKey);
+        String searchQuery = Entries.searchQuery.startsWith("!") ? Entries.searchQuery.substring(1) : Entries.searchQuery;
         if (null != entry) {
-            return entry.entrySet().stream()
-                    .skip(offset)
-                    .limit(PAGE_SIZE_MIN)
-                    .iterator();
+            Iterator<Map.Entry<String, Entry>> iterator = Collections.emptyIterator();
+            if (!Entries.searchQuery.startsWith("!")) {
+                iterator = entry.entrySet().stream()
+                        .filter(e
+                                -> searchQuery.isEmpty() || e.getValue().getContent().toLowerCase().contains(searchQuery.toLowerCase()))
+                        .skip(offset)
+                        .limit(PAGE_SIZE_MIN)
+                        .iterator();
+            }
+            if (!iterator.hasNext() && !searchQuery.isEmpty()) {
+                logger.debug("getEntriesIterator: no entries found for topic {} with offset {} and searchQuery '{}'"
+                        , Entries.toString(currentEntryKey), offset, searchQuery);
+                MainActivity.notifyUser("No local matches, run global search.");
+                // search across all topics
+                iterator = entryTree.entries.values().stream()
+                        .flatMap(m -> m.entrySet().stream())
+                        .filter(e
+                                -> e.getValue().getContent().toLowerCase().contains(searchQuery.toLowerCase()))
+                        .skip(offset)
+                        .limit(PAGE_SIZE_MIN)
+                        .iterator();
+                return iterator;
+            }
+            return iterator;
         } else {
             return Collections.emptyIterator();
         }
@@ -312,6 +345,7 @@ public class Entries {
     public static void setCurrentEntryKey(EntryKey entryKey) {
         currentEntryKey = null == entryKey ? EntryTree.ROOT_ENTRY_KEY: entryKey;
         offset = 0;
+        searchQuery = "";
         callTopicChangedListeners(currentEntryKey);
     }
 

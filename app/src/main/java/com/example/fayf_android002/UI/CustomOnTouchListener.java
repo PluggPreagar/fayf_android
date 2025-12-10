@@ -301,6 +301,8 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                         }
                     }
                 }
+            } else if (isMoveStarted) {
+                logger.info("Touch released after move - no *click detected");
             } else if (longPressDetected){
                 onLongClick();
             } else {

@@ -39,6 +39,14 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     private NestedScrollView scrollView = null;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        logger.info("FirstFragment onCreate() called");
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true); // to enable menu in fragment
+    }
+
+
+    @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
@@ -251,10 +259,6 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
         super.onHiddenChanged(hidden);
     }
 
-    public void onCreate(Bundle savedInstanceState) {
-        logger.info("FirstFragment onCreate() called");
-        super.onCreate(savedInstanceState);
-    }
 
     public void onInflate(@NonNull android.content.Context context, @NonNull android.util.AttributeSet attrs, Bundle savedInstanceState) {
         logger.info("FirstFragment onInflate() called");
@@ -541,28 +545,34 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
         int offsetMove = 0;
         if(topDetector <= 0){
             // v.scrollTo(0,v.getBottom()/2);
-            Toast.makeText( MainActivity.getInstance(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
+            //Toast.makeText( MainActivity.getInstance(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
+            logger.info("ScrollView reached top");
             offsetMove = -1;
         }
         if(bottomDetector == 0 ){
             //v.scrollTo(0,v.getBottom()/2);
-            Toast.makeText( MainActivity.getInstance(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
+            //Toast.makeText( MainActivity.getInstance(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
+            logger.info("ScrollView reached bottom");
             offsetMove = 1;
         }
         if (offsetMove != 0) {
             UtilDebug.logCompactCallStack("FirstFragment.onScrollChange()");
-            offsetMove *= 5; // load 5 entries
+            offsetMove *= 10; // load 5 entries
             if (Entries.changeOffsetBy(offsetMove)) {
-                logger.info("Loading more entries after overscroll at {}",
-                        offsetMove > 0 ? "bottom" : "top");
+                logger.info("Loading more entries after overscroll at {} (offset: {}: {} of {})",
+                        offsetMove > 0 ? "bottom" : "top",
+                        offsetMove, Entries.getOffset(), Entries.getCurrentTopicSize());
+                if (!isScrollingInProgress()){
+                    scrollingInProgress = System.currentTimeMillis() + 500; // 500ms guard
+                    updateButtonsUIThread();
+                    // scroll to opposite end to prevent self bounce
+                    v.scrollTo(0, offsetMove > 0 ? 1 : v.getBottom() - v.getHeight());
+                } // prevent self bounce
             } else {
-                logger.info("No more entries to load after overscroll at {}",
-                        offsetMove > 0 ? "bottom" : "top");
+                logger.info("No more entries to load after overscroll at {} (offset {}: {} of {})",
+                        offsetMove > 0 ? "bottom" : "top",
+                        offsetMove, Entries.getOffset(), Entries.getCurrentTopicSize());
             }
-            if (!isScrollingInProgress()){
-                scrollingInProgress = System.currentTimeMillis() + 500; // 500ms guard
-                updateButtonsUIThread();
-            } // prevent self bounce
         } // move
     } // onScrollChange
 

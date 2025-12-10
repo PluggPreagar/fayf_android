@@ -265,5 +265,13 @@
                 app:layout_constraintStart_toStartOf="parent"
                 />
 
+        <View
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:background="@android:color/transparent"
+                app:layout_constraintTop_toBottomOf="@id/button20"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.example.fayf_android002.UI.CustomNestedScrollView>

@@ -52,4 +52,5 @@
     <string name="toggle_log">Toggle Log</string>
     <string name="tenant_changed_reload_toast">Change Tenant</string>
     <string name="action_check">Go to Checks</string>
+    <string name="action_search">Search</string>
 </resources>
