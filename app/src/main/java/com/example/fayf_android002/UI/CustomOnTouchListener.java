@@ -12,6 +12,7 @@ import android.widget.Button;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.FirstFragment;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.R;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
@@ -189,6 +190,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
     }
 
     public boolean onTouch(View v, MotionEvent event){
+        if (null != v) {
+            view = v; // KLUDGE
+        }
         return onTouchAsync(new MotionEventFixed(event));
     }
 
@@ -203,9 +207,13 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
     public boolean onTouch_(View v, MotionEventFixed event){
         // move btn to left
-        logger.info("onTouch_ called {}", event.toString().substring(0,100));
+        if (FirstFragment.isScrollingInProgress()) {
+            logger.debug("touch ignored( Scrolling in progress ): {}", event);
+            return true; // do not consume event
+        }
+        logger.info("onTouch_ called {}", event);
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            logger.info("Action Down detected {}", event.toString());
+            logger.info("Action Down detected {}", event);
             // reset everything
             swipeVelocity = 0;
             view = v;

@@ -21,7 +21,6 @@ import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.button.MaterialButton;
-import kotlin.jvm.Synchronized;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -513,17 +512,28 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
     // prevent self bounce
 
-    static boolean recursionGuard = false;
+    // 0 == no scroll in progress
+    // t = timestamp for reset
+    public static long scrollingInProgress = 0;
+
+    public static boolean isScrollingInProgress() {
+        if (0 == scrollingInProgress) {
+            return false;
+        }
+        if (System.currentTimeMillis() > scrollingInProgress) {
+            scrollingInProgress = 0;
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void onScrollChange(@NonNull @NotNull NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-        // TODO  KLUDGE - reset recursion guard by delay - prevent bounce (when updating buttons triggers onScrollChange again)
-        v.postDelayed(() -> recursionGuard = false, 200); // always reset after 200ms - KLUDGE ensure to get it back again ...
-        if (recursionGuard){ // KLUDGE
+        if (isScrollingInProgress()){ // KLUDGE
             logger.warn("onScrollChange recursionGuard active, skipping");
             UtilDebug.logCompactCallStack("FirstFragment.onScrollChange() recursionGuard");
             return;
         }
-        recursionGuard = true;
         // Detect scrollview top and bottom
         View view = v.getChildAt(v.getChildCount() - 1);
         int topDetector = v.getScrollY();
@@ -549,8 +559,11 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                 logger.info("No more entries to load after overscroll at {}",
                         offsetMove > 0 ? "bottom" : "top");
             }
-            updateButtonsUIThread();
-        }
-    }
+            if (!isScrollingInProgress()){
+                scrollingInProgress = System.currentTimeMillis() + 500; // 500ms guard
+                updateButtonsUIThread();
+            } // prevent self bounce
+        } // move
+    } // onScrollChange
 
 }
