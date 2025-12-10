@@ -41,9 +41,12 @@ public class TextViewAppender {
             nextTimestampToFlush = currentTime + 500;
             uiHandler.postDelayed(() -> {
                 // still have issues with concurrent modification exception, so make a copy
-                ArrayList<String> logLinesCopy = new ArrayList<>(logLines);
-                String join = String.join("\n", logLinesCopy);
-                logTextView.setText(join);
+                try{
+                    String join = String.join("\n", logLines);
+                    logTextView.setText(join);
+                } catch (Exception e) {
+                    // ignore concurrent modification
+                }
             }, 500);
         }
         return message;

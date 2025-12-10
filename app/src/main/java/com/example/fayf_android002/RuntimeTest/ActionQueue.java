@@ -302,12 +302,12 @@ public class ActionQueue {
     public ActionQueue testBlock(String msg) {
         // check current state, let app settle before
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
-                , fragmentId, -1, "", 5000, null));
+                , fragmentId, -1, "", 2000, null));
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
-                , fragmentId, R.id.button1, "c1", 5000, null));
+                , fragmentId, R.id.button1, "c1", 2000, null));
         // wait a bit
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
-                , fragmentId, -1, "", 1000, null));
+                , fragmentId, -1, "", 200, null));
         // mark a test block - reset checks
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.TEST_BLOCK
                 , fragmentId, -1, msg, 0, null));

@@ -71,11 +71,15 @@ public class InputFragment extends Fragment {
         // KeyboardUtil.showKeyboard(requireActivity(), binding.editextSecond);
         binding.editextSecond.requestFocus();
         binding.editextSecond.postDelayed(() -> {
-            binding.editextSecond.requestFocus();
-            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                view.requestFocus();
-                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+            if (null != binding.editextSecond) {
+                binding.editextSecond.requestFocus();
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    view.requestFocus();
+                    imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+                }
+            }  else {
+                logger.warn("editextSecond is null in postDelayed");
             }
         }, 200);
 
