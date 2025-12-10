@@ -219,4 +219,7 @@ public class UtilDebug {
         return colorInfo;
     }
 
+    public static void logError(String s, Exception e) {
+        Log.e(TAG, s + " Exception: " + e.getMessage());
+    }
 }

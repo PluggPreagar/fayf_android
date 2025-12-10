@@ -37,8 +37,16 @@ public class DataStorageWeb {
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                     String line;
+                    int quotes = 0 ;
                     while ((line = reader.readLine()) != null) {
-                        add(data, line);
+                        // count " in line - if odd, then continue reading
+                        quotes += line.contains("\"")
+                                ? line.length() - line.replace("\"", "").length()
+                                : 0 ;
+                        quotes = quotes % 2 ;
+                        if (0 == quotes){ // even number of quotes - complete line
+                            add(data, line);
+                        }
                     }
                 }
             } else {

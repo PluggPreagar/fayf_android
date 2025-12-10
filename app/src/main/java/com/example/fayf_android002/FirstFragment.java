@@ -15,11 +15,13 @@ import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
+import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.button.MaterialButton;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -172,6 +174,15 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     private void onTopicChanged(EntryKey entryKey) {
         logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
         updateButtonsUIThread();
+        // scroll to top, show appbar
+        binding.ButtonScrollView.scrollTo(0, 0);
+        MainActivity.getInstance().runOnUiThread(() -> {
+            // ensure scroll to top and appbar visible
+            binding.ButtonScrollView.fullScroll(View.FOCUS_UP);
+            binding.ButtonScrollView.scrollTo(0, 0);
+            AppBarLayout appBarLayout =  MainActivity.getInstance().findViewById(R.id.appbar);
+            appBarLayout.setExpanded(true, true); // Scrolls the toolbar into viewc
+        });
         binding.ButtonScrollView.post(() ->
                 {
                     /*
@@ -381,8 +392,10 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
         if (!entriesIterator.hasNext()) {
             logger.info("No entries found for topic: {}, offset: {}", topic, offset);
             //Entries.upOneTopicLevel(); // will trigger callback to update buttons again --> RECURSIVE LOOP !!
-            // Toast message
-            Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
+            if (!topic.equals(EntryTree.ROOT_ENTRY_KEY.getFullPath())) {
+                // Toast message - suppressed to avoid spam on startup
+                Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
+            }
         } else {
 
             while (entriesIterator.hasNext() && limit > 0) {
