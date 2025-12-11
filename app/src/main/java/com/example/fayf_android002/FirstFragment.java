@@ -79,6 +79,17 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
             onTopicChanged(entry);
         });
 
+        Entries.setOnDataChangedListener(FIRST_FRAGMENT, k -> {
+            if (!this.isVisible()) {
+                // somehow I removed the listener on onDestroyView
+                // but it missed the onCreateView call to re-listen
+                logger.info("Data changed callback received, but Fragment not visible, skipping UI update");
+                return; //rather than set/reset listener on onResume/onPause
+            }
+            logger.info("Data changed callback received, updating buttons - but keep topic and offset");
+            updateButtonsUIThread();
+        });
+
         // on overscroll the bottom of button list
         // then top entries are out of reach
 
@@ -454,13 +465,13 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
                         @Override
                         public void onSwipeRight() {
-                            MainActivity.notifyUser("Swiped right on entry: " + entry.content);
+                            MainActivity.notifyUser("Up(" + entry.rank + ") ");
                             //Entries.setTopicEntry(entry); // set topic to this entry
                             Entries.voteUp(btn.getEntryKey());
                         }
                         @Override
                         public void onSwipeLeft() {
-                            MainActivity.notifyUser("Swiped left on entry: " + entry.content);
+                            MainActivity.notifyUser("Down(" + entry.rank + ") ");
                             //navigateToEdit(entry); // navigate to edit this entry
                             Entries.voteDown(btn.getEntryKey());
                         }

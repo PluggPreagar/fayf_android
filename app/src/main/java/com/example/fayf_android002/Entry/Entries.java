@@ -3,11 +3,15 @@ package com.example.fayf_android002.Entry;
 import android.content.Context;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
+import com.example.fayf_android002.Util;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +23,7 @@ public class Entries {
 
     private static Entries instance = new Entries();
     private static Map<String, OnTopicChanged> topicListener = new ConcurrentHashMap<>();
+    private static Map<String, OnDataChanged> dataListener = new ConcurrentHashMap<>();
     private static EntryTree entryTree = new EntryTree();
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -53,6 +58,10 @@ public class Entries {
     public interface OnTopicChanged {
         void onTopicChanged(EntryKey topic);
 
+    }
+
+    public interface OnDataChanged {
+        void onDataChanged(EntryKey entryKey);
     }
 
 
@@ -107,7 +116,7 @@ public class Entries {
     }
 
     public static void callTopicChangedListeners(EntryKey topic) {
-
+        UtilDebug.logCompactCallStack("callTopicChangedListeners");
         for (Map.Entry<String, OnTopicChanged> e : topicListener.entrySet()) {
             if ( null != e.getValue()) {
                 logger.debug("callTopicChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
@@ -117,6 +126,31 @@ public class Entries {
             }
         }
     }
+
+    /* Data Changed - just refresh, but keep offset and topic */
+
+    public static void setOnDataChangedListener(String clientKey, OnDataChanged listener) {
+        // allow multiple listeners - map by clientKey / allow replacing or removing
+        if (null == listener) {
+            Entries.dataListener.remove(clientKey);
+        } else {
+            Entries.dataListener.put(clientKey, listener);
+        }
+    }
+
+    public static void callDataChangedListeners(EntryKey topic) {
+
+        for (Map.Entry<String, OnDataChanged> e : dataListener.entrySet()) {
+            if ( null != e.getValue()) {
+                logger.debug("callDataChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
+                e.getValue().onDataChanged(topic); // null signals complete reload
+            } else {
+                logger.debug("callDataChangedListeners: SKIPP {} has null listener for {} ", e.getKey(), Entries.toString(topic) );
+            }
+        }
+    }
+
+
 
     public static String toString(EntryKey topic) {
         if (null == topic) {
@@ -184,7 +218,7 @@ public class Entries {
             }
         }
         // entry content should have ">"-suffix for topics
-        for (Map.Entry<String, TreeMap<String, Entry>> topicEntry : entryTree.entries.entrySet()) {
+        for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
             //  /
             //      n1 -> c1
             //      n2 -> c2
@@ -243,6 +277,7 @@ public class Entries {
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP save entries async (locale tenant '{}')", Config.TENANT.getValue());
         } else {
+            UtilDebug.logCompactCallStack("save entries async");
             executorService.execute(() -> {
                 try {
                     DataStorageLocal.saveEntries(entryTree, context);
@@ -299,7 +334,7 @@ public class Entries {
     }
 
     public static Iterator<Map.Entry<String, Entry>> getEntriesIterator(int offset) {
-        TreeMap<String, Entry> entry = entryTree.getTopic(currentEntryKey);
+        SortedEntryMap entry = entryTree.getTopic(currentEntryKey);
         String searchQuery = Entries.searchQuery.startsWith("!") ? Entries.searchQuery.substring(1) : Entries.searchQuery;
         if (null != entry) {
             Iterator<Map.Entry<String, Entry>> iterator = Collections.emptyIterator();
@@ -423,12 +458,12 @@ public class Entries {
     }
 
     public static int getCurrentTopicSize() {
-        TreeMap<String, Entry> topicEntries = entryTree.getTopic(currentEntryKey);
+        SortedEntryMap topicEntries = entryTree.getTopic(currentEntryKey);
         return null != topicEntries ? topicEntries.size() : 0;
     }
 
     public static int sizeTopic(EntryKey entryKey) {
-        TreeMap<String, Entry> topicEntries = entryTree.getTopic(entryKey);
+        SortedEntryMap topicEntries = entryTree.getTopic(entryKey);
         return null != topicEntries ? topicEntries.size() : 0;
     }
 
@@ -440,12 +475,16 @@ public class Entries {
         Entry entry = getEntry(entryKey);
         // TODO implement vote up logic  -- TreeMap orders by key only
         entry.rank ++;
+        entryTree.entries.get(entryKey.topic).sortByValue();
+        callDataChangedListeners(entryKey);
     }
 
     public static void voteDown(EntryKey entryKey) {
         Entry entry = getEntry(entryKey);
         // TreeMap orders by key only
         entry.rank --;
+        entryTree.entries.get(entryKey.topic).sortByValue();
+        callDataChangedListeners(entryKey);
     }
 
 

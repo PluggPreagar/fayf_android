@@ -1,24 +1,14 @@
 package com.example.fayf_android002.Entry;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 public class EntryTree {
 
     public static EntryKey ROOT_ENTRY_KEY = new EntryKey( EntryKey.PATH_SEPARATOR , "");
 
-    public TreeMap<String, TreeMap<String, Entry>> entries = getNewTreeMap();
+    public SortedEntryTreeMap entries = new SortedEntryTreeMap();
 
-    public static TreeMap<String,TreeMap<String, Entry>> getNewTreeMap() {
-        return new TreeMap<>(new EntryComparator());
-    }
-
-    public static TreeMap<String, Entry> getNewTreeChildMap() {
-        return new TreeMap<String, Entry>( new EntryComparator());
-    }
 
     public Entry get(EntryKey key) {
-        TreeMap<String, Entry> stringEntryTreeMap = entries.get(key.topic);
+        SortedEntryMap stringEntryTreeMap = entries.get(key.topic);
         if (null != stringEntryTreeMap) {
             Entry entry = stringEntryTreeMap.get(key.nodeId);
             if (null != entry) {
@@ -28,14 +18,14 @@ public class EntryTree {
         return null;
     }
 
-    public TreeMap<String, Entry> getTopic(EntryKey key) {
+    public SortedEntryMap getTopic(EntryKey key) {
         return entries.get(key.getFullPath());
     }
 
 
 
     public String remove(EntryKey key) {
-        TreeMap<String, Entry> stringEntryTreeMap = entries.get(key.topic);
+        SortedEntryMap stringEntryTreeMap = entries.get(key.topic);
         if (null != stringEntryTreeMap) {
             Entry entry = stringEntryTreeMap.remove(key.nodeId);
             if (null != entry) {
@@ -46,8 +36,8 @@ public class EntryTree {
     }
 
     public Entry set(EntryKey key, String content) {
-        TreeMap<String, Entry> stringEntryTreeMap = entries.computeIfAbsent(key.topic
-                , k -> EntryTree.getNewTreeChildMap());
+        SortedEntryMap stringEntryTreeMap = entries.computeIfAbsent(key.topic
+                , k -> new SortedEntryMap());
         Entry entry = stringEntryTreeMap.get(key.nodeId);
         if (null == entry) {
             entry = new Entry(content);
@@ -71,7 +61,7 @@ public class EntryTree {
 
     public int size() {
         int size = 0;
-        for (TreeMap<String, Entry> topicEntries : entries.values()) {
+        for (SortedEntryMap topicEntries : entries.values()) {
             size += topicEntries.size();
         }
         return size;

@@ -4,6 +4,7 @@ import android.content.Context;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryTree;
+import com.example.fayf_android002.Entry.SortedEntryTreeMap;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ public class DataStorageLocal {
         EntryTree entries = new EntryTree();
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream( context.openFileInput( filePath)))) {
-            entries.entries = (TreeMap<String, TreeMap<String, Entry>>) ois.readObject();
+            entries.entries = (SortedEntryTreeMap) ois.readObject();
             logger.info("Entries read from file: {} ({} entries)", filePath, entries.size());
         } catch (Exception e) {
             UtilDebug.logError("Error reading entries from file: " + filePath , e);

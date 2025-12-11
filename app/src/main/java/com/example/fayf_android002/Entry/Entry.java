@@ -25,4 +25,7 @@ public class Entry implements java.io.Serializable {
         this.content = content;
     }
 
+    public int getRank() {
+        return rank;
+    }
 }

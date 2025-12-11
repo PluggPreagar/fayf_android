@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private ActivityMainBinding binding;
     NestedScrollView scrollView;
+
+    private EntryViewModel entryViewModel;
 
     private static MainActivity instance = null;
     public Menu menu = null;
@@ -57,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         instance = this;
 
+        // keep state on orientation change - use ViewModel
+        entryViewModel = new ViewModelProvider(this).get(EntryViewModel.class);
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -68,7 +74,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         setSupportActionBar(binding.toolbar);
 
-        Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
+        // keep current entry on orientation change
+        // Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
         if (Config.SHOW_LOGS.asBoolean()) {
             binding.logScrollView.setVisibility(View.VISIBLE);
@@ -161,7 +168,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     public void onDestroy() {
         logger.info("MainActivity onDestroy() called");
-        Entries.save( getApplicationContext());
         super.onDestroy();
     }
 
