@@ -243,16 +243,18 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             if (calculateVelocityAndDirection(lastEvent, event)) {
                 // debounce
-                float dXMarginLeft = 0;
+                ;
                 // move button according to deltaX - absolute
                 if (isDirectionX) {
                     if (Math.abs(deltaX) > MOVE_THRESHOLD_START) {
                         if ( 0 == max_margin || Math.abs(deltaX) < max_margin ) {
                             // keep minimum size
-                            dXMarginLeft = params.leftMargin;
+                            float dXMarginLeft = params.leftMargin;
                             params.leftMargin = deltaX > 0 ? (int) deltaX : 0;
                             params.rightMargin = deltaX < 0 ? (int) -deltaX : 0;
                             dXMarginLeft = params.leftMargin - dXMarginLeft; // actual change to compensate changing starting point
+                            //
+                            updateLayout(v);
                         }
                     }
                 }
@@ -264,18 +266,46 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                             *  (Math.abs(deltaX) < MOVE_TRIGGER_THRESHOLD ? 1 : 2));
                     logger.info("moved : dX={} -> button color change {}", deltaX, UtilDebug.getBackgroundColorOfButton(v) );
                 }
-                ;
-                updateLayout(v, dXMarginLeft);
             }
             // iterate
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             logger.debug("Action Up detected {}", event.toString());
             // log all variables
+            handleTouchEnd(v, event);
+        } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+            logger.info("Action Cancel detected .. wait vor dispatched events {} ", event.toString());
             logStatusDetail();
+            // schedule reset after short delay to allow dispatched events to arrive
+            long cancelTime =  event.getEventTime();
+            new android.os.Handler().postDelayed(() -> {
+                MainActivity.getInstance().runOnUiThread(() -> {
+                    if (cancelTime < event.getEventTime()) {
+                        logger.info("Action Cancel ignored - later event detected {}", lastEvent.toString());
+                        return; // ignore cancel as later event detected
+                    }
+                    logger.info("Action Cancel processed after delay {}", event.toString());
+                    handleTouchEnd(v, event);
+                });
+            }, 100); // robust for short leaving or hand over to CustomNestedScrollView
+            // --- always reset after cancel
+            // TODO ... handle forwarded from CustomNestedScrollView ?
+        } else {
+            logger.warn("Unknown action detected: {}", event.toString());
+            handleTouchEnd(v, event);
+        }
+        return isDirectionX; // consume event if moved in X direction
+        //return false; // allow other events like onClick to be processed
+        //return true; // consume event
+    }
+
+    private void handleTouchEnd(View v, MotionEventFixed event) {
+        if (touching){
+
             touching = false;
             calculateLongPress(event); // check for long press on release, if moved it already was checked
             calculateVelocityAndDirection(lastEvent, event);
             calculateAbsoluteDelta(event);
+            logStatusDetail();
             if (swipeVelocity > 0) {
                 if (isDirectionX) {
                     if (deltaX < 0) {
@@ -313,42 +343,10 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             } else {
                 onClick();
             }
-            Entries.unregisterTouchInProgress( this ); // reset
-            resetPosition(v);
-            firstEvent = null; // reset
-        } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-            logger.info("Action Cancel detected .. wait vor dispatched events {} ", event.toString());
-            logStatusDetail();
-            // schedule reset after short delay to allow dispatched events to arrive
-            long cancelTime =  event.getEventTime();
-            new android.os.Handler().postDelayed(() -> {
-                MainActivity.getInstance().runOnUiThread(() -> {
-                    if (cancelTime < event.getEventTime()) {
-                        logger.info("Action Cancel ignored - later event detected {}", lastEvent.toString());
-                        return; // ignore cancel as later event detected
-                    }
-                    logger.info("Action Cancel processed after delay {}", event.toString());
-                    Entries.unregisterTouchInProgress( this); // reset
-                    resetPosition(v);
-                    firstEvent = null; // reset
-                });
-            }, 100);
-            // --- always reset after cancel
-            // TODO ... handle forwarded from CustomNestedScrollView ?
-            touching = false;
-            Entries.unregisterTouchInProgress( this); // reset
-            resetPosition(v);
-            firstEvent = null; // reset
-        } else {
-            logger.warn("Unknown action detected: {}", event.toString());
-            touching = false;
-            Entries.unregisterTouchInProgress( this); // reset
-            resetPosition(v);
-            firstEvent = null; // reset
-        }
-        return isDirectionX; // consume event if moved in X direction
-        //return false; // allow other events like onClick to be processed
-        //return true; // consume event
+        } // touching
+        Entries.unregisterTouchInProgress( this ); // reset
+        resetPosition(v);
+        firstEvent = null; // reset
     }
 
 
@@ -370,22 +368,23 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
         params_initial = new ViewGroup.MarginLayoutParams(params); // store copy of initial params
         params.height = v.getHeight(); // keep height - even if it is wrap content on shrink
-        updateLayout(v, 0);
+        updateLayout(v);
     }
 
-    public void updateLayout(View v, float dXMarginLeft) {
+    public void updateLayout(View v) {
         MainActivity.getInstance().runOnUiThread (() -> {
-            updateLayout_(v, dXMarginLeft);
+            updateLayout_(v);
         });
     }
 
-    protected void updateLayout_(View v, float dXMarginLeft) {
-        logger.info("updateLayout called - margin l/r {}, {}", params.leftMargin, params.rightMargin);
+    protected void updateLayout_(View v) {
+        // logger.info("updateLayout called - margin l/r {}, {}", params.leftMargin, params.rightMargin);
         v.setLayoutParams(params);
     }
 
 
     public void resetPosition(View v){
+        // logger.info("SKIPP resetPosition");
         MainActivity.getInstance().runOnUiThread (() -> {
             // run on UI thread
             resetPosition_(v);
@@ -417,8 +416,6 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             }
             onMovingX( v, 0); // reset color
         }
-
-
     }
 
 
