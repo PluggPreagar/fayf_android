@@ -349,7 +349,7 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
             }
         }
-        binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
         logger.info("Initialized buttons in ButtonList, total count: {} ", buttonList.getChildCount());
     }
 
@@ -456,11 +456,13 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                         public void onSwipeRight() {
                             MainActivity.notifyUser("Swiped right on entry: " + entry.content);
                             //Entries.setTopicEntry(entry); // set topic to this entry
+                            Entries.voteUp(btn.getEntryKey());
                         }
                         @Override
                         public void onSwipeLeft() {
                             MainActivity.notifyUser("Swiped left on entry: " + entry.content);
                             //navigateToEdit(entry); // navigate to edit this entry
+                            Entries.voteDown(btn.getEntryKey());
                         }
 
 

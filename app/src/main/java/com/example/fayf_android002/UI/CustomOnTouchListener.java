@@ -1,5 +1,8 @@
 package com.example.fayf_android002.UI;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.animation.StateListAnimator;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -9,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
@@ -30,7 +34,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
     private static final int MOVE_TRIGGER_THRESHOLD = 100;
 
-    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    private static final int SWIPE_VELOCITY_THRESHOLD = 30;
     private MotionEventFixed firstEvent;
     private MotionEventFixed lastEvent;
     private ViewGroup.MarginLayoutParams params_initial = null ;
@@ -231,6 +235,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             deltaY = 0;
             lastEvent = firstEvent; // store last event as copy
             longPressDetected = false;
+            onTouchDown(v);
             fixateLayout(v);
             initLongPressCheckByTimeout(v);
         } else if (null == firstEvent) {
@@ -313,6 +318,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             firstEvent = null; // reset
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
             logger.info("Action Cancel detected .. wait vor dispatched events {} ", event.toString());
+            logStatusDetail();
             // schedule reset after short delay to allow dispatched events to arrive
             long cancelTime =  event.getEventTime();
             new android.os.Handler().postDelayed(() -> {
@@ -321,6 +327,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                         logger.info("Action Cancel ignored - later event detected {}", lastEvent.toString());
                         return; // ignore cancel as later event detected
                     }
+                    logger.info("Action Cancel processed after delay {}", event.toString());
                     Entries.unregisterTouchInProgress( this); // reset
                     resetPosition(v);
                     firstEvent = null; // reset
@@ -530,6 +537,35 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         ((Button) v).setBackground(border);
     }
 
+    public void onTouchDown(View v) {
+        // Override this method in your fragment or activity
+        MainActivity.getInstance().runOnUiThread (() -> {
+            int colorId = ContextCompat.getColor(MainActivity.getInstance(), R.color.purple_200);
+            GradientDrawable border = new GradientDrawable();
+            border.setColor(Color.TRANSPARENT); // Background color
+            border.setStroke(2, colorId); // Border width and color
+            border.setCornerRadius(32); // Optional: Rounded corners
+            v.setBackground(null);
+            ((Button) v).setBackground(border);
+            // fade out after short delay
+            fadeOutBorder(v);
+        });
+    }
+
+    private void fadeOutBorder(View v) {
+        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(v, "alpha", 1f, 0.5f);
+        fadeOut.setDuration(500); // Duration in milliseconds
+        fadeOut.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                v.setBackground(null); // Remove the border after fading out
+                v.setAlpha(1f); // Reset alpha for future interactions
+            }
+
+        });
+        fadeOut.start();
+    }
 
 
 }

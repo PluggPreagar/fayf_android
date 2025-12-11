@@ -28,6 +28,11 @@ public class TextViewAppender {
     }
 
     public static String appendLog(String message) {
+        // do not repeat same message
+        if (!logLines.isEmpty()
+                && logLines.get(logLines.size() - 1).equals(message)) {
+            return message;
+        }
         logLines.add(message);
         while (logLines.size() > 500) {
             // remove oldest 50 lines
@@ -42,7 +47,9 @@ public class TextViewAppender {
             uiHandler.postDelayed(() -> {
                 // still have issues with concurrent modification exception, so make a copy
                 try{
-                    String join = String.join("\n", logLines);
+                    ArrayList<String> logLines1 = new ArrayList<>(logLines);
+                    Collections.reverse(logLines1);
+                    String join = String.join("\n", logLines1);
                     logTextView.setText(join);
                 } catch (Exception e) {
                     // ignore concurrent modification

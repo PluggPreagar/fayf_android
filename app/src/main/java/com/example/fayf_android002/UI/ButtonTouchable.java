@@ -30,6 +30,10 @@ public class ButtonTouchable extends MaterialButton {
         this.fragment = fragment;
     }
 
+    public EntryKey getEntryKey() {
+        return entryKey;
+    }
+
     public ButtonTouchable(android.content.Context context) {
         super(context);
     }

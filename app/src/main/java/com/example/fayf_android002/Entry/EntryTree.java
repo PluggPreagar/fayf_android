@@ -1,5 +1,6 @@
 package com.example.fayf_android002.Entry;
 
+import java.util.Map;
 import java.util.TreeMap;
 
 public class EntryTree {
@@ -13,7 +14,7 @@ public class EntryTree {
     }
 
     public static TreeMap<String, Entry> getNewTreeChildMap() {
-        return new TreeMap<>(new EntryComparator());
+        return new TreeMap<String, Entry>( new EntryComparator());
     }
 
     public Entry get(EntryKey key) {

@@ -7,10 +7,7 @@ import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -438,5 +435,18 @@ public class Entries {
     public static boolean isTopic(EntryKey entryKey) {
         return entryTree.getTopic(entryKey) != null;
     }
+
+    public static void voteUp(EntryKey entryKey) {
+        Entry entry = getEntry(entryKey);
+        // TODO implement vote up logic  -- TreeMap orders by key only
+        entry.rank ++;
+    }
+
+    public static void voteDown(EntryKey entryKey) {
+        Entry entry = getEntry(entryKey);
+        // TreeMap orders by key only
+        entry.rank --;
+    }
+
 
 }

@@ -9,6 +9,7 @@ public class Entry implements java.io.Serializable {
 
     // Content
     public String content;
+    public int rank = 0;
 
     public Entry(String content) {
         this.content = content;
