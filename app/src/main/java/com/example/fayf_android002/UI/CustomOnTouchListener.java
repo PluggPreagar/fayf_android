@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.StateListAnimator;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -385,10 +386,13 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
     public void resetPosition(View v){
         // logger.info("SKIPP resetPosition");
-        MainActivity.getInstance().runOnUiThread (() -> {
-            // run on UI thread
-            resetPosition_(v);
-        });
+        if (true){
+            MainActivity.getInstance().runOnUiThread (() -> {
+                // run on UI thread
+                resetPosition_(v);
+            });
+
+        } //
     }
 
 
@@ -499,16 +503,20 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         // Override this method in your fragment or activity
         int color = intensity < -1 ? R.color.red_700
                 : intensity < 0 ? R.color.red_200
-                : intensity < 1 ? R.color.black
+                : intensity < 1 ? R.color.transparent
                 : intensity < 2 ? R.color.teal_200
                 : R.color.teal_700;
+
         logger.info("onMovingX intensity={} -> color {}", intensity, color);
+
+
         //int colorId = MainActivity.getInstance().getColor(color);
         int colorId = ContextCompat.getColor(MainActivity.getInstance(), color);
         //v.setStateListAnimator(null);
         //v.setBackgroundColor(Color.RED); // orange
         //((Button) v).setTextColor(Color.RED);
-        ((Button) v).setTextColor(colorId); // works
+        int textColor = intensity != 0 ? R.color.white : R.color.black;
+        ((Button) v).setTextColor( ContextCompat.getColor(MainActivity.getInstance(), textColor )); // works
         //((Button) v).setShadowLayer(5, 4, 4, colorId);
         //((Button) v).setBackgroundColor(colorId); // does not work ...
         GradientDrawable border = new GradientDrawable();
@@ -520,9 +528,28 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             border.setCornerRadius(32); // Optional: Rounded corners
         }
         v.setBackground(null);
+        setColor(v, color);
         ((Button) v).setBackground(border);
+
+
     }
 
+
+    public void setColor(View v, int colorResId) {
+        // background
+        v.setBackground(null);
+        // reset background
+        //v.setBackgroundResource(android.R.color.white);
+        // set background #FFFFFFFF
+        v.setBackgroundColor(ContextCompat.getColor(MainActivity.getInstance(), R.color.white));
+        // set Background tint
+        v.setBackgroundTintList(ContextCompat.getColorStateList(MainActivity.getInstance(), colorResId));
+        // set full background
+        v.setBackground(ContextCompat.getDrawable(MainActivity.getInstance(), colorResId));
+        // src_over
+        v.setBackgroundTintMode(PorterDuff.Mode.SRC_OVER);
+
+    }
 
     public void onHover(View v) {
         int colorId = ContextCompat.getColor(MainActivity.getInstance(), R.color.orange_orange);
