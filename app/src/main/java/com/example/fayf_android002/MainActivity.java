@@ -374,7 +374,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             // true to consume event here -> prevent scrollview from scrolling
             boolean b = viewTouchedInProgress.onTouch( new MotionEventFixed( event) );
             // TODO KLUDGE - check direction
-            boolean b2 = CustomOnTouchListener.isDirectionX;
+            boolean b2 = CustomOnTouchListener.directionX;
             Log.d(TAG, "MainActivity onTouch: forwarded, returned: " + b +" is:" + b2 + " event: " + event.toString());
             return b2;
         } else {

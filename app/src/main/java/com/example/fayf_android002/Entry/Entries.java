@@ -471,21 +471,13 @@ public class Entries {
         return entryTree.getTopic(entryKey) != null;
     }
 
-    public static void voteUp(EntryKey entryKey) {
+    public static void vote(EntryKey entryKey, int delta) {
         Entry entry = getEntry(entryKey);
         // TODO implement vote up logic  -- TreeMap orders by key only
-        entry.rank ++;
+        entry.rank += delta;
         entryTree.entries.get(entryKey.topic).sortByValue();
         callDataChangedListeners(entryKey);
     }
-
-    public static void voteDown(EntryKey entryKey) {
-        Entry entry = getEntry(entryKey);
-        // TreeMap orders by key only
-        entry.rank --;
-        entryTree.entries.get(entryKey.topic).sortByValue();
-        callDataChangedListeners(entryKey);
-    }
-
+    
 
 }

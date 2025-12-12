@@ -104,10 +104,10 @@ class TestableOnTouchListener extends CustomOnTouchListener {
     public Map<String, String> getState() {
         state.put("deltaX", String.valueOf(this.deltaX));
         state.put("deltaY", String.valueOf(this.deltaY));
-        state.put("swipeVelocity", String.valueOf(this.swipeVelocity));
-        state.put("isDirectionX", String.valueOf(this.isDirectionX));
-        state.put("isMoveStarted", String.valueOf(this.isMoveStarted));
-        state.put("isMoving", String.valueOf(this.isMoving));
+        state.put("swipeVelocity", String.valueOf(this.velocity));
+        state.put("isDirectionX", String.valueOf(this.directionX));
+        state.put("isMoveStarted", String.valueOf(this.moveStarted));
+        state.put("isMoving", String.valueOf(this.moving));
         return state;
     }
 

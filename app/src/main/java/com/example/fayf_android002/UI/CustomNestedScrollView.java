@@ -34,7 +34,8 @@ public class CustomNestedScrollView extends NestedScrollView {
         boolean handled = false; // default to not handled
         // KLUDGE
         CustomOnTouchListener viewTouchedInProgress = Entries.getViewTouchedInProgress();
-        if (viewTouchedInProgress != null && false) {
+        if (viewTouchedInProgress != null ) {
+            // need to inform about moving-on ...
             logger.debug("CustomNestedScrollView delegating onTouchEvent to viewTouchedInProgress");
             handled = viewTouchedInProgress.onTouch(eventFixed);
         }

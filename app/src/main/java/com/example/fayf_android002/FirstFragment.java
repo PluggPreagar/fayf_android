@@ -465,15 +465,17 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
                         @Override
                         public void onSwipeRight() {
-                            MainActivity.notifyUser("Up(" + entry.rank + ") ");
+                            MainActivity.notifyUser("Up(" + (entry.rank + 1) + ") ");
                             //Entries.setTopicEntry(entry); // set topic to this entry
-                            Entries.voteUp(btn.getEntryKey());
+                            Entries.vote(btn.getEntryKey(), +1);
                         }
                         @Override
                         public void onSwipeLeft() {
-                            MainActivity.notifyUser("Down(" + entry.rank + ") ");
+                            MainActivity.notifyUser("Down(" + (entry.rank +(entry.rank > 0 ? -2 : -1)) + ") ");
                             //navigateToEdit(entry); // navigate to edit this entry
-                            Entries.voteDown(btn.getEntryKey());
+                            // allow Workflow
+                            //      unvoted (Backlog) -> Upvoted (WIP) -> Downvoted (DONE ) -> unvoted (Backlog)
+                            Entries.vote(btn.getEntryKey(), entry.rank == 1 ? -2 : -1);
                         }
 
 

@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.Entries;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class CustomOnTouchListener implements View.OnTouchListener {
 
+    private static int TOUCH_LOCK_TIMEOUT = 100;
     private final int LONG_PRESS_DURATION = 750;
     Logger logger = LoggerFactory.getLogger(CustomOnTouchListener.class);
 
@@ -38,23 +38,24 @@ public class CustomOnTouchListener implements View.OnTouchListener {
     private static final int SWIPE_VELOCITY_THRESHOLD = 30;
     private MotionEventFixed firstEvent;
     private MotionEventFixed lastEvent;
-    private ViewGroup.MarginLayoutParams params_initial = null ;
     private StateListAnimator sla_initial = null;
     private int x_start = -1;
     private int y_start = -1;
 
     private final Fragment fragment;
     private View  view;
-    protected boolean longPressDetected = false;
+    protected boolean longPress = false;
     protected float deltaX = 0;
     protected float deltaY = 0;
     private float velocityX = 0;
     private float velocityY = 0;
-    protected float swipeVelocity = 0;
-    public static boolean isDirectionX = false; // need MainActivity to get direction
+    protected float velocity = 0;
+    public static boolean directionX = false; // need MainActivity to get direction
     protected boolean touching;
-    protected boolean isMoveStarted = false;
-    protected boolean isMoving;
+    private boolean touchLocked = false;
+    protected boolean moveStarted = false;
+    protected boolean moving;
+    private ViewGroup.MarginLayoutParams params_initial = null ;
     private ViewGroup.MarginLayoutParams params = null;
     protected int LONG_PRESS_RELEASE_AUTO_TIMEOUT;
     private int max_margin = 0;
@@ -80,30 +81,30 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         deltaY += deltaYcur;
         float absDeltaMax = Math.max(Math.abs(deltaX), Math.abs(deltaY));
         //float absDeltaMax = Math.max(Math.abs(deltaXcur), Math.abs(deltaYcur));
-        if (absDeltaMax < (isMoveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
+        if (absDeltaMax < (moveStarted ? MOVE_THRESHOLD_MOVING : MOVE_THRESHOLD_START)) {
             logger.info("move no: .delta*={} < {}", absDeltaMax , MOVE_THRESHOLD_START);
             return false; // debounce move detection
         } else {
-            if (!isMoveStarted) {
+            if (!moveStarted) {
                 calculateLongPress(e1); // check for long press before move started
-                isMoveStarted = true;
+                moveStarted = true;
             }
             long deltaTime = e2.getEventTime() - e1.getEventTime();
-            if (!isDirectionX) {
-                isDirectionX = Math.abs(deltaX) > Math.abs(deltaY);
-                if (isDirectionX){
+            if (!directionX) {
+                directionX = Math.abs(deltaX) > Math.abs(deltaY);
+                if (directionX){
                     logger.info("fix direction once set - prevent scrolling");
                 }
             }
-            float velocityAbs = Math.abs(isDirectionX ? deltaYcur : deltaXcur) / deltaTime * 1000;
-            if (velocityAbs > swipeVelocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
-                swipeVelocity = velocityAbs;
+            float velocityAbs = Math.abs(directionX ? deltaYcur : deltaXcur) / deltaTime * 1000;
+            if (velocityAbs > velocity && velocityAbs > SWIPE_VELOCITY_THRESHOLD) {
+                velocity = velocityAbs;
             }
             logger.info("moved  : dX={}, dY={}, v={}, isDirX={} ({})",
                     String.format("%4d", (int) deltaX),
                     String.format("%4d", (int) deltaY),
-                    String.format("%4d", (int) swipeVelocity),
-                    isDirectionX,
+                    String.format("%4d", (int) velocity),
+                    directionX,
                     // lookup MotionEvent action names
                     e2.getAction() == MotionEvent.ACTION_DOWN ? "DOWN"     // 0
                             : e2.getAction() == MotionEvent.ACTION_UP ? "UP"     // 1
@@ -128,10 +129,10 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
     // calculate if initial touch was long press
     private void calculateLongPress(MotionEventFixed e){
-        if (!isMoveStarted && !longPressDetected) {
+        if (!moveStarted && !longPress) {
             long pressDuration = e.getEventTime() - e.getDownTime();
             if (pressDuration > LONG_PRESS_DURATION) {
-                longPressDetected = true;
+                longPress = true;
                 logger.info("Long press detected, duration: {} ms", pressDuration);
                 if (e.getAction() == MotionEvent.ACTION_MOVE) {
                     onLongClickDuringMove(); // raise only once
@@ -145,10 +146,10 @@ public class CustomOnTouchListener implements View.OnTouchListener {
     }
 
     private void checkLongPressByTimeout(CustomOnTouchListener listener){
-        if (!listener.isMoveStarted && !listener.longPressDetected & null !=listener.firstEvent) {
+        if (!listener.moveStarted && !listener.longPress & null !=listener.firstEvent) {
             // make sure no move happened
             // and still in touch
-            listener.longPressDetected = true;
+            listener.longPress = true;
             MainActivity.getInstance().runOnUiThread(() -> {
                 logStatusDetail();
                 listener.onLongClick();
@@ -164,13 +165,28 @@ public class CustomOnTouchListener implements View.OnTouchListener {
     }
 
     private boolean isMoveStarted(){
-        return isMoveStarted;
+        return moveStarted;
     }
 
     private boolean isDirectionX(){
-        return isDirectionX;
+        return directionX;
     }
 
+    private void initTouchLockCheckByTimeout(View v){
+        TOUCH_LOCK_TIMEOUT = 100; // allow click, fast unregister and leave it to ScrollView
+        logger.debug("initTouchLockCheckByTimeout called");
+        new android.os.Handler().postDelayed(() -> {
+            touchLocked = !moveStarted || directionX;
+            if (!touchLocked) {
+                logger.info("Touch locked FAIL - reset button position");
+                touching = false; // prevent further handling
+                resetPosition(v);
+            } else {
+                logger.info("Touch locked - continue handling touch events");
+                onTouchLocked( v);
+            }
+        }, TOUCH_LOCK_TIMEOUT);
+    }
 
     private void initLongPressCheckByTimeout(View v){
         LONG_PRESS_RELEASE_AUTO_TIMEOUT = 2000;
@@ -220,14 +236,14 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             logger.info("Action Down detected {}", event);
             // reset everything
-            swipeVelocity = 0;
+            velocity = 0;
             view = v;
             Entries.registerTouchInProgress( this );
             max_margin = null == v ? 0 : (int) (0.75 * v.getWidth());
             sla_initial = null;
-            isMoving = false;
-            isMoveStarted = false; // reset move
-            isDirectionX = false; // reset direction
+            moving = false;
+            moveStarted = false; // reset move
+            directionX = false; // reset direction
             touching = true;
             firstEvent = event; // store initial event as copy
             x_start = (int) event.getRawX(); // as event has no fixed values -- REMOVE ??
@@ -235,19 +251,27 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             deltaX = 0;
             deltaY = 0;
             lastEvent = firstEvent; // store last event as copy
-            longPressDetected = false;
             onTouchDown(v);
-            fixateLayout(v);
+            params_initial = null;
+            touchLocked = false;
+            initTouchLockCheckByTimeout(v);
+            longPress = false;
             initLongPressCheckByTimeout(v);
         } else if (null == firstEvent) {
             logger.warn("First event is null on move/up action");
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (calculateVelocityAndDirection(lastEvent, event)) {
+            if (!touchLocked) {
+                // PERFORMANCE: avoid calculating velocity and direction until touch is locked
+                // or leave it to ScrollView
+            } else if (calculateVelocityAndDirection(lastEvent, event)) {
                 // debounce
                 ;
                 // move button according to deltaX - absolute
-                if (isDirectionX) {
+                if (directionX) {
                     if (Math.abs(deltaX) > MOVE_THRESHOLD_START) {
+                        if (null == params){
+                            fixateLayout(v);
+                        }
                         if ( 0 == max_margin || Math.abs(deltaX) < max_margin ) {
                             // keep minimum size
                             float dXMarginLeft = params.leftMargin;
@@ -260,9 +284,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                     }
                 }
                 // change color of button if moved more than threshold
-                if (isDirectionX && isMoveStarted && !isMoving
+                if (directionX && moveStarted && !moving
                         && (deltaX > MOVE_THRESHOLD_START || deltaX < -MOVE_THRESHOLD_START)) {
-                    isMoving = true; // onMoving may reset isMoving
+                    moving = true; // onMoving may reset isMoving
                     onMovingX( v, (deltaX < 0 ? - 1 : 1)
                             *  (Math.abs(deltaX) < MOVE_TRIGGER_THRESHOLD ? 1 : 2));
                     logger.info("moved : dX={} -> button color change {}", deltaX, UtilDebug.getBackgroundColorOfButton(v) );
@@ -294,7 +318,7 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             logger.warn("Unknown action detected: {}", event.toString());
             handleTouchEnd(v, event);
         }
-        return isDirectionX; // consume event if moved in X direction
+        return  null == firstEvent && directionX; // consume event if moved in X direction
         //return false; // allow other events like onClick to be processed
         //return true; // consume event
     }
@@ -307,16 +331,23 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             calculateVelocityAndDirection(lastEvent, event);
             calculateAbsoluteDelta(event);
             logStatusDetail();
-            if (swipeVelocity > 0) {
-                if (isDirectionX) {
+            // reset my view first
+            Entries.unregisterTouchInProgress(this); // reset
+            resetPosition(v);
+            firstEvent = null; // reset
+            params_initial = null;
+            params = null;
+            // callbacks according to move
+            if (velocity > 0) {
+                if (directionX) {
                     if (deltaX < 0) {
-                        if (longPressDetected) {
+                        if (longPress) {
                             onLongPressAndSwipeLeft();
                         } else {
                             onSwipeLeft();
                         }
                     } else {
-                        if (longPressDetected) {
+                        if (longPress) {
                             onLongPressAndSwipeRight();
                         } else {
                             onSwipeRight();
@@ -324,42 +355,47 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                     }
                 } else {
                     if (deltaY < 0) {
-                        if (longPressDetected) {
+                        if (longPress) {
                             onLongPressAndSwipeTop();
                         } else {
                             onSwipeTop();
                         }
                     } else {
-                        if (longPressDetected) {
+                        if (longPress) {
                             onLongPressAndSwipeBottom();
                         } else {
                             onSwipeBottom();
                         }
                     }
                 }
-            } else if (isMoveStarted) {
+            } else if (moveStarted) {
                 logger.info("Touch released after move - no *click detected");
-            } else if (longPressDetected){
+            } else if (longPress){
                 onLongClick();
             } else {
                 onClick();
             }
-        } // touching
-        Entries.unregisterTouchInProgress( this ); // reset
-        resetPosition(v);
-        firstEvent = null; // reset
+        } else { // touching
+            Entries.unregisterTouchInProgress(this); // reset
+            resetPosition(v);
+            firstEvent = null; // reset
+            params_initial = null;
+            params = null;
+        }
     }
+
 
 
     protected void logStatusDetail(){
         logger.info("CustomOnTouchListener status: " +
-                "isMoving=" + isMoving +
-                ", isMoveStarted=" + isMoveStarted +
-                ", isDirectionX=" + isDirectionX +
-                ", longPressDetected=" + longPressDetected +
+                "moving=" + moving +
+                ", doveStarted=" + moveStarted +
+                ", directionX=" + directionX +
+                ", touchLocked=" + touchLocked +
+                ", longPress=" + longPress +
                 ", deltaX=" + deltaX +
                 ", deltaY=" + deltaY +
-                ", swipeVelocity=" + swipeVelocity
+                ", velocity=" + velocity
         );
     }
 
@@ -368,8 +404,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         // fixate button size
         params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
         params_initial = new ViewGroup.MarginLayoutParams(params); // store copy of initial params
+        // TODO sometimes the height is still going to wrap content after moving -> fix height
         params.height = v.getHeight(); // keep height - even if it is wrap content on shrink
-        updateLayout(v);
+        // set fixed height / NOT WRAP CONTENT
     }
 
     public void updateLayout(View v) {
@@ -397,6 +434,10 @@ public class CustomOnTouchListener implements View.OnTouchListener {
 
 
     public void resetPosition_(View v){
+        if (null == params || null == params_initial){
+            logger.info("resetPosition called but params null - nothing to reset");
+            return; // nothing to reset
+        }
         logger.info("resetPosition (button vertically) {}, {}", params.leftMargin, params.rightMargin);
         // reset button position
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
@@ -417,6 +458,11 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                 // or keep color change until next render ?
                 //v.setBackgroundColor(MainActivity.getInstance().getColor(R.color.purple_200)); // will be reset by next render, after aktion
                 // v.setLayoutParams(params_initial);
+
+                // reset height to wrap content again
+                ViewGroup.MarginLayoutParams paramsReset = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+                paramsReset.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                v.setLayoutParams(paramsReset);
             }
             onMovingX( v, 0); // reset color
         }
@@ -560,6 +606,17 @@ public class CustomOnTouchListener implements View.OnTouchListener {
         v.setBackground(null);
         ((Button) v).setBackground(border);
     }
+
+    public void onTouchLocked(View v) {
+        int colorId = ContextCompat.getColor(MainActivity.getInstance(), R.color.black);
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(Color.TRANSPARENT); // Background color
+        border.setStroke(4, colorId); // Border width and color
+        border.setCornerRadius(32); // Optional: Rounded corners
+        v.setBackground(null);
+        ((Button) v).setBackground(border);
+    }
+
 
     public void onTouchDown(View v) {
         // Override this method in your fragment or activity
