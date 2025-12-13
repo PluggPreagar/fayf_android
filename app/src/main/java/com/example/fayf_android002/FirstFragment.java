@@ -476,21 +476,21 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                         badgeDrawable.setHorizontalOffset(20);
                         BadgeUtils.attachBadgeDrawable(badgeDrawable, btn, null);
                     }
-                    if (entry.rank == 0) {
-                        btn.setCompoundDrawablePadding(0);
-                    } else {
-                        btn.setCompoundDrawablePadding(16);
-                    }
+                    btn.setCompoundDrawablePadding(16);
                     // add singedVotes to content description - set icon to signed
-                    btn.setIconResource(!entry.signedVotes.isEmpty() ?
-                             R.mipmap.icons8_guarantee_96 :
-                            entry.getMyVote() > 0 ?
-                            R.mipmap.icons8_thumbs_up_96 :
-                            entry.getMyVote() < 0 ?
-                                    R.mipmap.icons8_thumbs_down_right_48 :
-                                    Entries.isTopic(new EntryKey( topic, nodeId)) ?
-                                            R.drawable.baseline_chevron_right_24 :
-                                            R.drawable.ic_baseline_note_24
+                    String content = entry.getContent();
+                    btn.setIconResource(
+                            // content.endsWith(".") ? R.drawable.baseline_folder_24 :  // Meinung.
+                            content.endsWith("??") ? R.mipmap.icons8_answer_100 :  // Gegenfrage ??
+                            content.endsWith("?") ? R.mipmap.icons8_speech_bubble_100_2 :  // Frage / Diskussion ?
+                            content.endsWith("!-") ? R.mipmap.icons8_radioactive_100 :  // falsifizerter Fact !-
+                                    !entry.signedVotes.isEmpty() ? R.mipmap.icons8_guarantee_96 :
+                                            content.endsWith("!") ? R.mipmap.icons8_diploma_100 :  // Fact !
+                                            content.endsWith("@") ? R.mipmap.icons8_book_100 :  // Reference @
+                            entry.getMyVote() > 0 ? R.mipmap.icons8_thumbs_up_96 :
+                            entry.getMyVote() < 0 ? R.mipmap.icons8_thumbs_down_right_48 :
+                            Entries.isTopic(new EntryKey( topic, nodeId)) ? R.drawable.baseline_chevron_right_24 :
+                                    R.drawable.ic_baseline_note_24
                     );
                     // icon padding
                     btn.setIconPadding(32); // Padding between icon and text

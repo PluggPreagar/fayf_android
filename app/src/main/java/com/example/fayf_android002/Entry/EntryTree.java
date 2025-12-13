@@ -14,6 +14,9 @@ public class EntryTree {
 
     public SortedEntryTreeMap entries = new SortedEntryTreeMap();
 
+    private static boolean isSortingInvalid = false;
+
+
 
     public Entry get(EntryKey key) {
         SortedEntryMap stringEntryTreeMap = entries.get(key.topic);
@@ -74,14 +77,29 @@ public class EntryTree {
             entry = stringEntryTreeMap.get(key.nodeId);
             if (null == entry) {
                 entry = new Entry(content);
+                entry.setRankOffset(1); // new entry starts with rank 1 - should be of interest
                 stringEntryTreeMap.put(key.nodeId, entry);
             } else {
                 entry.setContent(content);
             } // entry exists
 
         } // vote ?
+        isSortingInvalid = false; // do not sort on every set, but on demand
         return entry;
     }
+
+    public static void markSortingInvalid() {
+        isSortingInvalid = true;
+    }
+
+    public static boolean isSortingInvalid() {
+        return isSortingInvalid;
+    }
+
+    public static void markSortingValid() {
+        isSortingInvalid = false;
+    }
+
 
 
     public boolean isEmpty() {

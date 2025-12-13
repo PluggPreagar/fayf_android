@@ -375,9 +375,13 @@ public class Entries {
      */
 
     public static void setCurrentEntryKey(EntryKey entryKey) {
+        EntryKey oldKey = currentEntryKey;
         currentEntryKey = null == entryKey ? EntryTree.ROOT_ENTRY_KEY: entryKey;
         offset = 0;
         searchQuery = "";
+        if (null == oldKey || !oldKey.equals(currentEntryKey) || EntryTree.isSortingInvalid() ) {
+            sortCurrentTopic();
+        }
         callTopicChangedListeners(currentEntryKey);
     }
 

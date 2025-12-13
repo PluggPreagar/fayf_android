@@ -41,6 +41,7 @@ public class Entry implements java.io.Serializable {
     public void setRankOffset( int offset ) {
         this.rank += offset;
         myVote = Integer.compare(rank, 0);
+        EntryTree.markSortingInvalid();
     }
 
     public void setVote(int voteValue, String voterId) {
@@ -59,6 +60,7 @@ public class Entry implements java.io.Serializable {
                 signedVotes.put(voterId, voteValue);
             }
         }
+        EntryTree.markSortingInvalid();
     }
 
     public int getMyVote() {
