@@ -2,11 +2,14 @@ package com.example.fayf_android002.Entry;
 
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.example.fayf_android002.Entry.EntryKey.VOTE_SEPARATOR;
 
 public class EntryTree {
 
+    private static final Logger log = LoggerFactory.getLogger(EntryTree.class);
     public static EntryKey ROOT_ENTRY_KEY = new EntryKey( EntryKey.PATH_SEPARATOR , "");
 
     public SortedEntryTreeMap entries = new SortedEntryTreeMap();
@@ -49,21 +52,22 @@ public class EntryTree {
         Entry entry = null;
         if (key.nodeId.contains(VOTE_SEPARATOR)) {
 
-            String[] splitId = key.nodeId.split(VOTE_SEPARATOR);
+            String[] splitId = key.nodeId.split(VOTE_SEPARATOR); // ::Vote::[voterId]
             // split last occurrence only - use regex with negative lookahead
-            String[] splitContent = content.split(" \\| (?=[^|]+$)");
-            if (splitId.length != 2) {
-                throw new IllegalArgumentException("Invalid vote nodeId: " + key.nodeId);
+            String[] splitContent = content.split(" \\| (?=[^|]+$)"); // content | voteValue
+            if (splitId.length != 2 && splitId.length != 1) {
+                log.error("Invalid vote nodeId: {}", key.nodeId);
             } else if (splitContent.length != 2) {
-                throw new IllegalArgumentException("Invalid vote content: " + content);
-            }
-            entry = stringEntryTreeMap.get(splitId[0]); // ohne vote suffix
-            if (null != entry) {
-                String voterId = splitId[1]; // me or others
-                boolean myVote = Config.SYSTEM.getValue().equals(voterId); // TODO PERFORMANCE - cache system id !!
-                int voteValue = Util.parseIntOr(splitContent[1], 0);
-                entry.setVote(voteValue, myVote);
-            } // entry exists
+                log.error("Invalid vote content: {}", content);
+            } else {
+                // valid
+                entry = stringEntryTreeMap.get(splitId[0]); // ohne vote suffix
+                if (null != entry) {
+                    String voterId = splitId.length < 2 ? "" : splitId[1]; // me or others
+                    int voteValue = Util.parseIntOr(splitContent[1], 0);
+                    entry.setVote(voteValue, voterId);
+                } // entry exists
+            } // valid split
 
         } else {
 

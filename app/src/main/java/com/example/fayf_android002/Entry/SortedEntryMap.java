@@ -13,18 +13,21 @@ public class SortedEntryMap extends LinkedHashMap<String, Entry> {
     public void sortByValue(){
         ArrayList<Entry<String, com.example.fayf_android002.Entry.Entry>> entryList = new ArrayList<>(this.entrySet());
         entryList.sort((e1, e2) -> {
+            // rank
             int i = e1.getValue().getRank() - e2.getValue().getRank();
-            if (i != 0) {
-                return -i;
+            if (0 == i) {
+                // votes
+                i = e1.getValue().myVote - e2.getValue().myVote;
+                if (0 == i) {
+                    i = e1.getValue().getContent().compareTo(e2.getValue().getContent());
+                }
             }
-            return e1.getValue().getContent().compareTo(e2.getValue().getContent());
+            return -i; // descending - most important first
         });
-        Map<String, com.example.fayf_android002.Entry.Entry> sortedMap = new LinkedHashMap<>();
-        for (Entry<String, com.example.fayf_android002.Entry.Entry> entry : entryList) {
-            sortedMap.put(entry.getKey(), entry.getValue());
-        }
         this.clear();
-        this.putAll(sortedMap);
+        for (Entry<String, com.example.fayf_android002.Entry.Entry> entry : entryList) {
+            this.put(entry.getKey(), entry.getValue());
+        }
     }
 
 }

@@ -330,6 +330,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 binding.logScrollView.setVisibility(View.GONE);
             }
             return true;
+        } else if ( id == R.id.action_log_details) {
+            // show logs
+            if (Integer.valueOf( Config.SHOW_LOGS.getValue()) == 0) {
+                Config.SHOW_LOGS.toggleValue();
+                binding.logScrollView.setVisibility(View.VISIBLE);
+            }
+            // iterate over visible entries
+            UtilDebug.inspectView();
+            Entries.getEntriesIterator( Entries.getOffset()).forEachRemaining( entry -> {
+                logger.info(  entry.toString() );
+            });
+        } else if ( id == R.id.action_force_sort){
+            logger.info("Forcing sort of entries");
+            Entries.sortCurrentTopic();
         }
 
         return super.onOptionsItemSelected(item);

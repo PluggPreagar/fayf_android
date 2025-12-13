@@ -46,4 +46,16 @@
             android:orderInCategory="100"
             app:showAsAction="never"
             />
+    <!-- detail log entry -->
+    <item
+            android:id="@+id/action_log_details"
+            android:title="@string/action_log_detail"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
+    <!-- force sort -->
+    <item
+            android:id="@+id/action_force_sort"
+            android:title="@string/action_force_sort"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
 </menu>

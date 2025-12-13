@@ -474,7 +474,7 @@ public class Entries {
     public static void vote(EntryKey entryKey, int delta) {
         Entry entry = getEntry(entryKey);
         // TODO implement vote up logic  -- TreeMap orders by key only
-        entry.rank += delta;
+        entry.setRankOffset(delta);
         entryTree.entries.get(entryKey.topic).sortByValue();
         callDataChangedListeners(entryKey);
         // TODO better use 2 functions - set content and set vote
@@ -482,6 +482,12 @@ public class Entries {
         String sid = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
         setEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + delta, null);
     }
-    
+
+    public static void sortCurrentTopic() {
+        SortedEntryMap topicEntries = entryTree.getTopic(currentEntryKey);
+        if (null != topicEntries) {
+            topicEntries.sortByValue();
+        }
+    }
 
 }

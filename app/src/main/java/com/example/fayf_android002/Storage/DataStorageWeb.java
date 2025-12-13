@@ -23,10 +23,6 @@ public class DataStorageWeb {
     public EntryTree readData(String sid, String tid) {
         EntryTree data = new EntryTree();
         readData(data, "https://fayf.info/entries?sid=" + sid + "&tid=" + tid);
-        // clear votes before reloading
-        data.entries.values().forEach( entryMap ->
-                entryMap.values().forEach(Entry::clearVotes)
-        );
         readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid);
         return data;
     }

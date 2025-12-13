@@ -453,6 +453,8 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                     } else {
                         btn.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     }
+                    btn.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START); // Icon on the left
+                    btn.setIconPadding(16); // Padding between icon and text
                     BadgeDrawable badgeDrawable = badgeMap.get(idx);
                     if (entry.rank == 0) {
                         if (badgeDrawable != null) { // detach existing badge
@@ -466,6 +468,12 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                         //badgeDrawable.setNumber(Math.abs(entry.rank));
                         badgeDrawable.setText("" + entry.rank
                                 + (0 != entry.otherVotes?  " (" + entry.otherVotes+")" : ""));
+                        badgeDrawable.setBackgroundColor( entry.rank > 0 ?
+                                getResources().getColor(R.color.green_700, null) :
+                                getResources().getColor(R.color.red_700, null)
+                        );
+                        // badge padding to right
+                        badgeDrawable.setHorizontalOffset(20);
                         BadgeUtils.attachBadgeDrawable(badgeDrawable, btn, null);
                     }
                     if (entry.rank == 0) {
@@ -473,7 +481,23 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                     } else {
                         btn.setCompoundDrawablePadding(16);
                     }
+                    // add singedVotes to content description - set icon to signed
+                    btn.setIconResource(!entry.signedVotes.isEmpty() ?
+                             R.mipmap.icons8_guarantee_96 :
+                            entry.getMyVote() > 0 ?
+                            R.mipmap.icons8_thumbs_up_96 :
+                            entry.getMyVote() < 0 ?
+                                    R.mipmap.icons8_thumbs_down_right_48 :
+                                    Entries.isTopic(new EntryKey( topic, nodeId)) ?
+                                            R.drawable.baseline_chevron_right_24 :
+                                            R.drawable.ic_baseline_note_24
+                    );
+                    // icon padding
+                    btn.setIconPadding(32); // Padding between icon and text
 
+                    /*
+                    // show button
+                     */
                     btn.setVisibility(View.VISIBLE);
                     // make button height larger
                     MaterialButton btn_m = (MaterialButton) button;
