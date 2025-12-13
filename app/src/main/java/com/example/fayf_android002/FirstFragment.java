@@ -22,11 +22,14 @@ import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.badge.BadgeDrawable;
+import com.google.android.material.badge.BadgeUtils;
 import com.google.android.material.button.MaterialButton;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -39,6 +42,8 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
     private boolean blockRekursiveScroll = true;
     private NestedScrollView scrollView = null;
+
+    private Map<Integer, BadgeDrawable> badgeMap = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -436,6 +441,37 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                         btn.setContentDescription("Note: " + entry.content);
                         btn.setTextAppearance(R.style.NoteButtonStyle);
                         btn.setIconResource(R.drawable.ic_baseline_note_24);
+                    }
+
+                    // remove existing badge if any
+                    if (entry.rank > 0) {
+                        // use icons8_thumbs_up_96.png from mipmap
+                        btn.setCompoundDrawablesWithIntrinsicBounds(R.mipmap.icons8_thumbs_up_96, 0, 0, 0);
+                    } else if (entry.rank < 0) {
+                        // use icons8_thumbs_down_96.png from mipmap
+                        btn.setCompoundDrawablesWithIntrinsicBounds(R.mipmap.icons8_thumbs_down_right_48, 0, 0, 0);
+                    } else {
+                        btn.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+                    }
+                    BadgeDrawable badgeDrawable = badgeMap.get(idx);
+                    if (entry.rank == 0) {
+                        if (badgeDrawable != null) { // detach existing badge
+                            BadgeUtils.detachBadgeDrawable(badgeDrawable, btn);
+                        }
+                    } else {
+                        if (badgeDrawable == null) {
+                            badgeDrawable = BadgeDrawable.create(getContext());
+                            badgeMap.put(idx, badgeDrawable);
+                        }
+                        //badgeDrawable.setNumber(Math.abs(entry.rank));
+                        badgeDrawable.setText("" + entry.rank
+                                + (0 != entry.otherVotes?  " (" + entry.otherVotes+")" : ""));
+                        BadgeUtils.attachBadgeDrawable(badgeDrawable, btn, null);
+                    }
+                    if (entry.rank == 0) {
+                        btn.setCompoundDrawablePadding(0);
+                    } else {
+                        btn.setCompoundDrawablePadding(16);
                     }
 
                     btn.setVisibility(View.VISIBLE);

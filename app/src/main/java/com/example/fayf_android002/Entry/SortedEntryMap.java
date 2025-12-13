@@ -8,6 +8,8 @@ import java.util.Map;
 
 public class SortedEntryMap extends LinkedHashMap<String, Entry> {
 
+
+
     public void sortByValue(){
         ArrayList<Entry<String, com.example.fayf_android002.Entry.Entry>> entryList = new ArrayList<>(this.entrySet());
         entryList.sort((e1, e2) -> {

@@ -114,5 +114,12 @@ public class Util {
         return actionString + String.format(" (x=%.1f, y=%.1f)", event.getX(), event.getY());
     }
 
+    public Integer parseIntegerOptional(String s, Integer defaultValue) {
+        try {
+            return Integer.valueOf(s);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
 
 }

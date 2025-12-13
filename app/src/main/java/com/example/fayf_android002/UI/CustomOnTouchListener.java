@@ -335,8 +335,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             Entries.unregisterTouchInProgress(this); // reset
             resetPosition(v);
             firstEvent = null; // reset
-            params_initial = null;
-            params = null;
+            // leave that to Reset-Ani
+            // params_initial = null;
+            // params = null;
             // callbacks according to move
             if (velocity > 0) {
                 if (directionX) {
@@ -379,8 +380,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
             Entries.unregisterTouchInProgress(this); // reset
             resetPosition(v);
             firstEvent = null; // reset
-            params_initial = null;
-            params = null;
+            // leave that to Reset-Ani
+            //params_initial = null;
+            //params = null;
         }
     }
 
@@ -465,6 +467,9 @@ public class CustomOnTouchListener implements View.OnTouchListener {
                 v.setLayoutParams(paramsReset);
             }
             onMovingX( v, 0); // reset color
+            // reset
+            params = null;
+            params_initial = null;
         }
     }
 

@@ -448,7 +448,7 @@ public class Entries {
     }
 
     public static Entries setEntry(String topic, String nodeId, String content) {
-        entryTree.set(new EntryKey(topic, nodeId), content);
+        entryTree.set(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
         return Entries.getInstance();
     }
 
@@ -477,6 +477,10 @@ public class Entries {
         entry.rank += delta;
         entryTree.entries.get(entryKey.topic).sortByValue();
         callDataChangedListeners(entryKey);
+        // TODO better use 2 functions - set content and set vote
+        // or just as virtual entry- attribute with only vote value as content
+        String sid = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
+        setEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + delta, null);
     }
     
 

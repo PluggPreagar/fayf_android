@@ -69,6 +69,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         TextView logTextView = findViewById(R.id.logTextView);
         TextViewAppender.initialize(logTextView);
         TextViewAppender.setupSLF4J();
+        logTextView.setOnLongClickListener(v -> {
+            TextViewAppender.clearLog();
+            return true;
+        });
 
         logger.info( "MainActivity onCreate() called" );
 

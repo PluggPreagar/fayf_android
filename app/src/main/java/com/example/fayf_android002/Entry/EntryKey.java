@@ -9,6 +9,8 @@ public class EntryKey {
     public String topic;
     public String nodeId;
 
+    final public static String VOTE_SEPARATOR = "::Vote::";
+
     public EntryKey(String topic, String nodeId) {
         this.topic = sanitizeTopic(topic); // ensure "" -> "/"
         this.nodeId = nodeId;

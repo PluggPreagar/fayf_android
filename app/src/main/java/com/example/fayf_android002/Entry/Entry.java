@@ -10,6 +10,8 @@ public class Entry implements java.io.Serializable {
     // Content
     public String content;
     public int rank = 0;
+    public int myVote = 0; // -1 , 0 , +1
+    public int otherVotes = 0;
 
     public Entry(String content) {
         this.content = content;
@@ -28,4 +30,18 @@ public class Entry implements java.io.Serializable {
     public int getRank() {
         return rank;
     }
+
+    public void setVote(int voteValue, boolean myVote) {
+        if (myVote) {
+            this.myVote = voteValue;
+        } else {
+            this.otherVotes += voteValue;
+        }
+    }
+
+    public void clearVotes() {
+        this.myVote = 0;
+        this.otherVotes = 0;
+    }
+
 }

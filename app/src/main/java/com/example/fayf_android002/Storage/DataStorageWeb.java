@@ -20,12 +20,19 @@ public class DataStorageWeb {
 
     String DELETE_SUFFIX = "--";
 
-
-    // Fetch CSV data from a URL
     public EntryTree readData(String sid, String tid) {
         EntryTree data = new EntryTree();
+        readData(data, "https://fayf.info/entries?sid=" + sid + "&tid=" + tid);
+        // clear votes before reloading
+        data.entries.values().forEach( entryMap ->
+                entryMap.values().forEach(Entry::clearVotes)
+        );
+        readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid);
+        return data;
+    }
 
-        String urlString = "https://fayf.info/entry/get?sid=" + sid + "&tid=" + tid;
+    // Fetch CSV data from a URL
+    public EntryTree readData(EntryTree data, String urlString) {
         logger.info("Fetching data from URL: {}", urlString);
 
         try {
@@ -65,7 +72,8 @@ public class DataStorageWeb {
 
 
     private void add(EntryTree data, String line) {
-        // 2025-10-31 14:09:49,/ | 1761916190 | heute
+        // entry:   2025-10-31 14:09:49,/ | 1761916190 | heute
+        // votes:   03/08/2025 10:52:30, | mig::Vote::97979 | Migration > | 1
         String[] rawParts = line.split(",", 2);
         String[] parts = rawParts.length > 1 ? rawParts[1].split(" \\| ", 3) : new String[]{};
         if (!rawParts[0].isEmpty() && parts.length > 2 && parts.length < 5 ) {
@@ -92,14 +100,17 @@ public class DataStorageWeb {
         assert sid != null ;
         assert tid != null ;
         assert !sid.isEmpty();
-        String urlString = "https://fayf.info/entry/add?sid=" + sid + "&tid=" + tid +
+        String objectName = entryKey.nodeId.contains(EntryKey.VOTE_SEPARATOR) ? "vote" : "entry" ;
+        // TODO do not use params ... in URL - use POST body !!
+        String urlString = "https://fayf.info/" + objectName + "/add?" +
+                "sid=" + sid + "&tid=" + tid +
                 "&entry=" +  Util.encodeToUrlParam( buildStringRepresentation(entryKey, entry) );
 
         logger.info("Saving entry to URL: {}", urlString);
         try {
             URL url = new URL(urlString);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
+            connection.setRequestMethod("POST");
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -114,6 +125,11 @@ public class DataStorageWeb {
     }
 
     private String buildStringRepresentation(EntryKey entryKey, Entry entry) {
+        if (entryKey.nodeId.contains(EntryKey.VOTE_SEPARATOR)) {
+            // String voterId = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
+            int votes = entryKey.nodeId.endsWith(EntryKey.VOTE_SEPARATOR) ? entry.otherVotes : entry.myVote ;
+            return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.content + " | " + votes;
+        }
         return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.content;
     }
 

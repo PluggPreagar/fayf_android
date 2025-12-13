@@ -20,7 +20,7 @@ public class TextViewAppender {
     private static TextView logTextView;
     private static final Handler uiHandler = new Handler(Looper.getMainLooper());
 
-    private static List<String> logLines = Collections.synchronizedList(new ArrayList<>());
+    private static String logLines = "";
     private static long nextTimestampToFlush = 0;
 
     public static void initialize(TextView textView) {
@@ -30,13 +30,13 @@ public class TextViewAppender {
     public static String appendLog(String message) {
         // do not repeat same message
         if (!logLines.isEmpty()
-                && logLines.get(logLines.size() - 1).equals(message)) {
+                && logLines.startsWith(message)) {
             return message;
         }
-        logLines.add(message);
-        while (logLines.size() > 500) {
-            // remove oldest 50 lines
-            logLines.subList(0, 50).clear();
+        logLines = message + "\n" + logLines;
+        while (logLines.length() > 10000) {
+            // remove oldest lines
+            logLines = logLines.substring(0, 10000);
         }
         long currentTime = System.currentTimeMillis();
         if (logTextView != null
@@ -47,10 +47,7 @@ public class TextViewAppender {
             uiHandler.postDelayed(() -> {
                 // still have issues with concurrent modification exception, so make a copy
                 try{
-                    ArrayList<String> logLines1 = new ArrayList<>(logLines);
-                    Collections.reverse(logLines1);
-                    String join = String.join("\n", logLines1);
-                    logTextView.setText(join);
+                    logTextView.setText(logLines);
                 } catch (Exception e) {
                     // ignore concurrent modification
                 }
@@ -104,4 +101,8 @@ public class TextViewAppender {
     }
 
 
+    public static void clearLog() {
+        logLines = "";
+        appendLog("Log cleared.");
+    }
 }
