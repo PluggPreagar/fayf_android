@@ -18,7 +18,7 @@ public enum Config {
     TEST_STRING("test_string", "default_value"),
     TENANT("tenant", "tst"),
 
-    VERSION("version", "1.0.0"),
+    VERSION("version", "0.25.0"),
 
 
 

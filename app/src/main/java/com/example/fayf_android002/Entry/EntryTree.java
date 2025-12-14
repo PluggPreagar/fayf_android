@@ -46,7 +46,16 @@ public class EntryTree {
         return null;
     }
 
+    public Entry load(EntryKey key, String content) {
+        return set(key, content, false);
+    }
+
     public Entry set(EntryKey key, String content) {
+        return set(key, content, true);
+    }
+
+
+    public Entry set(EntryKey key, String content, boolean initRank) {
         // entry: EntryKey(<topic>, <nodeId>)                     content: <content>
         // vote:  EntryKey(<topic>, <nodeId>"::Vote::"<voterId>)  content: <content>" | "<voteValue>
         SortedEntryMap stringEntryTreeMap = entries.computeIfAbsent(key.topic
@@ -77,7 +86,9 @@ public class EntryTree {
             entry = stringEntryTreeMap.get(key.nodeId);
             if (null == entry) {
                 entry = new Entry(content);
-                entry.setRankOffset(1); // new entry starts with rank 1 - should be of interest
+                if (initRank) {
+                    entry.setRankOffset(1); // new entry starts with rank 1 - should be of interest
+                }
                 stringEntryTreeMap.put(key.nodeId, entry);
             } else {
                 entry.setContent(content);

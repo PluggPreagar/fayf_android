@@ -7,7 +7,6 @@ import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
-import com.example.fayf_android002.Util;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -170,6 +169,8 @@ public class Entries {
     private static void load(EntryTree entryTree, Context context, boolean forceWeb) {
         String system = Config.SYSTEM.getValue();
         String tenant = Config.TENANT.getValue();
+        // keep my rankings and votes ?
+        SortedEntryTreeMap entryTreeOld = Entries.entryTree.entries;
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
@@ -186,12 +187,30 @@ public class Entries {
                 DataStorageLocal.saveEntries(entryTree, context);
             }
         }
+        // merge old votes and rankings
+        mergeVotesAndRankings(entryTreeOld, Entries.entryTree.entries);
         searchQuery = "";
         offset = 0;
         // check data integrity
         checkDataIntegrity();
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(null);
+    }
+
+    private static void mergeVotesAndRankings(SortedEntryTreeMap entryTreeOld, SortedEntryTreeMap entryTree) {
+        if (null != entryTreeOld && null != entryTree) {
+            for (Map.Entry<String, SortedEntryMap> topicEntryOld : entryTreeOld.entrySet()) {
+                for (Map.Entry<String, Entry> entryOld : topicEntryOld.getValue().entrySet()) {
+                    SortedEntryMap topicEntry = entryTree.get(topicEntryOld.getKey());
+                    if (null != topicEntry) {
+                        Entry entryNew = topicEntry.get(entryOld.getKey());
+                        if (null != entryNew) {
+                            entryNew.merge( entryOld.getValue() ); // keep private settings
+                        }
+                    } // if entry still exists
+                } // for nodeEntry
+            } // for topics
+        } // null checks
     }
 
     public static void checkDataIntegrity() {
@@ -378,8 +397,8 @@ public class Entries {
         EntryKey oldKey = currentEntryKey;
         currentEntryKey = null == entryKey ? EntryTree.ROOT_ENTRY_KEY: entryKey;
         offset = 0;
-        searchQuery = "";
         if (null == oldKey || !oldKey.equals(currentEntryKey) || EntryTree.isSortingInvalid() ) {
+            searchQuery = ""; // prevent reset of search on changing search filter
             sortCurrentTopic();
         }
         callTopicChangedListeners(currentEntryKey);
@@ -441,6 +460,10 @@ public class Entries {
             // first child in topic -> check parent integrity
             checkDataIntegrity(parentKey, Entries.getEntry(parentKey));
         }
+        sendEntry(entryKey, content, entry);
+    }
+
+    private static void sendEntry(EntryKey entryKey, String content, Entry entry) {
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP upload Entry (volatile tenant {} ) : {} with \"{}\" ", Config.TENANT, Entries.toString(entryKey), content);
         } else if (entryKey.topic.startsWith(Config.CONFIG_PATH)) {
@@ -484,7 +507,7 @@ public class Entries {
         // TODO better use 2 functions - set content and set vote
         // or just as virtual entry- attribute with only vote value as content
         String sid = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
-        setEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + delta, null);
+        sendEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + entry.myVote, entry);
     }
 
     public static void sortCurrentTopic() {

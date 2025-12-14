@@ -422,7 +422,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     newTitle += " of " + Config.TENANT.getValue();
                 }
             } else {
-                newTitle += " - " + Util.shortenString(entry.content, 30);
+                newTitle = Util.shortenString(entry.content, 30);
             }
             getSupportActionBar().setTitle(newTitle);
             // enable back button in action bar

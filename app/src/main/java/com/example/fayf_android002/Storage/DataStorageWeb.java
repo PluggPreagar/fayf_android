@@ -40,6 +40,7 @@ public class DataStorageWeb {
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                     String line;
+                    StringBuilder line_leftover = new StringBuilder();
                     int quotes = 0 ;
                     while ((line = reader.readLine()) != null) {
                         // count " in line - if odd, then continue reading
@@ -48,7 +49,13 @@ public class DataStorageWeb {
                                 : 0 ;
                         quotes = quotes % 2 ;
                         if (0 == quotes){ // even number of quotes - complete line
+                            if (line_leftover.length() > 0) {
+                                line = line_leftover + line ;
+                                line_leftover.setLength(0);
+                            }
                             add(data, line);
+                        } else {
+                            line_leftover.append(line).append("\n");
                         }
                     }
                 }
@@ -69,17 +76,24 @@ public class DataStorageWeb {
 
     private void add(EntryTree data, String line) {
         // entry:   2025-10-31 14:09:49,/ | 1761916190 | heute
+        // entry:   2025-10-31 14:09:49,"/ | 1761916190 | heute, gestern oder morgen"
         // votes:   03/08/2025 10:52:30, | mig::Vote::97979 | Migration > | 1
         String[] rawParts = line.split(",", 2);
         String[] parts = rawParts.length > 1 ? rawParts[1].split(" \\| ", 3) : new String[]{};
         if (!rawParts[0].isEmpty() && parts.length > 2 && parts.length < 5 ) {
             // valid entry
             EntryKey key = new EntryKey(parts[0].trim(), parts[1].trim());
+            // remove enclosing quotes if any
+            if (parts[2].startsWith("\"") && parts[2].endsWith("\"")) {
+                parts[2] = parts[2].substring(1, parts[2].length() - 1);
+            }
             String content = parts[2].trim();
-            if (content.endsWith(DELETE_SUFFIX)) { // Suffix to allow safe APPEND operation
+            if (key.topic.startsWith(Config.CONFIG_PATH)) {
+                logger.debug("Skipping config entry from data load: {}", line);
+            } else if (content.endsWith(DELETE_SUFFIX)) { // Suffix to allow safe APPEND operation
                 data.remove(key);
             } else {
-                data.set(key, content);
+                data.load(key, content);
             }
         } else {
             logger.warn("Failed to build Entry from string: {}", line);

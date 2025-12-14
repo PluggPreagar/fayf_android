@@ -63,6 +63,14 @@ public class Entry implements java.io.Serializable {
         EntryTree.markSortingInvalid();
     }
 
+
+    public void merge(Entry previous) {
+        // on load - keep private settings
+        this.rank = previous.rank;
+        this.myVote = previous.myVote;
+        EntryTree.markSortingInvalid();
+    }
+
     public int getMyVote() {
         if (this.rank != 0) {
             int myVoteNew = Integer.compare(this.rank, 0);
