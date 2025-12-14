@@ -344,6 +344,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         } else if ( id == R.id.action_force_sort){
             logger.info("Forcing sort of entries");
             Entries.sortCurrentTopic();
+        } else if ( id == R.id.action_report_bug){
+            // show bug report instructions --> create bug node / and open in InputFragment
+            UtilDebug.logCompactCallStack();
+            Entry currentEntry = Entries.getCurrentEntry();
+            int randomId = (int) (Math.random() * 100000);
+            String bugReportContent = "Bug Report " + randomId +  "\n\n"
+                    + "Topic: " + Entries.getCurrentEntryKey().getFullPath() + "\n"
+                    + "Content: " + ( null == currentEntry ? "<null>" : currentEntry.content ) + "\n\n"
+                    + "Please describe the issue here...\n";
+            EntryKey bugEntryKey = new EntryKey( "/_/bug", "bug_" + randomId);
+            Entries.setEntry( bugEntryKey, bugReportContent, getApplicationContext());
+            Entries.setCurrentEntryKey(bugEntryKey);
+            switchToInputFragment(); // reload InputFragment
         }
 
         return super.onOptionsItemSelected(item);
@@ -370,6 +383,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (currentFragment instanceof InputFragment) {
             logger.info("Back pressed in InputFragment - switching to FirstFragment");
+            if (!Entries.isTopic(Entries.getCurrentEntryKey())) {
+                // if in InputFragment for a topic - go up one level
+                Entries.upOneTopicLevel();
+                // TODO check why
+                logger.warn("Navigating up topic: {} (from {}) (BACK from InputFragment)", Entries.getCurrentEntryKey().getFullPath(), topicBefore);
+            }
             switchToFirstFragment();
         } else {
             logger.info("Back pressed in FirstFragment or other - navigating up topic");

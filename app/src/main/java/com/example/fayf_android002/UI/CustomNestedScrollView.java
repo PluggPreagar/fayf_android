@@ -6,6 +6,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import androidx.core.widget.NestedScrollView;
 import com.example.fayf_android002.Entry.Entries;
+import com.example.fayf_android002.FirstFragment;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ public class CustomNestedScrollView extends NestedScrollView {
         boolean handled = false; // default to not handled
         // KLUDGE
         CustomOnTouchListener viewTouchedInProgress = Entries.getViewTouchedInProgress();
-        if (viewTouchedInProgress != null ) {
+        if (viewTouchedInProgress != null && !FirstFragment.isScrollingInProgress()) {
             // need to inform about moving-on ...
             logger.debug("CustomNestedScrollView delegating onTouchEvent to viewTouchedInProgress");
             handled = viewTouchedInProgress.onTouch(eventFixed);

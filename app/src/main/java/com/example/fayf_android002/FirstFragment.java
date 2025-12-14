@@ -12,10 +12,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
-import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.Entry;
-import com.example.fayf_android002.Entry.EntryKey;
-import com.example.fayf_android002.Entry.EntryTree;
+import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.UI.CustomOnTouchListener;
@@ -481,12 +478,12 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                     String content = entry.getContent();
                     btn.setIconResource(
                             // content.endsWith(".") ? R.drawable.baseline_folder_24 :  // Meinung.
-                            content.endsWith("??") ? R.mipmap.icons8_answer_100 :  // Gegenfrage ??
-                            content.endsWith("?") ? R.mipmap.icons8_speech_bubble_100_2 :  // Frage / Diskussion ?
-                            content.endsWith("!-") ? R.mipmap.icons8_radioactive_100 :  // falsifizerter Fact !-
-                                    !entry.signedVotes.isEmpty() ? R.mipmap.icons8_guarantee_96 :
-                                            content.endsWith("!") ? R.mipmap.icons8_diploma_100 :  // Fact !
-                                            content.endsWith("@") ? R.mipmap.icons8_book_100 :  // Reference @
+                            content.endsWith("??") ? EntryStyle.COUNTER_QUESTION.getIconResourceId() :  // Gegenfrage ??
+                            content.endsWith("?") ? EntryStyle.QUESTION.getIconResourceId() :  // Frage / Diskussion ?
+                            content.endsWith("!-") ? EntryStyle.FALSE_FACT.getIconResourceId() :  // falsifizerter Fact !-
+                                    !entry.signedVotes.isEmpty() ? R.mipmap.icons8_guarantee_100_3 :
+                                            content.endsWith("!") ? EntryStyle.FACT.getIconResourceId() :  // Fact !
+                                            content.endsWith("@") ? EntryStyle.REFERENCE.getIconResourceId() :  // Reference @
                             entry.getMyVote() > 0 ? R.mipmap.icons8_thumbs_up_96 :
                             entry.getMyVote() < 0 ? R.mipmap.icons8_thumbs_down_right_48 :
                             Entries.isTopic(new EntryKey( topic, nodeId)) ? R.drawable.baseline_chevron_right_24 :
@@ -566,7 +563,8 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
         //
         // getMainActivity().getSupportActionBar().setTitle("FAYF - " + topic);
         if (null != binding.ButtonScrollView){
-            binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
+            binding.ButtonScrollView.post(()
+                    -> {if (null != binding && null != binding.ButtonScrollView) binding.ButtonScrollView.fullScroll(View.FOCUS_UP);});
         }
     }
 

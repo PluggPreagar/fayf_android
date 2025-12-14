@@ -58,4 +58,10 @@
             android:title="@string/action_force_sort"
             android:orderInCategory="100"
             app:showAsAction="never"/>
+    <!-- report bug -->
+    <item
+            android:id="@+id/action_report_bug"
+            android:title="@string/action_report_bug"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
 </menu>

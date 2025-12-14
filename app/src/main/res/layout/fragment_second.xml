@@ -10,19 +10,72 @@
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
             android:padding="16dp">
 
-        <Button
-                android:id="@+id/button_second"
-                android:layout_width="wrap_content"
+
+        <LinearLayout
+                android:id="@+id/style_lists"
+                android:orientation="horizontal"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/previous"
-                app:layout_constraintBottom_toTopOf="@id/editext_second"
+                app:layout_constraintTop_toBottomOf="@id/editext_second"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                android:visibility="gone"
-                />
+                android:layout_marginTop="16dp"
+                android:gravity="center">
+
+            <ImageButton
+                    android:id="@+id/button_style_question"
+                    android:src="@mipmap/icons8_ask_question_100"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="0dp"
+                    android:paddingRight="16dp"/>
+
+            <ImageButton
+                    android:id="@+id/button_style_counter_question"
+                    android:src="@mipmap/icons8_answer_100"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="0dp"
+                    android:paddingRight="16dp"/>
+
+            <ImageButton
+                    android:id="@+id/button_style_fact"
+                    android:src="@mipmap/icons8_checked_100_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="0dp"
+                    android:paddingRight="16dp"
+                    />
+
+            <ImageButton
+                    android:id="@+id/button_style_false_fact"
+                    android:src="@mipmap/icons8_radioactive_100"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="0dp"
+                    android:paddingRight="16dp"/>
+
+            <ImageButton
+                    android:id="@+id/button_style_reference"
+                    android:src="@mipmap/icons8_book_100"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:visibility="gone"
+                    />
+
+        </LinearLayout>
 
         <EditText
                 android:id="@+id/editext_second"
@@ -36,10 +89,9 @@
                 android:maxLines="10"
                 android:gravity="top|start"
                 android:scrollbars="vertical"
-                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/button_second"/>
+                app:layout_constraintTop_toBottomOf="@id/style_lists"/>
 
         <LinearLayout
                 android:orientation="horizontal"
@@ -52,7 +104,7 @@
 
             <ImageButton
                     android:id="@+id/button_delete"
-                    android:src="@android:drawable/ic_menu_delete"
+                    android:src="@mipmap/icons8_trash_100_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -60,33 +112,24 @@
 
             <ImageButton
                     android:id="@+id/button_star"
-                    android:src="@android:drawable/star_off"
+                    android:src="@mipmap/icons8_guarantee_100_3"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="@android:color/transparent"
-                    android:layout_weight="1"/>
+                    android:layout_weight="1"
+                    android:layout_gravity="center_vertical"/>
 
             <ImageButton
                     android:id="@+id/button_send"
-                    android:src="@android:drawable/ic_menu_send"
+                    android:src="@mipmap/icons8_send_100_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
-                    android:layout_weight="1"/>
+                    android:layout_weight="1"
+                    android:layout_gravity="center_vertical"
+                    />
         </LinearLayout>
 
-        <TextView
-                android:id="@+id/textView_hidden"
-                android:text=""
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                tools:layout_editor_absoluteY="394dp"
-                tools:layout_editor_absoluteX="187dp"
-                tools:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

@@ -15,10 +15,14 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
+import com.example.fayf_android002.Entry.EntryStyle;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.databinding.FragmentSecondBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 public class InputFragment extends Fragment {
 
@@ -27,12 +31,14 @@ public class InputFragment extends Fragment {
     private FragmentSecondBinding binding;
     private String oldValue = "";
 
+    Map<EntryStyle, View> styleButtonMap = null;
+
     @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
-
+        logger.info("InputFragment onCreateView called");
         binding = FragmentSecondBinding.inflate(inflater, container, false);
         RuntimeTester.registerFragment("InputFragment", this, R.id.FirstFragment, binding.getRoot());
         return binding.getRoot();
@@ -41,10 +47,17 @@ public class InputFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
+        logger.info("InputFragment onViewCreated called");
 
         //binding.buttonCancel.setOnClickListener(v -> backToFirstFragment() );
-        binding.buttonSecond.setOnClickListener(v -> backToFirstFragment() );
+        //binding.buttonSecond.setOnClickListener(v -> backToFirstFragment() );
+        styleButtonMap = Map.of(
+                EntryStyle.FACT, binding.buttonStyleFact,
+                EntryStyle.FALSE_FACT, binding.buttonStyleFalseFact,
+                EntryStyle.QUESTION, binding.buttonStyleQuestion,
+                EntryStyle.COUNTER_QUESTION, binding.buttonStyleCounterQuestion,
+                EntryStyle.REFERENCE, binding.buttonStyleReference
+        );
 
         binding.buttonDelete.setOnClickListener(v -> onDelete() );
         //binding.buttonStar.setOnClickListener(v -> onSendEntry() );
@@ -56,14 +69,6 @@ public class InputFragment extends Fragment {
         }, 100);
         */
 
-        Entry entry = Entries.getCurrentEntry();
-        oldValue = null == entry ? "" : entry.content;
-        binding.editextSecond.setText(oldValue);
-        binding.editextSecond.setSelection( binding.editextSecond.getText().length());
-        binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
-        // set TextView to entry content
-        binding.textViewHidden.setVisibility(View.GONE); // hide edit text for now
-
         // disable fab in FirstFragment
         // FIXME ((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
 
@@ -71,7 +76,7 @@ public class InputFragment extends Fragment {
         // KeyboardUtil.showKeyboard(requireActivity(), binding.editextSecond);
         binding.editextSecond.requestFocus();
         binding.editextSecond.postDelayed(() -> {
-            if (null != binding.editextSecond) {
+            if (null != binding && null != binding.editextSecond) {
                 binding.editextSecond.requestFocus();
                 InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                 if (imm != null) {
@@ -94,6 +99,75 @@ public class InputFragment extends Fragment {
 
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        logger.info("InputFragment started");
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        logger.info("InputFragment resumed");
+        Entry entry = Entries.getCurrentEntry();
+        oldValue = null == entry ? "" : entry.content;
+        EntryStyle entryStyle = EntryStyle.getByContent(oldValue);
+        styleButtonMap.forEach(
+                (style, button) -> {
+                    button.setSelected(style.getIconResourceId() == entryStyle.getIconResourceId());
+                    button.setOnClickListener( v -> toggle(v) );
+                    //button.setBackgroundResource(style.getIconResourceId());
+                }
+        );
+        toggle(null); // initial alpha setup
+        //
+        if (oldValue.endsWith(entryStyle.getSuffix())) {
+            oldValue = oldValue.substring(0, oldValue.length() - entryStyle.getSuffix().length());
+        }
+        //
+
+        binding.editextSecond.setText(oldValue);
+        binding.editextSecond.setSelection( binding.editextSecond.getText().length());
+        binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
+
+        if (binding != null) {
+            binding.editextSecond.requestFocus();
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(binding.editextSecond, InputMethodManager.SHOW_IMPLICIT);
+            }
+        } else {
+            logger.warn("Binding is null in onResume - unable to focus editextSecond");
+        }
+    }
+
+    private void toggle(View v) {
+        if (null != v){
+            v.setSelected(!v.isSelected());
+            if (v.isSelected()) {
+                for(View otherButton : styleButtonMap.values()){
+                    if (otherButton != v){
+                        otherButton.setSelected(false);
+                    }
+                }
+                // selecting = sending
+                onSendEntry();
+                return;
+            }
+        }
+        // iterate over all style buttons and set alpha if not selected
+        for (View button : styleButtonMap.values()) {
+            if (button.isSelected()) {
+                button.setAlpha(1.0f);
+            } else {
+                button.setAlpha(0.25f);
+            }
+        }
+    }
+
+
+
+
     public void  backToFirstFragment(){
         Entries.upOneTopicLevel(); // ???
         MainActivity.getInstance().switchToFirstFragment();
@@ -102,6 +176,30 @@ public class InputFragment extends Fragment {
 
     public void onSendEntry(){
         String newContent = binding.editextSecond.getText().toString();
+        // check style buttons
+        String suffix = "";
+        if (binding.buttonStyleFact.isSelected()) {
+            suffix = EntryStyle.FACT.getSuffix();
+        } else if (binding.buttonStyleFalseFact.isSelected()) {
+            suffix = EntryStyle.FALSE_FACT.getSuffix();
+        } else if (binding.buttonStyleQuestion.isSelected()) {
+            suffix = EntryStyle.QUESTION.getSuffix();
+        } else if (binding.buttonStyleCounterQuestion.isSelected()) {
+            suffix = EntryStyle.COUNTER_QUESTION.getSuffix();
+        } else if (binding.buttonStyleReference.isSelected()) {
+            suffix = EntryStyle.REFERENCE.getSuffix();
+        }
+        if (!suffix.isEmpty()){
+            EntryStyle byContent = EntryStyle.getByContent(newContent);// validate current suffix
+            if (!suffix.equals(byContent.getSuffix()) && newContent.endsWith(suffix)) {
+                // remove existing suffix - and re-append new one
+                newContent = newContent.substring(0, newContent.length() - byContent.getSuffix().length());
+                newContent += suffix;
+            } if (!newContent.endsWith(suffix)) {
+                newContent += suffix;
+            }
+        }
+
         EntryKey entryKey = Entries.getCurrentEntryKey();
         Entries.setEntry(entryKey, newContent, getContext());
         logger.info("Entry updated: {}", entryKey.getFullPath());
@@ -131,19 +229,6 @@ public class InputFragment extends Fragment {
         binding = null;
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        logger.info("InputFragment resumed");
-        if (binding != null) {
-            binding.editextSecond.requestFocus();
-            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                imm.showSoftInput(binding.editextSecond, InputMethodManager.SHOW_IMPLICIT);
-            }
-        } else {
-            logger.warn("Binding is null in onResume - unable to focus editextSecond");
-        }
-    }
+
 
 }

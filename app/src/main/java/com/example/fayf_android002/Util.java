@@ -1,6 +1,7 @@
 package com.example.fayf_android002;
 
 import android.view.MotionEvent;
+import com.example.fayf_android002.Entry.EntryStyle;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
