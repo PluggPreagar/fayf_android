@@ -7,14 +7,17 @@ import org.jetbrains.annotations.NotNull;
 // Dummy class to ease debugging MotionEvent issues
 public class MotionEventFixed {
 
+    private static final float MOVE_THRESHOLD = 5.0f;
     private final int action;
     private final float x;
     private final float y;
     private final long downTime;
-    private final long eventTime;
+    private long eventTime; // may be modified on delayed handover ...
     private final String msg;
     private final float rawX;
     private final float rawY;
+
+    private MotionEvent otherEvent = null;
 
     public MotionEventFixed(MotionEvent event) {
         // clone the event with all properties
@@ -27,6 +30,26 @@ public class MotionEventFixed {
         this.eventTime = event.getEventTime();
         this.msg = UtilDebug.eventToStr(event);
     }
+
+    public MotionEventFixed setOtherEvent(MotionEvent other) {
+        this.otherEvent = other;
+        return this;
+    }
+
+    public boolean hasMoved() {
+        return null != otherEvent && (this.rawX != otherEvent.getRawX() || this.y != otherEvent.getRawY())
+             && Math.max(Math.abs(this.rawX - otherEvent.getRawX()), Math.abs(this.rawY - otherEvent.getRawY()))
+                > MOVE_THRESHOLD;
+    }
+
+    public long getDuration() {
+        return  (null != otherEvent ? otherEvent.getEventTime() : eventTime) - downTime;
+    }
+
+
+
+
+    /* Getter methods */
 
     public int getAction() {
         return action;
@@ -58,5 +81,9 @@ public class MotionEventFixed {
 
     public float getRawY() {
         return rawY;
+    }
+
+    public void setEventTime(long l) {
+        eventTime = l;
     }
 }

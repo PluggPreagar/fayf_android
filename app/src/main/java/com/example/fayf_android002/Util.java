@@ -89,6 +89,10 @@ public class Util {
         return str;
     }
 
+    public static void postDelayed(Runnable runnable, long delayMillis) {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(runnable, delayMillis);
+    }
+
     public String shortEventString(MotionEvent event) {
         if (null == event) {
             return "null";
