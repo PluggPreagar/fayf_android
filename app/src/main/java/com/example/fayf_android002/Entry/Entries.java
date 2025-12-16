@@ -6,7 +6,6 @@ import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
-import com.example.fayf_android002.UI.CustomOnTouchListener;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,24 +62,6 @@ public class Entries {
         void onDataChanged(EntryKey entryKey);
     }
 
-
-    /*    TODO move to ViewModel ? */
-
-    private static CustomOnTouchListener viewTouchedInProgress = null;
-
-    public static void registerTouchInProgress(CustomOnTouchListener v) {
-        logger.debug("registerTouchInProgress: {} ", v.getId());
-        viewTouchedInProgress = v;
-    }
-
-    public static void unregisterTouchInProgress(CustomOnTouchListener v) {
-        logger.debug("unregisterTouchInProgress: {} reset ", v.getId());
-        viewTouchedInProgress = null;
-    }
-
-    public static CustomOnTouchListener getViewTouchedInProgress() {
-        return viewTouchedInProgress;
-    }
 
 
 

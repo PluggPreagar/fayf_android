@@ -20,6 +20,8 @@
         <item name="android:windowBackground">@color/colorBackground</item>
     </style>
 
-    <style name="Theme.Fayf_android002" parent="Base.Theme.Fayf_android002"/>
-
+    <style name="Theme.Fayf_android002" parent="Base.Theme.Fayf_android002">
+        <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="android:backgroundTint">@color/colorPrimary</item>
+    </style>
 </resources>

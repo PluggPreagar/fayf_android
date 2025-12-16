@@ -1,7 +1,6 @@
 package com.example.fayf_android002;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.*;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,17 +15,13 @@ import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
-import com.example.fayf_android002.UI.CustomOnTouchListener;
-import com.example.fayf_android002.UI.MotionEventFixed;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static android.content.ContentValues.TAG;
-
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
+public class MainActivity extends AppCompatActivity  {
 
     public static final Logger logger = LoggerFactory.getLogger(MainActivity.class);
 
@@ -401,24 +396,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
 
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        // forward touch event to child views
-        logger.debug("MainActivity onTouch: event: " + event.toString());
-        CustomOnTouchListener viewTouchedInProgress = Entries.getViewTouchedInProgress();
-        if (viewTouchedInProgress != null ) {
-            // prevent scrolling once Direction is Set
-            // true to consume event here -> prevent scrollview from scrolling
-            boolean b = viewTouchedInProgress.onTouch( new MotionEventFixed( event) );
-            // TODO KLUDGE - check direction
-            boolean b2 = CustomOnTouchListener.directionX;
-            Log.d(TAG, "MainActivity onTouch: forwarded, returned: " + b +" is:" + b2 + " event: " + event.toString());
-            return b2;
-        } else {
-            Log.d(TAG, "MainActivity onTouch: " + event.toString());
-        }
-        return false;
-    }
 
     /*
 

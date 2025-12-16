@@ -1,5 +1,6 @@
 package com.example.fayf_android002;
 
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,12 +11,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
-import com.example.fayf_android002.UI.CustomOnTouchListener;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.appbar.AppBarLayout;
@@ -326,6 +327,15 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
          */
+        for (int i = buttonList.getChildCount() - 1; i >= 0 ; i--) {
+            View child = buttonList.getChildAt(i);
+            if (child != null) {
+                // TODO KLUDE - TINT is messed up - may be due to old android version
+                child.setBackgroundTintList(ContextCompat.getColorStateList(this.getContext(), R.color.white));
+                child.setBackgroundTintMode(PorterDuff.Mode.MULTIPLY);
+
+            }
+        }
         int uniqueIdBase = 1000; // base for unique IDs
         for (int i = buttonList.getChildCount(); i < 20 ; i++) {
             Button button = (Button) LayoutInflater.from(requireContext()).inflate(R.layout.button_clone, null);
@@ -505,7 +515,7 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                     params.topMargin = 10;
                     params.bottomMargin = 10;
                     button.setLayoutParams(params);
-
+/*
                     btn.setOnTouchListener(new CustomOnTouchListener(this) {
 
                         @Override
@@ -537,7 +547,7 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
 
 
                     });
-
+*/
 
                 } else {
                     logger.warn("Button at index {} is not ButtonTouchable, but {}", idx, button.getClass().getName());
