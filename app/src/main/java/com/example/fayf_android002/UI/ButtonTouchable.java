@@ -3,6 +3,7 @@ package com.example.fayf_android002.UI;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.util.Log;
@@ -27,6 +28,7 @@ public class ButtonTouchable extends MaterialButton {
     private EntryKey entryKey = null; // entry associated with this button
     private FirstFragment fragment = null; // fragment containing this button
     private static float startX;
+    private Drawable background = null;
 
     private GestureDetector gestureDetector;
 
@@ -77,7 +79,19 @@ public class ButtonTouchable extends MaterialButton {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 startX = event.getX();
+                background = getBackground();
                 setBackgroundColor(getResources().getColor(android.R.color.darker_gray)); // Light feedback on touch start
+
+                // Set the red trash bin icon on the right side of the button
+                Drawable trashBinIcon = ContextCompat.getDrawable(getContext(), R.drawable.ic_baseline_folder_24);
+                if (trashBinIcon != null) {
+                    trashBinIcon.setBounds(0, 0, trashBinIcon.getIntrinsicWidth(), trashBinIcon.getIntrinsicHeight());
+                }
+                setCompoundDrawablesWithIntrinsicBounds(null, null, trashBinIcon, null);
+
+                // Optional: Add padding between the text and the icon
+                setCompoundDrawablePadding(16);
+
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -86,24 +100,35 @@ public class ButtonTouchable extends MaterialButton {
                 float maxSwipeDistance = getWidth(); // Use the button's width as the max swipe distance
                 float proportion = Math.min(1, Math.abs(deltaX) / maxSwipeDistance); // Clamp proportion to [0, 1]
 
+                // interpolate middle color between red and green based on swipe direction and distance
+                // deltaXtouch starting from real position
+                float deltaXtouch = event.getX() - startX;
+                int middleColor = deltaX < 0
+                        ? Color.rgb(255, (int)(255 * (proportion)), (int)(255 * (proportion))) // Red to white
+                        : Color.rgb((int)(255 * (proportion)), 255, (int)(255 * (proportion))); // White to green
+
                 // Calculate gradient shift
-                int[] colors = new int[]{Color.RED, Color.WHITE, Color.GREEN};
+                int[] colors = new int[]{Color.RED, middleColor, Color.GREEN};
                 float[] positions = new float[]{Math.max(0, 0.5f - proportion / 2), Math.min(1, 0.5f + proportion / 2)};
 
                 GradientDrawable gradientDrawable = new GradientDrawable(
                         GradientDrawable.Orientation.LEFT_RIGHT, colors
                 );
-                gradientDrawable.setGradientCenter( positions[0], positions[1]);
+                //gradientDrawable.setGradientCenter( positions[0], positions[1]);
                 gradientDrawable.setCornerRadius(32); // Optional: Rounded corners
                 gradientDrawable.setStroke(4, Color.BLACK); // Optional: Border width and color
 
                 setBackground(gradientDrawable); // Apply the gradient dynamically
 
+                //
+
+
+
                 break;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                setColor(getResources().getColor(android.R.color.transparent)); // Reset background
+                resetBackgroundAfterDelay();
                 break;
         }
         return super.onTouchEvent(event);
@@ -149,7 +174,7 @@ public class ButtonTouchable extends MaterialButton {
                 logger.info("Toggle config entry for {}.", entryKey.getFullPath());
                 config.toggleValue(); // nodeId is the config key
                 // force refresh button text - refresh fragment
-                fragment.updateButtonsUIThread();
+                // fragment.updateButtonsUIThread();
             } else if (Config.TENANT.is(config) || config.name().startsWith("TEST_") ) {
                 logger.warn("Edit Config {} by click.", entryKey.getFullPath());
                 fragment.navigateToEdit(entryKey); // navigate to edit this entry
@@ -195,7 +220,10 @@ public class ButtonTouchable extends MaterialButton {
     }
 
     private void resetBackgroundAfterDelay() {
-        new Handler().postDelayed(() -> setColor(getResources().getColor(android.R.color.transparent)), 300);
+        new Handler().postDelayed(() -> {
+            setColor(getResources().getColor(android.R.color.transparent));
+            setBackground(background);
+        }, 300);
     }
 
 

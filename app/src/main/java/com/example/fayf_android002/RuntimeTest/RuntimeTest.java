@@ -67,6 +67,7 @@ public class RuntimeTest {
                 .clickBack()
                 .clickBack()
         ;
+        /*
         queue.testBlock("start at root")
                 .isVisible(R.id.button1, "c1")
                 .isVisible(R.id.button2, "c2 >");
@@ -97,7 +98,7 @@ public class RuntimeTest {
                 .clickBack()
                 .waitForVisible(R.id.button3, "c3 >").doc("c3 is now a topic with child")
                 ;
-
+        */
         queue.testBlock("done"); // check finish of last block
         queue.run();
     }

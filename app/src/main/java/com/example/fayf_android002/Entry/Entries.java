@@ -333,6 +333,17 @@ public class Entries {
         return offsetOld != offset;
     }
 
+    public static SortedEntryMap getTopicEntries(){
+        // TODO optimize - avoid double iteration
+        Iterator<Map.Entry<String, Entry>> entriesIterator = getEntriesIterator(0);
+        SortedEntryMap entries = new SortedEntryMap();
+        while (entriesIterator.hasNext()) {
+            Map.Entry<String, Entry> e = entriesIterator.next();
+            entries.put(e.getKey(), e.getValue());
+        }
+        return entries;
+    }
+
     public static Iterator<Map.Entry<String, Entry>> getEntriesIterator(int offset) {
         SortedEntryMap entry = entryTree.getTopic(currentEntryKey);
         String searchQuery = Entries.searchQuery.startsWith("!") ? Entries.searchQuery.substring(1) : Entries.searchQuery;

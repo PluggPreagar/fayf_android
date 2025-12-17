@@ -14,9 +14,12 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
+import com.example.fayf_android002.UI.MainItemAdapter;
 import com.example.fayf_android002.databinding.FragmentFirstBinding;
 import com.example.fayf_android002.UI.ButtonTouchable;
 import com.google.android.material.appbar.AppBarLayout;
@@ -31,17 +34,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class FirstFragment extends Fragment implements NestedScrollView.OnScrollChangeListener {
+public class FirstFragment extends Fragment {
 
     private final String FIRST_FRAGMENT = "FirstFragment";
     Logger logger = LoggerFactory.getLogger(FirstFragment.class);
 
-    private FragmentFirstBinding binding;
-
-    private boolean blockRekursiveScroll = true;
-    private NestedScrollView scrollView = null;
+    private View view;
 
     private Map<Integer, BadgeDrawable> badgeMap = new HashMap<>();
+
+    private RecyclerView recyclerView;
+    private MainItemAdapter adapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,20 +61,20 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     ) {
 
         logger.info("FirstFragment onCreateView() called");
-        binding = FragmentFirstBinding.inflate(inflater, container, false);
-        RuntimeTester.registerFragment(FIRST_FRAGMENT, this, R.id.FirstFragment, binding.getRoot());
+        view = inflater.inflate(R.layout.fragment_first, container, false);
 
-        // initializeButtons(); // to early here ?
+        recyclerView = view.findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new MainItemAdapter(getContext(), Entries.getTopicEntries() );
+        recyclerView.setAdapter(adapter);
+
+        RuntimeTester.registerFragment(FIRST_FRAGMENT, this, R.id.FirstFragment, view);
 
         // Navigating from SecondFragment to FirstFragment will not show the Topic Title
-        getMainActivity().updateActionBarTitle();
-
         if (Entries.size()<3) { // TODO ignore /_/config topic
-            /* get Data */
             Entries.load_async(requireContext()); // async load entries - will trigger callback to update buttons
         }
 
-        //((MainActivity) requireActivity()).getFab().setVisibility(View.GONE);
         Entries.setOnTopicChangedListener(FIRST_FRAGMENT, entry -> {
             if (!this.isVisible()) {
                 // somehow I removed the listener on onDestroyView
@@ -90,68 +93,14 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
                 return; //rather than set/reset listener on onResume/onPause
             }
             logger.info("Data changed callback received, updating buttons - but keep topic and offset");
-            updateButtonsUIThread();
         });
 
         // on overscroll the bottom of button list
         // then top entries are out of reach
 
         // get ButtomList.onOverScrolledListener
-        /*
-        binding.ButtonScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            if (scrollY == oldScrollY) {
-                return; // no scroll // may happen while WO top-out-of-reach issue
-            }
-            if (blockRekursiveScroll && 0 == scrollY) {
-                blockRekursiveScroll = false;
-                return; // skip first call after programmatic scroll
-            }
-            View view = binding.ButtonScrollView.getChildAt(binding.ButtonScrollView.getChildCount() - 1);
-            int diff = (view.getBottom() - (binding.ButtonScrollView.getHeight() + binding.ButtonScrollView.getScrollY()));
-            if (diff == 0) {
-                // we are at the bottom
-                logger.info("ScrollView reached bottom");
-                if (true) {
-                    logger.info("Scrolling load more entries skipped - TEST");
-                }
-                if (Entries.changeOffsetBy(5)){
-                    // load next 20 entries
-                    logger.info("Loading next entries after overscroll at bottom");
-                    updateButtonsUIThread();
-                } else {
-                    logger.info("No more entries to load after overscroll at bottom");
-                }
-            }
-            // if on overscroll at top
-            if (binding.ButtonScrollView.getScrollY() == 0) {
-                logger.info("ScrollView reached top");
-                // we are at the top
-                if (Entries.changeOffsetBy(-5)){
-                    // load previous 20 entries
-                    updateButtonsUIThread();
-                    logger.info("Loading previous entries after overscroll at top");
-                } else {
-                    logger.info("No previous entries to load after overscroll at top");
-                }
-                // try to fix the top-out-of-reach--after--scrolling-bottom issue
-                if (scrollX>0) {
-                    binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
-                    binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
-                    // scroll to see first button
-                    binding.button1.requestFocus();
-                }
-            }
-        });
-        */
 
-
-        // try to fix the top-out-of-reach--after--scrolling-bottom issue
-        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
-        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.scrollTo(0, 0));
-        // scroll to see first button
-        //binding.button1.requestFocus();
-
-        return binding.getRoot();
+        return view;
 
     }
 
@@ -159,61 +108,19 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
-        binding.ButtonScrollView.setOnScrollChangeListener(this);
+        // this.view.ButtonScrollView.setOnScrollChangeListener(this);
         UtilDebug.inspectView();
 
-/*
-        binding.button1.setOnClickListener(v ->
-                NavHostFragment.findNavController(FirstFragment.this)
-                        .navigate(R.id.action_FirstFragment_to_SecondFragment)
-        );
-
-        if (getArguments() != null) {
-            String entryFullPath = getArguments().getString("entryFullPath", "");
-            // fullPath = topic / nodeId
-            String topic = Entry.getTopicFromFullPath(entryFullPath);
-            logger.info("Received argument entryFullPath: {}, setting topic to: {}", entryFullPath, topic);
-        }
-
-        if (0 == Entries.size()) {
-            logger.info("Entries not loaded yet, will update buttons after loading");
-        } else {
-            logger.info("Entries already loaded ({} entries), updating buttons", Entries.size());
-            updateButtonsUIThread();
-        }
-*/
-        // binding.button1.requestFocus();
     }
 
     private void onTopicChanged(EntryKey entryKey) {
         logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
-        updateButtonsUIThread();
-        // scroll to top, show appbar
-        binding.ButtonScrollView.scrollTo(0, 0);
-        MainActivity.getInstance().runOnUiThread(() -> {
-            // ensure scroll to top and appbar visible
-            binding.ButtonScrollView.fullScroll(View.FOCUS_UP);
-            binding.ButtonScrollView.scrollTo(0, 0);
-            AppBarLayout appBarLayout =  MainActivity.getInstance().findViewById(R.id.appbar);
-            appBarLayout.setExpanded(true, true); // Scrolls the toolbar into viewc
-        });
-        binding.ButtonScrollView.post(() ->
-                {
-                    /*
-                    logger.debug("Scrolling to top after topic change");
-                    binding.ButtonScrollView.fullScroll(View.FOCUS_UP);
-                    binding.ButtonScrollView.scrollTo(0, 0);
-
-                     */
-                } // scroll to top
-        );
+        adapter.updateData( Entries.getTopicEntries() );
     }
 
     public void onResume() {
         logger.info("FirstFragment onResume() called");
         super.onResume();
-        // called when getting from InputFragment back to FirstFragment
-        updateButtonsUIThread(); // in case entries changed while in background
 
     }
 
@@ -296,288 +203,6 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     }
 
 
-    /*
-            B U T T O N S
-     */
-
-    private MainActivity getMainActivity() {
-        return ((MainActivity) getActivity());
-    }
-
-
-    // add 10 Buttons dynamically to ButtonList
-    public void initializeButtons() {
-        ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
-        // TODO -
-        if (buttonList == null) {
-            logger.error("ButtonList ViewGroup not found in MainActivity");
-            return;
-        }
-        if (false) {
-            logger.info("initializeButtons() skipped - already initialized");
-            binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
-            return;
-        }
-        logger.info("Initializing buttons in ButtonList {} ", buttonList.getChildCount());
-        //buttonList.removeAllViews(); // clear existing buttons
-        /*
-                app:layout_constraintTop_toBottomOf="@id/button2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-         */
-        for (int i = buttonList.getChildCount() - 1; i >= 0 ; i--) {
-            View child = buttonList.getChildAt(i);
-            if (child != null) {
-                // TODO KLUDE - TINT is messed up - may be due to old android version
-                child.setBackgroundTintList(ContextCompat.getColorStateList(this.getContext(), R.color.white));
-                child.setBackgroundTintMode(PorterDuff.Mode.MULTIPLY);
-
-            }
-        }
-        int uniqueIdBase = 1000; // base for unique IDs
-        for (int i = buttonList.getChildCount(); i < 20 ; i++) {
-            Button button = (Button) LayoutInflater.from(requireContext()).inflate(R.layout.button_clone, null);
-            buttonList.addView(button);
-            /*
-            Button button = new Button(getActivity());
-            button.setId(uniqueIdBase + i); // set unique ID
-            button.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-            ));
-            buttonList.addView(button);
-
-             */
-            ConstraintSet constraintSet = new ConstraintSet();
-            constraintSet.clone((ConstraintLayout) buttonList);
-            if (i == 0) {
-                constraintSet.connect(button.getId(), ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, 16);
-            } else {
-                constraintSet.connect(button.getId(), ConstraintSet.TOP, buttonList.getChildAt(i - 1).getId(), ConstraintSet.BOTTOM, 16);
-            }
-            constraintSet.connect(button.getId(), ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 16);
-            constraintSet.connect(button.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 16);
-            constraintSet.applyTo((ConstraintLayout) buttonList);
-
-
-            //
-            button.setText("Button " + (i + 1));
-        }
-
-        for (int i = 0; i < buttonList.getChildCount(); i++) {
-            View button = buttonList.getChildAt(i);
-            if (button instanceof Button) {
-
-            }
-        }
-        //binding.ButtonScrollView.post(() -> binding.ButtonScrollView.fullScroll(View.FOCUS_UP));
-        logger.info("Initialized buttons in ButtonList, total count: {} ", buttonList.getChildCount());
-    }
-
-
-
-    public void updateButtonsUIThread() {
-        requireActivity().runOnUiThread(() -> {
-            initializeButtons();
-            logger.info("Render in UI-Thread ({} entries)", Entries.size());
-            updateButtons(); // update buttons after entries loaded
-        });
-    }
-
-    public void updateButtons() {
-        updateButtons( Entries.getOffset());
-    }
-
-    public void updateButtons( int offset) {
-        int limit = 20; // buttonList.getChildCount();
-        logger.info("Updating buttons for topic: {} , offset: {}, limit: {} max: {} "
-                , Entries.toString(Entries.getCurrentEntryKey())
-                , offset, limit, Entries.getCurrentTopicSize());
-        UtilDebug.logCompactCallStack("FirstFragment.updateButtons(" + offset + ")");
-        ViewGroup buttonList = getMainActivity().findViewById(R.id.ButtonList);
-        if (buttonList == null) {
-            logger.error("ButtonList ViewGroup not found in MainActivity");
-            return;
-        }
-        if (null == binding || null == binding.ButtonScrollView) {
-            logger.error("Binding or ButtonScrollView is null, cannot update buttons");
-            return;
-        }
-        if (false) {
-            logger.info("updateButtons() skipped - TEST");
-            return;
-        }
-        String topic = Entries.getCurrentEntryKey().getFullPath();
-        Iterator<Map.Entry<String, Entry>> entriesIterator = Entries.getEntriesIterator( offset);
-        int idx = 0;
-        if (!entriesIterator.hasNext()) {
-            logger.info("No entries found for topic: {}, offset: {}", topic, offset);
-            //Entries.upOneTopicLevel(); // will trigger callback to update buttons again --> RECURSIVE LOOP !!
-            if (!topic.equals(EntryTree.ROOT_ENTRY_KEY.getFullPath())) {
-                // Toast message - suppressed to avoid spam on startup
-                Toast.makeText(getActivity(), "No entries found for the selected topic.", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-
-            while (entriesIterator.hasNext() && limit > 0) {
-                Map.Entry<String, Entry> e = entriesIterator.next();
-                String nodeId = e.getKey();
-                Entry entry = e.getValue();
-                logger.info("Entry: {}", entry.content);
-                // KLUDGE  iterate over Buttons in ButtonList
-
-                // iterate over Buttons in ButtonList
-                View button = buttonList.getChildAt(idx);
-                if (button instanceof ButtonTouchable) {
-
-                    ButtonTouchable btn = (ButtonTouchable) button;
-                    btn.setEntry(new EntryKey( topic, nodeId), this); // set entry and fragment reference, allow runtime test
-
-                    if (topic.startsWith(Config.CONFIG_PATH)) {
-                        btn.setText("" + Config.DisplayName( nodeId ) + ": " + entry.content);
-                    } else {
-                        btn.setText(entry.content);
-                    }
-                    if (Entries.isTopic(new EntryKey( topic, nodeId))) {
-                        btn.setContentDescription("Topic: " + entry.content);
-                        btn.setTextAppearance(R.style.TopicButtonStyle);
-                        btn.setIconResource(R.drawable.baseline_chevron_right_24);
-                    } else {
-                        btn.setContentDescription("Note: " + entry.content);
-                        btn.setTextAppearance(R.style.NoteButtonStyle);
-                        btn.setIconResource(R.drawable.ic_baseline_note_24);
-                    }
-
-                    // remove existing badge if any
-                    if (entry.rank > 0) {
-                        // use icons8_thumbs_up_96.png from mipmap
-                        btn.setCompoundDrawablesWithIntrinsicBounds(R.mipmap.icons8_thumbs_up_96, 0, 0, 0);
-                    } else if (entry.rank < 0) {
-                        // use icons8_thumbs_down_96.png from mipmap
-                        btn.setCompoundDrawablesWithIntrinsicBounds(R.mipmap.icons8_thumbs_down_right_48, 0, 0, 0);
-                    } else {
-                        btn.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-                    }
-                    btn.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START); // Icon on the left
-                    btn.setIconPadding(16); // Padding between icon and text
-                    BadgeDrawable badgeDrawable = badgeMap.get(idx);
-                    if (entry.rank == 0) {
-                        if (badgeDrawable != null) { // detach existing badge
-                            BadgeUtils.detachBadgeDrawable(badgeDrawable, btn);
-                        }
-                    } else {
-                        if (badgeDrawable == null) {
-                            badgeDrawable = BadgeDrawable.create(getContext());
-                            badgeMap.put(idx, badgeDrawable);
-                        }
-                        //badgeDrawable.setNumber(Math.abs(entry.rank));
-                        badgeDrawable.setText("" + entry.rank
-                                + (0 != entry.otherVotes?  " (" + entry.otherVotes+")" : ""));
-                        badgeDrawable.setBackgroundColor( entry.rank > 0 ?
-                                getResources().getColor(R.color.green_700, null) :
-                                getResources().getColor(R.color.red_700, null)
-                        );
-                        // badge padding to right
-                        badgeDrawable.setHorizontalOffset(20);
-                        BadgeUtils.attachBadgeDrawable(badgeDrawable, btn, null);
-                    }
-                    btn.setCompoundDrawablePadding(16);
-                    // add singedVotes to content description - set icon to signed
-                    String content = entry.getContent();
-                    btn.setIconResource(
-                            // content.endsWith(".") ? R.drawable.baseline_folder_24 :  // Meinung.
-                            content.endsWith("??") ? EntryStyle.COUNTER_QUESTION.getIconResourceId() :  // Gegenfrage ??
-                            content.endsWith("?") ? EntryStyle.QUESTION.getIconResourceId() :  // Frage / Diskussion ?
-                            content.endsWith("!-") ? EntryStyle.FALSE_FACT.getIconResourceId() :  // falsifizerter Fact !-
-                                    !entry.signedVotes.isEmpty() ? R.mipmap.icons8_guarantee_100_3 :
-                                            content.endsWith("!") ? EntryStyle.FACT.getIconResourceId() :  // Fact !
-                                            content.endsWith("@") ? EntryStyle.REFERENCE.getIconResourceId() :  // Reference @
-                            entry.getMyVote() > 0 ? R.mipmap.icons8_thumbs_up_96 :
-                            entry.getMyVote() < 0 ? R.mipmap.icons8_thumbs_down_right_48 :
-                            Entries.isTopic(new EntryKey( topic, nodeId)) ? R.drawable.baseline_chevron_right_24 :
-                                    R.drawable.ic_baseline_note_24
-                    );
-                    // icon padding
-                    btn.setIconPadding(32); // Padding between icon and text
-
-                    /*
-                    // show button
-                     */
-                    btn.setVisibility(View.VISIBLE);
-                    // make button height larger
-                    MaterialButton btn_m = (MaterialButton) button;
-                    btn_m.setInsetTop( 0);
-                    btn_m.setInsetBottom(0);
-                    // compensate with margins
-                    ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) button.getLayoutParams();
-                    params.topMargin = 10;
-                    params.bottomMargin = 10;
-                    button.setLayoutParams(params);
-/*
-                    btn.setOnTouchListener(new CustomOnTouchListener(this) {
-
-                        @Override
-                        public void onClick() {
-                            //Toast.makeText(getActivity(), "Click: " + entry.content, Toast.LENGTH_SHORT).show();
-                            btn.performClick(); // Fragment calls updateButtonsUIThread() after changing topic
-                            // updateButtonsUIThread(); // TODO should be called from Entries after topic change
-                        }
-                        @Override
-                        public void onLongClick() {
-                            //Toast.makeText(getActivity(), "LongClick: " + entry.content, Toast.LENGTH_SHORT).show();
-                            btn.performLongClick();
-                        }
-
-                        @Override
-                        public void onSwipeRight() {
-                            MainActivity.notifyUser("Up(" + (entry.rank + 1) + ") ");
-                            //Entries.setTopicEntry(entry); // set topic to this entry
-                            Entries.vote(btn.getEntryKey(), +1);
-                        }
-                        @Override
-                        public void onSwipeLeft() {
-                            MainActivity.notifyUser("Down(" + (entry.rank +(entry.rank > 0 ? -2 : -1)) + ") ");
-                            //navigateToEdit(entry); // navigate to edit this entry
-                            // allow Workflow
-                            //      unvoted (Backlog) -> Upvoted (WIP) -> Downvoted (DONE ) -> unvoted (Backlog)
-                            Entries.vote(btn.getEntryKey(), entry.rank == 1 ? -2 : -1);
-                        }
-
-
-                    });
-*/
-
-                } else {
-                    logger.warn("Button at index {} is not ButtonTouchable, but {}", idx, button.getClass().getName());
-                }
-
-                limit--;
-                idx++;
-            }
-        }
-
-        logger.info("{} Buttons updated, hiding remaining buttons if any", idx);
-        while (limit > 0) {
-            if (idx >= buttonList.getChildCount() || buttonList.getChildAt(idx) == null) {
-                logger.warn("No more buttons available in ButtonList to hide (idx: {}, childCount: {})", idx, buttonList.getChildCount());
-                break;
-            }
-            buttonList.getChildAt(idx).setVisibility(View.GONE);
-            limit--;
-            idx++;
-        }
-
-
-        //
-        // getMainActivity().getSupportActionBar().setTitle("FAYF - " + topic);
-        if (null != binding.ButtonScrollView){
-            binding.ButtonScrollView.post(()
-                    -> {if (null != binding && null != binding.ButtonScrollView) binding.ButtonScrollView.fullScroll(View.FOCUS_UP);});
-        }
-    }
-
 
 
 
@@ -603,73 +228,8 @@ public class FirstFragment extends Fragment implements NestedScrollView.OnScroll
     public void onDestroyView() {
         super.onDestroyView();
         logger.info("FirstFragment onDestroyView() called");
-        binding = null;
+        view = null;
     }
 
-    /*
-            S C R O L L V I E W
-     */
-
-    // prevent self bounce
-
-    // 0 == no scroll in progress
-    // t = timestamp for reset
-    public static long scrollingInProgress = 0;
-
-    public static boolean isScrollingInProgress() {
-        if (0 == scrollingInProgress) {
-            return false;
-        }
-        if (System.currentTimeMillis() > scrollingInProgress) {
-            scrollingInProgress = 0;
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public void onScrollChange(@NonNull @NotNull NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-        if (isScrollingInProgress()){ // KLUDGE
-            logger.warn("onScrollChange recursionGuard active, skipping");
-            UtilDebug.logCompactCallStack("FirstFragment.onScrollChange() recursionGuard");
-            return;
-        }
-        // Detect scrollview top and bottom
-        View view = v.getChildAt(v.getChildCount() - 1);
-        int topDetector = v.getScrollY();
-        int bottomDetector = view.getBottom() - (v.getHeight() + v.getScrollY());
-        int offsetMove = 0;
-        if(topDetector <= 0){
-            // v.scrollTo(0,v.getBottom()/2);
-            //Toast.makeText( MainActivity.getInstance(),"Scroll View top reached",Toast.LENGTH_SHORT).show();
-            logger.info("ScrollView reached top");
-            offsetMove = -1;
-        }
-        if(bottomDetector == 0 ){
-            //v.scrollTo(0,v.getBottom()/2);
-            //Toast.makeText( MainActivity.getInstance(),"Scroll View bottom reached",Toast.LENGTH_SHORT).show();
-            logger.info("ScrollView reached bottom");
-            offsetMove = 1;
-        }
-        if (offsetMove != 0) {
-            UtilDebug.logCompactCallStack("FirstFragment.onScrollChange()");
-            offsetMove *= 10; // load 5 entries
-            if (Entries.changeOffsetBy(offsetMove)) {
-                logger.info("Loading more entries after overscroll at {} (offset: {}: {} of {})",
-                        offsetMove > 0 ? "bottom" : "top",
-                        offsetMove, Entries.getOffset(), Entries.getCurrentTopicSize());
-                if (!isScrollingInProgress()){
-                    scrollingInProgress = System.currentTimeMillis() + 500; // 500ms guard
-                    updateButtonsUIThread();
-                    // scroll to opposite end to prevent self bounce
-                    v.scrollTo(0, offsetMove > 0 ? 1 : v.getBottom() - v.getHeight());
-                } // prevent self bounce
-            } else {
-                logger.info("No more entries to load after overscroll at {} (offset {}: {} of {})",
-                        offsetMove > 0 ? "bottom" : "top",
-                        offsetMove, Entries.getOffset(), Entries.getCurrentTopicSize());
-            }
-        } // move
-    } // onScrollChange
 
 }
