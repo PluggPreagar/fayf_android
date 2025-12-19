@@ -2,11 +2,10 @@ package com.example.fayf_android002.RuntimeTest;
 
 import android.graphics.drawable.Drawable;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.Button;
 import android.widget.TextView;
+import androidx.annotation.IdRes;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.Util;
@@ -85,7 +84,7 @@ public class UtilDebug {
         }
     }
 
-    private static String getVisibilityStatus(int visibility) {
+    public static String getVisibilityStatus(int visibility) {
         switch (visibility) {
             case View.VISIBLE:
                 return "VISIBLE";
@@ -96,6 +95,10 @@ public class UtilDebug {
             default:
                 return "UNKNOWN";
         }
+    }
+
+    public static String getVisibilityStatus(View view) {
+        return getVisibilityStatus(view.getVisibility());
     }
 
 
@@ -111,6 +114,11 @@ public class UtilDebug {
     }
 
 
+    public static MenuItem getMenuItem(int viewId) {
+        Menu menu = MainActivity.getInstance().menu;
+        return null == menu ? null : menu.findItem(viewId);
+    }
+
     public static View getView(int viewId) {
         return getView(null, viewId);
     }
@@ -118,6 +126,7 @@ public class UtilDebug {
     public static View getView(View view, int viewId) {
         View matchingView = null;
         if (view == null) {
+            // check for menu items
             view = MainActivity.getInstance().findViewById(android.R.id.content);
         }
         // If the view is a ViewGroup, inspect its children
@@ -187,7 +196,7 @@ public class UtilDebug {
                     break;
             }
         } else {
-            Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
+            // Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
         }
         if (null != viewText &&  viewText.equals(text)){
             Log.d(TAG, "getView: found matching view " + getResourceName(view) + " (" + view.getId() + ") with text \"" + text + "\"");
@@ -251,5 +260,23 @@ public class UtilDebug {
 
     public static void logError(String s, Exception e) {
         Log.e(TAG, s + " Exception: " + e.getMessage());
+    }
+
+    /*
+        view log helpers
+     */
+
+    public static String logName(@IdRes int viewId) {
+        View view = UtilDebug.getView(viewId);
+        if ( null != view ) {
+            return logName(view);
+        } else {
+            return String.valueOf(viewId );
+        }
+    }
+
+
+    public static String logName(View view) {
+        return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
     }
 }

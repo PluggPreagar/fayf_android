@@ -29,51 +29,17 @@ public class ActionExecutor {
     private String testContext = "";
     private ActionQueueEntry currentAction = null;
 
-    private String logName(View view) {
-        return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
-    }
 
-    private String logName(@IdRes int viewId) {
-        View view = UtilDebug.getView(viewId);
-        if ( null != view ) {
-            return logName(view);
-        } else {
-            return String.valueOf(viewId );
-        }
-    }
+
 
     @SuppressLint("RestrictedApi")
     public void executeAction(ActionQueueEntry action, ActionQueue actionQueue) {
         // switch on action type
         currentAction = action;
-        Object view = getViewOptional(action);
-        if ( view == null ) {
-            // maybe a MenuItem
-            Menu menu = MainActivity.getInstance().menu;
-            if ( null != menu ){
-                view = menu.findItem(action.viewId); // ensure menu is initialized
-            }
-        }
         if ( ActionQueueEntry.ACTIONS.TEST_BLOCK == action.action ) {
             logger.info("---------------------------------------");
         } else if ( ActionQueueEntry.ACTIONS.DOC != action.action ) {
-            // FIXME : handle menu items here too
-            String text = "";
-            if ( null != view && view instanceof SupportMenuItem ){
-                text = ((SupportMenuItem) view).getTitle().toString();
-                text += " Text='" + ((SupportMenuItem) view).getTitle().toString() + "'";
-            } else if ( null != view && view instanceof android.widget.TextView ){
-                text = logName( (View) view ) + " Text='" + ((android.widget.TextView) view).getText().toString() + "'";
-            } else if ( null != view && view instanceof View ){
-                text = logName( (View) view );
-            }
-            Fragment fragment = RuntimeTester.findFragmentOptional(action.fragmentId);
-            logger.info("-- " + action.action
-                    + ( null == fragment ? "<unknown-fragment> : "
-                        : " on Fragment: \"" + fragment.getClass().getSimpleName() + "\"")
-                    + ( action.viewId != -1 ? " View: " + (null == view ? action.viewId + " (NOT FOUND)" : text )
-                    : "" )
-            );
+            logger.info(action.toString());
         }
         long waitTime = action.waitTimeMs; // allow action to "consume" its wait time - default is post-action wait
         switch (action.action) {
@@ -131,45 +97,8 @@ public class ActionExecutor {
 
 
 
-    private Fragment getFragment(ActionQueueEntry action) {
-        Fragment fragment = RuntimeTester.findFragment(action.fragmentId);
-        if (fragment == null) {
-            throw new IllegalArgumentException("Fragment not found: " + action.fragmentId);
-        }
-        return fragment;
-    }
-
-
-    private View getViewOptional(ActionQueueEntry action) {
-        View view = null;
-        if ( action.viewId < 0 ) {
-            // search view by text
-            view = UtilDebug.getView(null, action.text);
-            logger.info("fixate view ID {} -> {} for text '{}'", action.viewId, null == view ? "<null>" : view.getId(), action.text);
-            if ( null != view ) {
-                action.fixated = true; // easy normal handling, but leave chance to re-resolve by text
-                action.viewId = view.getId();
-                action.view = view; // need to store view, as on recycler views the ID identical or reused
-            }
-        } else {
-            view = UtilDebug.getView(action.viewId);
-        }
-        Fragment fragment = RuntimeTester.findFragmentOptional(action.fragmentId);
-        return  null != view ? view : action.viewId < View.VISIBLE || null == fragment ? null : fragment.requireView().findViewById(action.viewId);
-    }
-
-    private View getView(ActionQueueEntry action) {
-        View view = getViewOptional(action);
-        if (view == null) {
-            logger.warn("View not found: {} in fragment {}", action.viewId, action.fragmentId);
-        }
-        return view;
-    }
-
-
-
     private FragmentActivity getActivity(ActionQueueEntry action) {
-        Fragment fragment = getFragment(action);
+        Fragment fragment = action.getFragment();
         if (fragment.getActivity() == null) {
             throw new IllegalArgumentException("Fragment's activity is null: " + action.fragmentId);
         }
@@ -214,19 +143,18 @@ public class ActionExecutor {
         }
         // Fragment fragment = getFragment(action);
         // View view = fragment.requireView().findViewById(action.viewId);
-        View view = null != action.view ? action.view : UtilDebug.getView(action.viewId); // try resolved view first
+        View view = null != action.resolvedView ? action.resolvedView : action.getViewOptional(); // try resolved view first
         if (view instanceof Button || view instanceof android.widget.ImageButton
                 || view instanceof androidx.appcompat.widget.AppCompatImageButton
             ) {
             getActivity(action).runOnUiThread(view::performClick);
         } else { // assume it's a MenuItem from the top menu
-            Menu menu = MainActivity.getInstance().menu;
-            MenuItem item = null == menu ? null : menu.findItem(action.viewId);
+            MenuItem item = UtilDebug.getMenuItem(action.viewId);
             if (item != null) {
                 getActivity(action).runOnUiThread(() -> MainActivity.getInstance().onOptionsItemSelected(item));
             } else {
                 // throw new IllegalArgumentException("View is not a Button or MenuItem: " + action.viewId);
-                logger.warn("View is not a Button or MenuItem: " + action.viewId);
+                logger.warn("View is not a Button or MenuItem: " + action);
             }
         }
     }
@@ -294,13 +222,13 @@ public class ActionExecutor {
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
         View view = UtilDebug.getView(action.viewId);
         boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
-        assertTrue(isVisible, logName(view) + " is visible.", null, null);
+        assertTrue(isVisible, UtilDebug.logName(view) + " is visible.", null, null);
         if ( null != action.text ) {
             // also check text
             if (view instanceof android.widget.TextView) {
                 String currentText = ((android.widget.TextView) view).getText().toString();
                 assertEquals(action.text, currentText
-                        , logName(view) + " has expected text.");
+                        , UtilDebug.logName(view) + " has expected text.");
             } else {
                 assertFail("View is not a TextView for IS_VISIBLE with text check: " + action.viewId);
             }
@@ -308,41 +236,33 @@ public class ActionExecutor {
     }
 
     private void executeWaitForVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        logger.info("Waiting for view {} to become visible..."
-                + ( null != action.text ? " with text '" + action.text + "'" : "")
-                , logName(action.viewId)
-        );
-        View view = getViewOptional(action);
-        logger.info("Initial visibility of view {} - {}", logName(action.viewId), view);
+        logger.info(action.toString());
+        View view = action.getViewOptional();
+        logger.info("Initial visibility of view {} - {}", UtilDebug.logName(action.viewId), view);
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
         int cnt = 0;
         while (System.currentTimeMillis() - startTime < timeout) {
-            // logger.info("Checking visibility of view {} - {}", logName(action.viewId), view);
-            if (null == view) {
-                view = getViewOptional(action);
-                logger.info("View {} not found yet, retrying... - {}", logName(action.viewId), view);
+            // logger.info("Checking visibility of view {} - {}", UtilDebug.logName(action.viewId), view);
+            // show 1,2,4,8,16,32,64,128,256,512,...
+            if (null == view || ++cnt % 10 == 0) { // allow view to relocate / change ...
+                view = action.getViewOptional();
+                if (null == view && (cnt == 1 || cnt == 10 || cnt == 100 || cnt % 1000 == 0)){
+                    logger.info( action + " (view not found yet)");
+                }
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
-                    assertTrue(true, logName(view) + " is visible.", null, null);
+                    assertTrue(true, UtilDebug.logName(view) + " is visible.", null, null);
                     return;
                 } else if (view instanceof android.widget.TextView) {
                     String currentText = ((android.widget.TextView) view).getText().toString();
                     if (action.text.equals(currentText)) {
                         assertTrue(true
-                                ,logName(view) + " is visible with expected text: '" + action.text + "'."
+                                ,UtilDebug.logName(view) + " is visible with expected text: '" + action.text + "'."
                                 , null, null);
                         return;
                     }
                 }
-            }
-            if (0 == cnt++ % 10) {
-                logger.info("Waiting for view {} to become visible..."
-                        + ( null != action.text ? " with text '" + action.text + "'" : "")
-                        + " (waited: {} ms)"
-                        , logName(action.viewId)
-                        , System.currentTimeMillis() - startTime
-                );
             }
             try {
                 Thread.sleep(100);
@@ -352,7 +272,7 @@ public class ActionExecutor {
             }
         }
 
-        assertFail("View " + logName(action.viewId)
+        assertFail("View " + UtilDebug.logName(action.viewId)
                 + ( null != action.text ? " '" + action.text + "'" : "")
                 + " not visible (waited: " + timeout + " ms)"
         );
@@ -389,6 +309,10 @@ public class ActionExecutor {
         logger.error(" ❌ " + shortenCaller + " " + message );
         errorMsg.add( shortenCaller + " " + Util.appendIfFilled(testContext,": ") + message );
         //throw new AssertionError(message);
+    }
+
+    private void assertTrue(boolean condition, String message) {
+        assertTrue(condition, message, null, null);
     }
 
     private void assertTrue(boolean condition, String message, String expected, String actual) {

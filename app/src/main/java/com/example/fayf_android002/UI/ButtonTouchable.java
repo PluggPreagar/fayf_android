@@ -30,6 +30,8 @@ public class ButtonTouchable extends MaterialButton {
     private static float startX;
     private Drawable background = null;
 
+    private long lastClickTime = 0;
+
     private GestureDetector gestureDetector;
 
 
@@ -43,8 +45,7 @@ public class ButtonTouchable extends MaterialButton {
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
-                performClick(); // Handle single click
-                return true;
+                return performClick(); // Handle single click
             }
 
             @Override
@@ -157,6 +158,12 @@ public class ButtonTouchable extends MaterialButton {
     @Override
     public boolean performClick() {
         super.performClick();
+        // debounce - as we allow to use onSingleTapConfirmed-Trigger as well as performClick directly
+        if (System.currentTimeMillis() - lastClickTime < 300) {
+            logger.warn("ButtonTouchable performClick debounced.");
+            return true; // indicate the click was handled
+        }
+        lastClickTime = System.currentTimeMillis();
         UtilDebug.logCompactCallStack("ButtonTouchable performClick");
         if (null == entryKey) {
             logger.error("ButtonTouchable is not initialized!");
@@ -171,7 +178,7 @@ public class ButtonTouchable extends MaterialButton {
             // Edit config -> toggle boolean or do nothing for others -> check text
             Config config = Config.fromKey(entryKey.nodeId);
             if (config.getDefaultValue() instanceof Boolean) {
-                logger.info("Toggle config entry for {}.", entryKey.getFullPath());
+                logger.info("Toggle config entry for {} ('{}').", entryKey.getFullPath(),getText());
                 config.toggleValue(); // nodeId is the config key
                 // TODO just update button text - merge with MainItemAdapter-Logic!
                 setText( Config.DisplayName(entryKey.nodeId) + ": " + Entries.getEntry(entryKey).content );

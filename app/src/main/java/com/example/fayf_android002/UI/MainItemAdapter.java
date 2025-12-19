@@ -85,7 +85,7 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
             logger.error("onBindViewHolder: Entry is null for key " + e.getKey());
             return;
         }
-        holder.button.setId( View.generateViewId() ); // unique ID for each button - helpful for testing
+        //holder.button.setId( View.generateViewId() ); // unique ID for each button - helpful for testing
         String text = entry.content;
         if(topic.startsWith(Config.CONFIG_PATH)) {
             text = Config.DisplayName(e.getKey()) + ": " + entry.content;
