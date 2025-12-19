@@ -1,5 +1,7 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.view.View;
+
 public class ActionQueueEntry {
     public final ACTIONS action;
     public final int fragmentId;
@@ -8,6 +10,8 @@ public class ActionQueueEntry {
     public long waitTimeMs; // for WAIT action
 
     public String sourceCodeLine = ""; // for DOC action
+    public View view = null; // resolved view for action
+    public boolean fixated = false; // whether the view has been found (by text) and fixed
 
     public enum ACTIONS {
         CLICK,

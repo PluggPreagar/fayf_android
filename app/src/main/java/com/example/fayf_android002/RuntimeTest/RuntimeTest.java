@@ -28,7 +28,18 @@ public class RuntimeTest {
     public void runTests(FragmentManager fragmentManager) {
         // Placeholder for runtime test logic
         logger.info("Running runtime tests...");
-        logger.info("Entry tree:\n" + Entries.getInstance().toString());
+        initSelfTest();
+        logger.info("Entry tree: " + Entries.size() + " entries.");
+
+        Entries.rootTopic(); // ensure starting at root, force reload
+        // delay 200ms to allow UI to update
+        try {
+            Thread.sleep(200); // Delay for 200 milliseconds
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore the interrupted status
+            e.printStackTrace();
+        }
+
         UtilDebug.inspectView();
 
         ActionQueue queue = new ActionQueue(R.id.FirstFragment);
@@ -38,10 +49,10 @@ public class RuntimeTest {
 
         queue.testBlock("config toggle boolean - dark_mode")
                 .click(R.id.action_settings)
-                .waitForVisible( "dark_mode: false")
+                .waitForVisible( "dark_mode: false", 2*5000) // wait up to 10s for config to load
                 .click("dark_mode: false")
                 .delay(500)
-                .waitForVisible( "dark_mode: true")
+                .waitForVisible( "dark_mode: true", 2*5000)
                 .delay(500)
                 .click("dark_mode: true")
                 .delay(500)

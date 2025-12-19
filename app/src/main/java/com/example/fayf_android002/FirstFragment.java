@@ -115,7 +115,7 @@ public class FirstFragment extends Fragment {
 
     private void onTopicChanged(EntryKey entryKey) {
         logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
-        adapter.updateData( Entries.getTopicEntries() );
+        adapter.updateData( Entries.getTopicEntries(), recyclerView );
     }
 
     public void onResume() {

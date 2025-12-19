@@ -5,8 +5,11 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.Util;
 
 import static android.view.MotionEvent.*;
 
@@ -64,11 +67,19 @@ public class UtilDebug {
                 inspectView(viewGroup.getChildAt(i), depth + 1);
             }
         } else {
+            String textContent = "";
+            if (view instanceof TextView){
+                textContent = ((TextView) view).getText().toString();
+            } else if (view instanceof Button){
+                textContent = ((Button) view).getText().toString();
+            }
+
             Log.d(TAG, indent +  viewName +
                     (resourceName.isEmpty() ? "" : " \"" + resourceName+"\"") +
                     ( view.getId() != View.NO_ID ? " (" + view.getId() + ")" : "") +
                     ", " + visibilityStatus +
                     " (" + x + ", " + y + ") " + width + "x" + height
+                    + (textContent.isEmpty() ? "" : " \"" + Util.shortenString(textContent, 50) + "\"")
             );
 
         }
@@ -121,6 +132,15 @@ public class UtilDebug {
             }
         } else if (view.getId() == viewId) {
                 matchingView = view;
+        } else if (view instanceof RecyclerView) {
+            // get child views of recycler view
+            RecyclerView recyclerView = (RecyclerView) view;
+            int itemCount = recyclerView.getChildCount();
+            for (int i = 0; i < itemCount; i++) {
+                matchingView = getView(recyclerView.getChildAt(i), viewId);
+                if (matchingView != null)
+                    break;
+            }
         } else {
             // Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
         }
@@ -157,10 +177,20 @@ public class UtilDebug {
         } else if (view instanceof android.widget.Button) {
             android.widget.Button button = (android.widget.Button) view;
             viewText = button.getText().toString();
+        } else if (view instanceof RecyclerView) {
+            // get child views of recycler view
+            RecyclerView recyclerView = (RecyclerView) view;
+            int itemCount = recyclerView.getChildCount();
+            for (int i = 0; i < itemCount; i++) {
+                matchingView = getView(recyclerView.getChildAt(i), text);
+                if (matchingView != null)
+                    break;
+            }
         } else {
-            // Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
+            Log.d(TAG, "getView: not matching view " + getResourceName(view) + " (" + view.getId() + ")");
         }
         if (null != viewText &&  viewText.equals(text)){
+            Log.d(TAG, "getView: found matching view " + getResourceName(view) + " (" + view.getId() + ") with text \"" + text + "\"");
             matchingView = view;
         }
         return matchingView;

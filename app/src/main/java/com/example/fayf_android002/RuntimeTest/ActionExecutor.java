@@ -75,6 +75,7 @@ public class ActionExecutor {
                     : "" )
             );
         }
+        long waitTime = action.waitTimeMs; // allow action to "consume" its wait time - default is post-action wait
         switch (action.action) {
             case CLICK:
                 executeClick(action, actionQueue);
@@ -99,6 +100,7 @@ public class ActionExecutor {
                 break;
             case WAIT_FOR_VISIBLE:
                 executeWaitForVisible(action, actionQueue);
+                waitTime = 0; // already waited
                 break;
             case DELAY:
                 executeDelay(action, actionQueue);
@@ -117,7 +119,7 @@ public class ActionExecutor {
         }
         // post-action wait time
         try {
-            Thread.sleep(action.waitTimeMs);
+            Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted during pre-action delay", e);
@@ -139,16 +141,23 @@ public class ActionExecutor {
 
 
     private View getViewOptional(ActionQueueEntry action) {
-        if ( action.viewId == ActionQueue.TO_BE_FOUND ) {
+        View view = null;
+        if ( action.viewId < 0 ) {
             // search view by text
-            int viewId = UtilDebug.getView(action.text);
-            if ( viewId > View.NO_ID ) {
-                action.viewId = viewId;
+            view = UtilDebug.getView(null, action.text);
+            logger.info("fixate view ID {} -> {} for text '{}'", action.viewId, null == view ? "<null>" : view.getId(), action.text);
+            if ( null != view ) {
+                action.fixated = true; // easy normal handling, but leave chance to re-resolve by text
+                action.viewId = view.getId();
+                action.view = view; // need to store view, as on recycler views the ID identical or reused
             }
+        } else {
+            view = UtilDebug.getView(action.viewId);
         }
         Fragment fragment = RuntimeTester.findFragmentOptional(action.fragmentId);
-        return  action.viewId < View.VISIBLE || null == fragment ? null : fragment.requireView().findViewById(action.viewId);
+        return  null != view ? view : action.viewId < View.VISIBLE || null == fragment ? null : fragment.requireView().findViewById(action.viewId);
     }
+
     private View getView(ActionQueueEntry action) {
         View view = getViewOptional(action);
         if (view == null) {
@@ -205,7 +214,7 @@ public class ActionExecutor {
         }
         // Fragment fragment = getFragment(action);
         // View view = fragment.requireView().findViewById(action.viewId);
-        View view = UtilDebug.getView(action.viewId);
+        View view = null != action.view ? action.view : UtilDebug.getView(action.viewId); // try resolved view first
         if (view instanceof Button || view instanceof android.widget.ImageButton
                 || view instanceof androidx.appcompat.widget.AppCompatImageButton
             ) {
@@ -299,12 +308,20 @@ public class ActionExecutor {
     }
 
     private void executeWaitForVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = getView(action);
+        logger.info("Waiting for view {} to become visible..."
+                + ( null != action.text ? " with text '" + action.text + "'" : "")
+                , logName(action.viewId)
+        );
+        View view = getViewOptional(action);
+        logger.info("Initial visibility of view {} - {}", logName(action.viewId), view);
         long startTime = System.currentTimeMillis();
         long timeout = action.waitTimeMs > 0 ? action.waitTimeMs : 5000; // default 5 seconds
+        int cnt = 0;
         while (System.currentTimeMillis() - startTime < timeout) {
+            // logger.info("Checking visibility of view {} - {}", logName(action.viewId), view);
             if (null == view) {
-                view = getView(action);
+                view = getViewOptional(action);
+                logger.info("View {} not found yet, retrying... - {}", logName(action.viewId), view);
             } else if (view.getVisibility() == View.VISIBLE) {
                 if (null == action.text) {
                     assertTrue(true, logName(view) + " is visible.", null, null);
@@ -318,6 +335,14 @@ public class ActionExecutor {
                         return;
                     }
                 }
+            }
+            if (0 == cnt++ % 10) {
+                logger.info("Waiting for view {} to become visible..."
+                        + ( null != action.text ? " with text '" + action.text + "'" : "")
+                        + " (waited: {} ms)"
+                        , logName(action.viewId)
+                        , System.currentTimeMillis() - startTime
+                );
             }
             try {
                 Thread.sleep(100);

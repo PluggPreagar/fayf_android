@@ -272,6 +272,11 @@ public class ActionQueue {
         return this;
     }
 
+    public ActionQueue waitForVisible( String text, long timeoutMs) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
+                , fragmentId, TO_BE_FOUND , text, timeoutMs, null));
+        return this;
+    }
 
     public ActionQueue delay(long waitTimeMs) {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
@@ -304,7 +309,7 @@ public class ActionQueue {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
                 , fragmentId, -1, "", 2000, null));
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
-                , fragmentId, R.id.button1, "c1", 2000, null));
+                , fragmentId, R.id.row_item_button, "c1", 2000, null));
         // wait a bit
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
                 , fragmentId, -1, "", 200, null));

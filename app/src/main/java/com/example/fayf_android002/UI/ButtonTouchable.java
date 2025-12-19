@@ -173,11 +173,12 @@ public class ButtonTouchable extends MaterialButton {
             if (config.getDefaultValue() instanceof Boolean) {
                 logger.info("Toggle config entry for {}.", entryKey.getFullPath());
                 config.toggleValue(); // nodeId is the config key
-                // force refresh button text - refresh fragment
-                // fragment.updateButtonsUIThread();
+                // TODO just update button text - merge with MainItemAdapter-Logic!
+                setText( Config.DisplayName(entryKey.nodeId) + ": " + Entries.getEntry(entryKey).content );
             } else if (Config.TENANT.is(config) || config.name().startsWith("TEST_") ) {
                 logger.warn("Edit Config {} by click.", entryKey.getFullPath());
-                fragment.navigateToEdit(entryKey); // navigate to edit this entry
+                Entries.setCurrentEntryKey(entryKey);
+                MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
             } else {
                 logger.error("FAIL - Edit config entry {} not allowed!", entryKey.getFullPath());
                 MainActivity.notifyUser("Your are not allowed to edit this config entry.");
@@ -198,7 +199,8 @@ public class ButtonTouchable extends MaterialButton {
         assert entryKey != null;
         logger.info("ButtonTouchable long-clicked.");
         UtilDebug.logCompactCallStack();
-        fragment.navigateToEdit(entryKey); // navigate to edit this entry
+        Entries.setCurrentEntryKey(entryKey);
+        MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
         // Custom behavior can be added here
         return super.performLongClick();
     }

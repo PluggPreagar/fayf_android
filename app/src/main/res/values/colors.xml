@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary color -->
-    <color name="colorPrimary">#FF018786</color>
-    <color name="colorPrimaryDark">#FF016B6E</color>
+    <color name="colorPrimary">#0000FF</color>
+<!--    <color name="colorPrimaryDark">#FF016B6E</color>-->
+    <color name="colorPrimaryDark">#FF0000</color>
     <color name="colorPrimaryLight">#FF33A39A</color>
     <color name="colorPrimaryVeryLight">#FFE0F7F4</color>
     <color name="colorCHECK_">@color/orange_orange</color>

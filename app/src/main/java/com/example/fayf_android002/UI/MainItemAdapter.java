@@ -5,11 +5,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.R;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.button.MaterialButton;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -26,16 +30,40 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
     private final Context context;
 
     public MainItemAdapter(Context context, SortedEntryMap entryMap) {
+        logger.info("MainItemAdapter initialized with " + entryMap.size() + " entries.");
         this.context = context;
         // TODO improve to avoid direct dependency
         entries.addAll( entryMap.entrySet() );
+        patchLayoutHeight();
     }
 
-    public void updateData(SortedEntryMap topicEntries) {
+    private void patchLayoutHeight() {
+        // KLUDGE: allow oversize if only 1 item (for testing)
+        // set layout height to wrap content
+    }
+
+    public void updateData(SortedEntryMap topicEntries, RecyclerView recyclerView) {
         entries.clear();
         entries.addAll( topicEntries.entrySet() );
+        logger.info("MainItemAdapter updateData called with " + topicEntries.size() + " entries.");
+        patchLayoutHeight();
         // call on main thread
-        MainActivity.getInstance().runOnUiThread(() -> notifyDataSetChanged() );
+        MainActivity.getInstance().runOnUiThread(() -> {
+                notifyDataSetChanged();
+                if (null != recyclerView ){
+                    recyclerView.post(() -> recyclerView.scrollToPosition(0));
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (layoutManager != null) {
+                        layoutManager.scrollToPositionWithOffset(0, 0);
+                    }
+                    // Ensure the AppBar is expanded
+                    AppBarLayout appBarLayout = MainActivity.getInstance().findViewById(R.id.appbar);
+                    if (appBarLayout != null) {
+                        appBarLayout.setExpanded(true, true);
+                    }                }
+
+            }
+        );
     }
 
 
@@ -49,15 +77,21 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
 
     @Override
     public void onBindViewHolder(@NonNull @NotNull MainItemViewHolder holder, int position) {
-        Map.Entry<String, Entry> entryKey = entries.get(position);
+        Map.Entry<String, Entry> e = entries.get(position);
         String topic = Entries.getCurrentEntryKey().getFullPath();
-        Entry entry = Entries.getEntry( new EntryKey(topic, entryKey.getKey()));
+        EntryKey entryKey = new EntryKey(topic, e.getKey());
+        Entry entry = Entries.getEntry(entryKey);
         if (entry == null) {
-            logger.error("onBindViewHolder: Entry is null for key " + entryKey.getKey());
+            logger.error("onBindViewHolder: Entry is null for key " + e.getKey());
             return;
         }
-        holder.button.setText(entry.content);
-        styleButton( (MaterialButton) holder.button, position, new EntryKey(entryKey.getKey()), entryKey.getValue() );
+        holder.button.setId( View.generateViewId() ); // unique ID for each button - helpful for testing
+        String text = entry.content;
+        if(topic.startsWith(Config.CONFIG_PATH)) {
+            text = Config.DisplayName(e.getKey()) + ": " + entry.content;
+        }
+        holder.button.setText(text);
+        styleButton( (MaterialButton) holder.button, position, entryKey, e.getValue() );
     }
 
     @Override
@@ -84,9 +118,12 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         Style related code
      */
 
-    private void styleButton(MaterialButton button, int position, EntryKey entryKey, Entry entry) {
+    public static void styleButton(MaterialButton button, int position, EntryKey entryKey, Entry entry) {
         // TODO implement styleButton
         String content = entry.content;
+        if (button instanceof ButtonTouchable) {
+            ((ButtonTouchable) button).setEntry(entryKey, null);
+        }
         button.setIconResource(
                 // content.endsWith(".") ? R.drawable.baseline_folder_24 :  // Meinung.
                 content.endsWith("??") ? EntryStyle.COUNTER_QUESTION.getIconResourceId() :  // Gegenfrage ??
@@ -101,15 +138,21 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
                                                                                         R.drawable.ic_baseline_note_24
         );
         // black text
-        button.setTextColor( context.getColor(R.color.black) );
+        button.setTextColor( button.getContext().getColor(R.color.black) );
+        /*
         button.setOnClickListener(v -> {
             Entries.setCurrentEntryKey(entryKey);
+            // will trigger
+            // ButtonTouchable.performClick(ButtonTouchable.java:162) too
+            // ButtonTouchable$1.onSingleTapConfirmed(ButtonTouchable.java:46)
         });
         button.setOnLongClickListener(v -> {
             Entries.setCurrentEntryKey(entryKey);
             MainActivity.getInstance().switchToInputFragment();
             return true; // indicate that the long click was handled
         });
+
+         */
     }
 
 

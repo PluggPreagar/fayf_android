@@ -50,6 +50,10 @@ public enum Config {
     }
 
     public static Config fromKey(String key) {
+        if (null == key || key.isEmpty()) {
+            throw new IllegalArgumentException("Config key cannot be null or empty");
+        }
+        key = stripConfigPath(key);
         for (Config setting : values()) {
             if (setting.getKey().equals(key)) {
                 return setting;
@@ -158,9 +162,18 @@ public enum Config {
 
 
     public static String DisplayName(String nodeId) {
-        return nodeId
+
+        return stripConfigPath(nodeId)
                 .replaceFirst("_YN$", "")
                 .replaceFirst("_[0-9]+to[0-9]+$", "");
+    }
+
+    public static String stripConfigPath(String fullPath) {
+        if (fullPath.startsWith(CONFIG_PATH + "/")) {
+            return fullPath.substring((CONFIG_PATH + "/").length());
+        } else {
+            return fullPath;
+        }
     }
 
 

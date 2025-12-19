@@ -1,16 +1,27 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
+             xmlns:app="http://schemas.android.com/apk/res-auto"
+             android:id="@+id/row_item_layout"
              android:layout_width="match_parent"
-             android:layout_height="100dp"
+             android:layout_height="75dp"
              android:layout_marginLeft="10dp"
              android:layout_marginRight="10dp"
-             android:gravity="center_vertical">
+             android:gravity="center_vertical"
+             android:paddingBottom="0dp"
+        >
+
     <com.example.fayf_android002.UI.ButtonTouchable
             app:layout_constraintTop_toTopOf="parent"
             style="@style/ButtonStyle.Light"
             android:id="@+id/row_item_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="TETETTE"
+            android:layout_height="match_parent"
+            android:textColor="@color/black"
+            android:text="Condensation lassen such vollständig physicalism erklären. lassen such vollständig physicalism erklären."
+            android:insetTop="0dp"
+            android:padding="0dp"
+            android:paddingLeft="16dp"
+            android:paddingTop="0dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="0dp"
             />
 </FrameLayout>

@@ -15,13 +15,13 @@
         <item name="colorOnSurface">@color/colorOnSurface</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorOnError">@color/colorOnError</item>
-        <item name="backgroundColor">@color/red</item>
-        <item name="colorBackgroundFloating">@color/red</item>
+        <item name="backgroundColor">@color/colorBackground</item>
+        <item name="colorBackgroundFloating">@color/colorBackground</item>
         <item name="android:windowBackground">@color/colorBackground</item>
     </style>
 
     <style name="Theme.Fayf_android002" parent="Base.Theme.Fayf_android002">
         <item name="android:colorBackground">@color/colorBackground</item>
-        <item name="android:backgroundTint">@color/colorPrimary</item>
+        <item name="android:backgroundTint">@color/white</item>
     </style>
 </resources>
