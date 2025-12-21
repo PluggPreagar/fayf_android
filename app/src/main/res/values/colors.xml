@@ -2,8 +2,7 @@
 <resources>
     <!-- Primary color -->
     <color name="colorPrimary">#0000FF</color>
-<!--    <color name="colorPrimaryDark">#FF016B6E</color>-->
-    <color name="colorPrimaryDark">#FF0000</color>
+    <color name="colorPrimaryDark">#FF016B6E</color>
     <color name="colorPrimaryLight">#FF33A39A</color>
     <color name="colorPrimaryVeryLight">#FFE0F7F4</color>
     <color name="colorCHECK_">@color/orange_orange</color>
@@ -19,7 +18,7 @@
 
     <!-- Text colors -->
     <color name="colorOnPrimary">#FF02B3A1</color>
-    <color name="colorOnSecondary">@color/black</color>
+    <color name="colorOnSecondary">#358600</color>
     <color name="colorOnBackground">#FF000000</color>
     <color name="colorOnSurface">#FF000000</color>
 

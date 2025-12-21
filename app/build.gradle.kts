@@ -114,4 +114,7 @@ dependencies {
     //
     testImplementation("androidx.test:core:1.5.0")
     testImplementation("org.robolectric:robolectric:4.10")
+    // qr code
+    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

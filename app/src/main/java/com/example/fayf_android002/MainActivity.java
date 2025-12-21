@@ -154,6 +154,11 @@ public class MainActivity extends AppCompatActivity  {
         loadFragment(new InputFragment());
     }
 
+    public void switchToContactFragment() {
+        loadFragment(new ContactFragment());
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
+    }
+
     private void refresh(EntryKey currentTopicEntry){
         // called in runOnUiThread from onTopicChangedListener
         logger.info("Refreshing MainActivity UI for topic: {}", Entries.getCurrentEntryKey().getFullPath());
@@ -266,6 +271,11 @@ public class MainActivity extends AppCompatActivity  {
             // KLUDGE allow Runtime-Test to trigger back button
             // but we can't create/get MenuItem directly
             logger.info("back-menu-button pressed");
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (!(currentFragment instanceof FirstFragment)) {
+                logger.info("Switching to FirstFragment on back-menu-button");
+                switchToFirstFragment();
+            }
             // check if in InputFragment, then go back to FirstFragment
             onBackPressed();
             return true;
@@ -278,6 +288,13 @@ public class MainActivity extends AppCompatActivity  {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             logger.info("Action menu item selected");
+            // switch to first fragment showing config entries
+            // check if first fragment
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (!(currentFragment instanceof FirstFragment)) {
+                logger.info("Switching to FirstFragment to show config entries");
+                switchToFirstFragment();
+            }
             if (Entries.getCurrentEntryKey().getFullPath().startsWith(Config.CONFIG_PATH)) {
                 Entries.setCurrentEntryKey( null ); // clear current entry
             } else {
@@ -352,6 +369,10 @@ public class MainActivity extends AppCompatActivity  {
             Entries.setEntry( bugEntryKey, bugReportContent, getApplicationContext());
             Entries.setCurrentEntryKey(bugEntryKey);
             switchToInputFragment(); // reload InputFragment
+        } else if ( id == R.id.action_contact){
+            logger.info("Contact menu item selected");
+            switchToContactFragment();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);

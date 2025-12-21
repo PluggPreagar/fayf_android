@@ -56,4 +56,5 @@
     <string name="action_log_detail">Show Entry Details</string>
     <string name="action_force_sort">sort current topic</string>
     <string name="action_report_bug">Bug Report</string>
+    <string name="action_contact">Contact / Group-QR</string>
 </resources>
