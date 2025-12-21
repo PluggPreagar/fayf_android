@@ -34,6 +34,8 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
     private final ArrayList<Map.Entry<String, Entry>> entries = new ArrayList<Map.Entry<String, Entry>>();
     private final Context context;
 
+    private static boolean dataUpdated = false; // TODO introduce usage, reason
+
     public MainItemAdapter(Context context, SortedEntryMap entryMap) {
         logger.info("MainItemAdapter initialized with " + entryMap.size() + " entries.");
         this.context = context;
@@ -47,10 +49,12 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         // set layout height to wrap content
     }
 
-    public void updateData(SortedEntryMap topicEntries, RecyclerView recyclerView) {
+    public void updateData(SortedEntryMap topicEntries, RecyclerView recyclerView, Entries.OnDataChanged.ChangeType changeType) {
         entries.clear();
         entries.addAll( topicEntries.entrySet() );
         logger.info("MainItemAdapter updateData called with " + topicEntries.size() + " entries.");
+        // allow to show more details like rank, as data is updated by changing the ranking
+        dataUpdated = changeType.equals( Entries.OnDataChanged.ChangeType.ENTRY_RANK_CHANGED ) ;
         patchLayoutHeight();
         // call on main thread
         MainActivity.getInstance().runOnUiThread(() -> {
@@ -232,6 +236,9 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         }
         if (voteCount == 0) {
             return; // No badge for zero votes
+        }
+        if (!dataUpdated){
+            return; // only show badge if data was updated( probably ranking changed)
         }
         // add badge
         Context context = button.getContext();

@@ -1,18 +1,11 @@
 package com.example.fayf_android002;
 
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import android.widget.Button;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.core.content.ContextCompat;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,18 +13,11 @@ import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.UI.MainItemAdapter;
-import com.example.fayf_android002.databinding.FragmentFirstBinding;
-import com.example.fayf_android002.UI.ButtonTouchable;
-import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.badge.BadgeDrawable;
-import com.google.android.material.badge.BadgeUtils;
-import com.google.android.material.button.MaterialButton;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class FirstFragment extends Fragment {
@@ -85,7 +71,7 @@ public class FirstFragment extends Fragment {
             onTopicChanged(entry);
         });
 
-        Entries.setOnDataChangedListener(FIRST_FRAGMENT, k -> {
+        Entries.setOnDataChangedListener(FIRST_FRAGMENT, (k, changeType) -> {
             if (!this.isVisible()) {
                 // somehow I removed the listener on onDestroyView
                 // but it missed the onCreateView call to re-listen
@@ -93,7 +79,7 @@ public class FirstFragment extends Fragment {
                 return; //rather than set/reset listener on onResume/onPause
             }
             logger.info("Data changed callback received, updating buttons - but keep topic and offset");
-            adapter.updateData( Entries.getTopicEntries(), recyclerView );
+            adapter.updateData( Entries.getTopicEntries(), recyclerView , changeType);
         });
 
         // on overscroll the bottom of button list
@@ -116,7 +102,7 @@ public class FirstFragment extends Fragment {
 
     private void onTopicChanged(EntryKey entryKey) {
         logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
-        adapter.updateData( Entries.getTopicEntries(), recyclerView );
+        adapter.updateData( Entries.getTopicEntries(), recyclerView, Entries.OnDataChanged.ChangeType.TOPIC_CHANGED);
     }
 
     public void onResume() {

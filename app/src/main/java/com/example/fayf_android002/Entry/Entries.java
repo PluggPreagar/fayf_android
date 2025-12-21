@@ -59,7 +59,12 @@ public class Entries {
     }
 
     public interface OnDataChanged {
-        void onDataChanged(EntryKey entryKey);
+
+        enum ChangeType {
+            ENTRY_RANK_CHANGED,
+            TOPIC_CHANGED,
+        }
+        void onDataChanged(EntryKey entryKey, ChangeType changeType);
     }
 
 
@@ -118,12 +123,12 @@ public class Entries {
         }
     }
 
-    public static void callDataChangedListeners(EntryKey topic) {
+    public static void callDataChangedListeners(EntryKey topic, OnDataChanged.ChangeType changeType) {
 
         for (Map.Entry<String, OnDataChanged> e : dataListener.entrySet()) {
             if ( null != e.getValue()) {
                 logger.debug("callDataChangedListeners: {} for {} ", e.getKey(), Entries.toString(topic) );
-                e.getValue().onDataChanged(topic); // null signals complete reload
+                e.getValue().onDataChanged(topic, changeType); // null signals complete reload
             } else {
                 logger.debug("callDataChangedListeners: SKIPP {} has null listener for {} ", e.getKey(), Entries.toString(topic) );
             }
@@ -500,12 +505,11 @@ public class Entries {
         // TODO implement vote up logic  -- TreeMap orders by key only
         entry.setRankOffset(delta);
         entryTree.entries.get(entryKey.topic).sortByValue();
-        callDataChangedListeners(entryKey);
+        callDataChangedListeners(entryKey, OnDataChanged.ChangeType.ENTRY_RANK_CHANGED);
         // TODO better use 2 functions - set content and set vote
         // or just as virtual entry- attribute with only vote value as content
         String sid = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
         sendEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + entry.myVote, entry);
-        callDataChangedListeners(entryKey);
     }
 
     public static void sortCurrentTopic() {
