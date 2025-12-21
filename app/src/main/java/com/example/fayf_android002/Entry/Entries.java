@@ -492,6 +492,11 @@ public class Entries {
 
     public static void vote(EntryKey entryKey, int delta) {
         Entry entry = getEntry(entryKey);
+        if (null == entry) {
+            // TODO fix on use swipe with config ..
+            logger.warn("vote: entry not found for {}", Entries.toString(entryKey) );
+            return;
+        }
         // TODO implement vote up logic  -- TreeMap orders by key only
         entry.setRankOffset(delta);
         entryTree.entries.get(entryKey.topic).sortByValue();
@@ -500,6 +505,7 @@ public class Entries {
         // or just as virtual entry- attribute with only vote value as content
         String sid = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
         sendEntry( new EntryKey(entryKey.topic, entryKey.nodeId + EntryKey.VOTE_SEPARATOR + sid), entry.getContent() + " | " + entry.myVote, entry);
+        callDataChangedListeners(entryKey);
     }
 
     public static void sortCurrentTopic() {

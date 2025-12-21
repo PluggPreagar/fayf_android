@@ -6,6 +6,10 @@ import com.example.fayf_android002.Entry.EntryKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 public enum Config {
 
     AUTO_SYNC_YN("auto_sync_YN", true),
@@ -18,11 +22,16 @@ public enum Config {
     TEST_STRING("test_string", "default_value"),
     TENANT("tenant", "tst"),
 
-    VERSION("version", "0.25.0"),
+    VERSION("version", BuildConfig.VERSION_NAME),
+    BUILD_TIME("build_time", Util.convertTime(Long.parseLong(BuildConfig.BUILD_TIME))),
 
-
+    COMMIT_HASH("commit_hash", BuildConfig.GIT_COMMIT_HASH)
 
     ;
+
+    //
+    static List<String> fixedValues = getFixedValues();
+
 
     static Logger logger = LoggerFactory.getLogger(Config.class);
 
@@ -39,6 +48,13 @@ public enum Config {
         this.value = defaultValue;
     }
 
+    private static List<String> getFixedValues() {
+        List<String> fixed = new ArrayList<>();
+        fixed.add(VERSION.key);
+        fixed.add(BUILD_TIME.key);
+        fixed.add(COMMIT_HASH.key);
+        return fixed;
+    }
 
 
     public String getKey() {
@@ -95,6 +111,15 @@ public enum Config {
 
     public static void set(String key, String value) {
         Config configChanged = Config.fromKey(key);// validate key
+        if (fixedValues.contains(key)) {
+            if (configChanged.value.equals(value)) {
+                logger.debug("Config '{}' unchanged with fixed value '{}'", key, value);
+                return; // no change
+            }
+            logger.warn("Config '{}' is fixed (keep  '{}', ignore new value '{}')"
+                    , key, configChanged.value, value);
+            return; // no change
+        }
         if (configChanged.value.equals(value)) {
             logger.debug("Config '{}' unchanged with value '{}'", key, value);
             return; // no change
@@ -112,6 +137,11 @@ public enum Config {
 
     public static String get(String key) {
         Config config = Config.fromKey(key);// validate key
+        // separate handling for version and build_time
+        if (fixedValues.contains(key)) {
+            logger.info("Config read '{}' with value '{}' (fix)", key, String.valueOf(config.value));
+            return String.valueOf(config.value);
+        }
         String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(config.value)); // validate key
         if (content.isEmpty()) {
             logger.warn("Config '{}' is empty, using default value '{}'", key, config.getDefaultValue());

@@ -7,6 +7,7 @@
              android:layout_marginRight="10dp"
              android:gravity="center_vertical"
              android:paddingBottom="0dp"
+
         >
 
     <com.example.fayf_android002.UI.ButtonTouchable

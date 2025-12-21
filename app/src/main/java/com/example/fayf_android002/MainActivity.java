@@ -368,6 +368,10 @@ public class MainActivity extends AppCompatActivity  {
 
     @Override
     public void onBackPressed() {
+        if (false){
+            super.onBackPressed();
+            return;
+        }
         // super.onBackPressed(); // SKIPP to prevent closing ...
         // same es pressing ESC-key or up-button in action bar
         String topicBefore = Entries.getCurrentEntryKey().getFullPath();

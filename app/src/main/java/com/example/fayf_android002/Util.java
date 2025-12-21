@@ -93,6 +93,12 @@ public class Util {
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(runnable, delayMillis);
     }
 
+    public static String convertTime(long buildTime) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        java.util.Date date = new java.util.Date(buildTime);
+        return sdf.format(date);
+    }
+
     public String shortEventString(MotionEvent event) {
         if (null == event) {
             return "null";

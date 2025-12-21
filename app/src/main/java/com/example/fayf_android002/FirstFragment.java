@@ -93,6 +93,7 @@ public class FirstFragment extends Fragment {
                 return; //rather than set/reset listener on onResume/onPause
             }
             logger.info("Data changed callback received, updating buttons - but keep topic and offset");
+            adapter.updateData( Entries.getTopicEntries(), recyclerView );
         });
 
         // on overscroll the bottom of button list

@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -33,6 +34,10 @@ public class ButtonTouchable extends MaterialButton {
     private long lastClickTime = 0;
 
     private GestureDetector gestureDetector;
+    private boolean moveStarted = false;
+
+    // TODO use swipe-fling-top/bottom to move item
+    //   lock onto item by inital click/longpress/x-movement(like swipe) and than move up/down to reorder
 
 
     // constructor with context, attribute set
@@ -77,58 +82,95 @@ public class ButtonTouchable extends MaterialButton {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //logger.debug("ButtonTouchable onTouchEvent: action={}, x={}", event.getAction(), event.getX());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 startX = event.getX();
+                moveStarted = false;
                 background = getBackground();
+
+
                 setBackgroundColor(getResources().getColor(android.R.color.darker_gray)); // Light feedback on touch start
 
-                // Set the red trash bin icon on the right side of the button
-                Drawable trashBinIcon = ContextCompat.getDrawable(getContext(), R.drawable.ic_baseline_folder_24);
-                if (trashBinIcon != null) {
-                    trashBinIcon.setBounds(0, 0, trashBinIcon.getIntrinsicWidth(), trashBinIcon.getIntrinsicHeight());
-                }
-                setCompoundDrawablesWithIntrinsicBounds(null, null, trashBinIcon, null);
+//                // Set the red trash bin icon on the right side of the button
+//                Drawable trashBinIcon = ContextCompat.getDrawable(getContext(), R.drawable.ic_baseline_folder_24);
+//                if (trashBinIcon != null) {
+//                    trashBinIcon.setBounds(0, 0, trashBinIcon.getIntrinsicWidth(), trashBinIcon.getIntrinsicHeight());
+//                }
+//                setCompoundDrawablesWithIntrinsicBounds(null, null, trashBinIcon, null);
 
                 // Optional: Add padding between the text and the icon
-                setCompoundDrawablePadding(16);
+                setCompoundDrawablePadding(16); // show a light movement feedback
+                // set border
+
+                // Create a GradientDrawable with a light border
+                GradientDrawable borderDrawable = new GradientDrawable();
+                borderDrawable.setColor( getContext().getColor(android.R.color.transparent)); // Transparent background
+                borderDrawable.setStroke(4, getContext().getColor(android.R.color.darker_gray)); // Light gray border
+                borderDrawable.setCornerRadius(16); // Optional: Rounded corners
+                // Apply the border drawable
+                setBackgroundTintList(null); // Clear any existing tint
+                setBackgroundColor( getContext().getColor(R.color.white) );
+                setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+                setBackground(borderDrawable); // Apply the border
+
 
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 // Detect swipe direction dynamically
                 float deltaX = event.getX() - startX;
+                if (!moveStarted){
+                    if (Math.abs(deltaX) < 5 ) {
+                        break;
+                    }
+                    moveStarted = true;
+                }
                 float maxSwipeDistance = getWidth(); // Use the button's width as the max swipe distance
-                float proportion = Math.min(1, Math.abs(deltaX) / maxSwipeDistance); // Clamp proportion to [0, 1]
+                // overshoot a bit for full color
+                float proportion = Math.min(1, 1.5f * Math.abs(deltaX) / maxSwipeDistance); // Clamp proportion to [0, 1]
 
-                // interpolate middle color between red and green based on swipe direction and distance
-                // deltaXtouch starting from real position
-                float deltaXtouch = event.getX() - startX;
-                int middleColor = deltaX < 0
-                        ? Color.rgb(255, (int)(255 * (proportion)), (int)(255 * (proportion))) // Red to white
-                        : Color.rgb((int)(255 * (proportion)), 255, (int)(255 * (proportion))); // White to green
+                // very low delta -> gray - neutral
+                // low delta -> show red, white, green gradient - white where finger is
+                // high delta swiped left -> solid red at left, white at opposite edge
+                // high delta swiped right -> solid green at right, white at opposite edge
 
-                // Calculate gradient shift
-                int[] colors = new int[]{Color.RED, middleColor, Color.GREEN};
-                float[] positions = new float[]{Math.max(0, 0.5f - proportion / 2), Math.min(1, 0.5f + proportion / 2)};
-
+                int leftColor = (deltaX < 10) ? Color.RED : Color.WHITE;
+                int middleColor = Color.WHITE;
+                int rightColor = (deltaX > -10 ) ? Color.GREEN : Color.WHITE;
+                float[] positions = new float[3];
+                positions[0] = 0.0f;
+                positions[1] = ( startX - deltaX) / getWidth(); // match finger position at start and expand in opposite direction
+                positions[2] = 1.0f;
                 GradientDrawable gradientDrawable = new GradientDrawable(
-                        GradientDrawable.Orientation.LEFT_RIGHT, colors
+                        GradientDrawable.Orientation.LEFT_RIGHT,
+                        new int[]{leftColor, middleColor, rightColor}
                 );
+                gradientDrawable.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    gradientDrawable.setColors(new int[]{leftColor, middleColor, rightColor}, positions);
+                }
+
+
                 //gradientDrawable.setGradientCenter( positions[0], positions[1]);
                 gradientDrawable.setCornerRadius(32); // Optional: Rounded corners
-                gradientDrawable.setStroke(4, Color.BLACK); // Optional: Border width and color
+                //gradientDrawable.setStroke(4, Color.BLACK); // Optional: Border width and color
+                //setBackground(gradientDrawable); // Apply the gradient dynamically
 
-                setBackground(gradientDrawable); // Apply the gradient dynamically
+                //setBackgroundColor(Color.TRANSPARENT); // Clear solid color to show gradient
 
+                //setBackgroundDrawable(gradientDrawable);
+
+                setBackgroundTintList(null);
+                setBackgroundDrawable(gradientDrawable);
                 //
 
 
 
                 break;
 
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
+            default: // might not be called when swipe detected etc.
+                //logger.debug("ButtonTouchable onTouchEvent: finish action={}", event.getAction());
                 resetBackgroundAfterDelay();
                 break;
         }
@@ -157,6 +199,9 @@ public class ButtonTouchable extends MaterialButton {
 
     @Override
     public boolean performClick() {
+        if (moveStarted){
+            return true; // ignore click if movement was started
+        }
         super.performClick();
         // debounce - as we allow to use onSingleTapConfirmed-Trigger as well as performClick directly
         if (System.currentTimeMillis() - lastClickTime < 300) {
@@ -165,6 +210,7 @@ public class ButtonTouchable extends MaterialButton {
         }
         lastClickTime = System.currentTimeMillis();
         UtilDebug.logCompactCallStack("ButtonTouchable performClick");
+        resetBackgroundAfterDelay();
         if (null == entryKey) {
             logger.error("ButtonTouchable is not initialized!");
             return true; // indicate the click was handled
@@ -198,6 +244,9 @@ public class ButtonTouchable extends MaterialButton {
 
     @Override
     public boolean performLongClick() {
+        if (moveStarted){
+            return true; // ignore long-click if movement was started
+        }
         super.performLongClick();
         if (null == entryKey) {
             logger.error("ButtonTouchable is not initialized!");
@@ -206,6 +255,7 @@ public class ButtonTouchable extends MaterialButton {
         assert entryKey != null;
         logger.info("ButtonTouchable long-clicked.");
         UtilDebug.logCompactCallStack();
+        resetBackgroundAfterDelay();
         Entries.setCurrentEntryKey(entryKey);
         MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
         // Custom behavior can be added here
@@ -218,24 +268,56 @@ public class ButtonTouchable extends MaterialButton {
     }
     private void onSwipeLeft() {
         logger.info("ButtonTouchable swiped left.");
-        setColor(getResources().getColor(android.R.color.holo_red_light)); // Swipe left feedback
+//        setColor(getResources().getColor(android.R.color.holo_red_light)); // Swipe left feedback
         resetBackgroundAfterDelay();
+        Entries.vote( entryKey, -1); // down vote
     }
 
     private void onSwipeRight() {
         logger.info("ButtonTouchable swiped right.");
-        setColor(getResources().getColor(android.R.color.holo_green_light)); // Swipe right feedback
+//        setColor(getResources().getColor(android.R.color.holo_green_light)); // Swipe right feedback
         resetBackgroundAfterDelay();
+        Entries.vote( entryKey, 1); // upvote
     }
 
     private void resetBackgroundAfterDelay() {
+//        if (true){
+//            return;
+//        }
         new Handler().postDelayed(() -> {
-            setColor(getResources().getColor(android.R.color.transparent));
+            if (null == background){
+                logger.error("ButtonTouchable resetBackgroundAfterDelay: background is null!");
+                return;
+            }
+            logger.debug("ButtonTouchable resetBackgroundAfterDelay: restoring background.");
             setBackground(background);
+            // leave a white background ;-( ... just WORKAROUND for now
+            setBackgroundTintList( getContext().getColorStateList(R.color.transparent) );
+            setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+
+//            setBackground(null);
+//            setBackgroundTintList(null);
+//            setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+//            setBackgroundColor( getContext().getColor(R.color.white) );
+//            setBackgroundTintList( getContext().getColorStateList(R.color.transparent) );
+//            setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+//
+            //setBackground(background);
+            // remove border
+            // remove drawable
+
         }, 300);
     }
 
 
+    /*
+        color
+        - onTouch
+        - onMove - left/right
+        - reset
+
+     */
     private void setColor(int colorId) {
         //getBackground().setColorFilter(colorId, PorterDuff.Mode.SRC_ATOP);
         int colorIdWhite = ContextCompat.getColor(MainActivity.getInstance(), R.color.white);

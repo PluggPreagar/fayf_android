@@ -1,5 +1,6 @@
 package com.example.fayf_android002.RuntimeTest;
 
+import android.view.MenuItem;
 import android.view.View;
 import androidx.core.internal.view.SupportMenuItem;
 import androidx.fragment.app.Fragment;
@@ -67,8 +68,8 @@ public class ActionQueueEntry {
             str.append(" ").append( UtilDebug.getVisibilityStatus( (View) view ) );
             if ( view instanceof android.widget.TextView ){
                 text = ((android.widget.TextView) view).getText().toString();
-            } else if ( view instanceof SupportMenuItem){
-                text = ((SupportMenuItem) view).getTitle().toString();
+            } else if ( view instanceof MenuItem){
+                text = ((MenuItem) view).getTitle().toString();
             }
         }
         str.append( viewId > 0 ? " " + viewId : "")

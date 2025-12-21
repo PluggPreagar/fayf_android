@@ -23,5 +23,7 @@
     <style name="Theme.Fayf_android002" parent="Base.Theme.Fayf_android002">
         <item name="android:colorBackground">@color/colorBackground</item>
         <item name="android:backgroundTint">@color/white</item>
+        <item name="android:textColor">@color/teal_700</item>
     </style>
+
 </resources>

@@ -1,11 +1,16 @@
 package com.example.fayf_android002.UI;
 
 import android.content.Context;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,7 +29,7 @@ import java.util.Map;
 
 public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainItemViewHolder> {
 
-    Logger logger = LoggerFactory.getLogger(MainItemAdapter.class);
+    static Logger logger = LoggerFactory.getLogger(MainItemAdapter.class);
 
     private final ArrayList<Map.Entry<String, Entry>> entries = new ArrayList<Map.Entry<String, Entry>>();
     private final Context context;
@@ -153,7 +158,116 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         });
 
          */
+
+        // set background to red
+        //button.setBackgroundColor( button.getContext().getColor(R.color.light_blue) ); // FAIL - hard blue
+
+        // reset Tint, in case it was set before
+        // set to gray if disabled
+        //button.setBackgroundColor( button.getContext().getColor(R.color.orange_yellow_2) ); // FAIL - hard blue
+
+        Drawable background = button.getBackground();
+        if (background instanceof ColorDrawable) {
+            int color = ((ColorDrawable) background).getColor();
+            logger.info("Button background color: " + color);
+        } else {
+            logger.info("Button background is not a ColorDrawable");
+        }
+
+        // use drawable tinting to set background color --> work
+//        button.setBackgroundColor( button.getContext().getColor(R.color.orange_yellow_2) );
+//        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.orange_yellow_2) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+        // works
+//        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+//        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.orange_yellow_2) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+        // works
+//        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+//        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.red) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+        // works fix strange behavior: just set background color
+//        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+//        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.colorPrimaryVeryLight) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+        // works
+//        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+//        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.orange_yellow_2) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+        button.setBackgroundTintList( button.getContext().getColorStateList(R.color.transparent) );
+        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+
+
+        // works - add border
+//        GradientDrawable borderDrawable = new GradientDrawable();
+//        borderDrawable.setColor( button.getContext().getColor(android.R.color.transparent)); // Transparent background
+//        borderDrawable.setStroke(4, button.getContext().getColor(android.R.color.darker_gray)); // Light gray border
+//        borderDrawable.setCornerRadius(16); // Optional: Rounded corners
+//        // Apply the border drawable
+//        button.setBackgroundTintList(null); // Clear any existing tint
+//        button.setBackgroundColor( button.getContext().getColor(R.color.white) );
+//        button.setBackgroundTintMode(android.graphics.PorterDuff.Mode.SRC_IN);
+//        button.setBackground(borderDrawable); // Apply the border
+
+
+        // add bagde to button for vote count
+        addBadgeToButton(button, entry.getRank());
+
+
+
     }
+
+    // Add badge to button for vote count
+    private static void addBadgeToButton(MaterialButton button, int voteCount) {
+        // Check if a badge already exists
+        FrameLayout frameLayout = (FrameLayout) button.getParent();
+        TextView existingBadge = frameLayout.findViewWithTag("badge");
+        if (existingBadge != null) {
+            frameLayout.removeView(existingBadge); // Remove the existing badge
+        }
+        if (voteCount == 0) {
+            return; // No badge for zero votes
+        }
+        // add badge
+        Context context = button.getContext();
+        logger.info("Adding badge '{}' with {}.", button.getText(), voteCount);
+
+        // Create a TextView for the badge
+        TextView badge = new TextView(context);
+        badge.setTag("badge"); // Tag to identify the badge later
+        badge.setText(String.valueOf(voteCount));
+        badge.setTextColor(context.getColor(android.R.color.white));
+        badge.setTextSize(12);
+        badge.setPadding(8, 4, 8, 4);
+        badge.setGravity(Gravity.CENTER);
+
+        // Create a GradientDrawable for the badge background
+        GradientDrawable badgeBackground = new GradientDrawable();
+        badgeBackground.setCornerRadius(8); // Rounded corners
+        if (voteCount > 0) {
+            badgeBackground.setColor(context.getColor(android.R.color.holo_green_light)); // Green for positive votes
+        } else {
+            badgeBackground.setColor(context.getColor(android.R.color.holo_red_light)); // Red for negative votes
+        }
+        badge.setBackground(badgeBackground);
+
+        // Set layout parameters for the badge
+        FrameLayout.LayoutParams badgeParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        badgeParams.gravity = Gravity.END | Gravity.TOP; // Position the badge at the top-right corner
+        badgeParams.setMargins(0, 8, 32, 0); // Adjust margins as needed
+
+        // Replace the button's parent with the FrameLayout
+        frameLayout.addView(badge, badgeParams);
+    }
+
 
 
 }

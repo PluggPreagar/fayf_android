@@ -1,3 +1,19 @@
+import java.util.Properties
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.ByteArrayOutputStream
+
+val versionPropsFile = file("version.properties")
+val versionProps = Properties()
+
+if (versionPropsFile.exists()) {
+    versionProps.load(FileInputStream(versionPropsFile))
+}
+
+val versionCode = versionProps["versionCode"].toString().toInt()
+val versionName = versionProps["versionName"].toString()
+
+
 plugins {
     id("com.android.application")
 }
@@ -10,8 +26,8 @@ android {
         applicationId = "com.example.fayf_android002"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.5"
+        this.versionCode = versionCode
+        this.versionName = versionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -20,6 +36,14 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField("String", "BUILD_TIME", "\"${System.currentTimeMillis()}\"")
+            buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
+            buildConfigField( "String", "GIT_COMMIT_HASH", "\"${getGitCommitHash()}\"")
+        }
+        debug {
+            buildConfigField("String", "BUILD_TIME", "\"${System.currentTimeMillis()}\"")
+            buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
+            buildConfigField( "String", "GIT_COMMIT_HASH", "\"${getGitCommitHash()}\"")
         }
     }
     compileOptions {
@@ -28,6 +52,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true // Enable BuildConfig generation
     }
 /*
     packagingOptions {
@@ -35,6 +60,33 @@ android {
     }
 */
 }
+
+fun getGitCommitHash(): String {
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+tasks.register("incrementVersionCode") {
+    doLast {
+        versionProps["versionCode"] = (versionCode + 1).toString()
+        versionProps.store(FileOutputStream(versionPropsFile), null)
+        println("Version code incremented to ${versionProps["versionCode"]}")
+    }
+}
+
+tasks.register("incrementVersionName") {
+    doLast {
+        val (major, minor, patch) = versionName.split(".").map { it.toInt() }
+        versionProps["versionName"] = "$major.$minor.${patch + 1}"
+        versionProps.store(FileOutputStream(versionPropsFile), null)
+        println("Version name incremented to ${versionProps["versionName"]}")
+    }
+}
+
 
 dependencies {
 

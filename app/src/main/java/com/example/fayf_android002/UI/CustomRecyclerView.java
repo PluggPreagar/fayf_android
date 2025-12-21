@@ -1,39 +1,35 @@
 package com.example.fayf_android002.UI;
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.view.View;
-import androidx.core.widget.NestedScrollView;
-import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.FirstFragment;
-import com.example.fayf_android002.MainActivity;
-import com.example.fayf_android002.RuntimeTest.UtilDebug;
-import com.example.fayf_android002.Util;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-public class CustomNestedScrollView extends NestedScrollView {
+public class CustomRecyclerView extends RecyclerView {
 
-    Logger logger = org.slf4j.LoggerFactory.getLogger(CustomNestedScrollView.class);
+    Logger logger = org.slf4j.LoggerFactory.getLogger(CustomRecyclerView.class);
 
-    private float startX;
+    private float startX=0;
     private static final int HORIZONTAL_THRESHOLD = 50; // Adjust threshold as needed
 
     private GestureDetector gestureDetector;
 
-    public CustomNestedScrollView(Context context) {
+    public CustomRecyclerView(@NotNull Context context) {
         super(context);
         init(context);
     }
 
-    public CustomNestedScrollView(Context context, AttributeSet attrs) {
+    public CustomRecyclerView(@NotNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public CustomNestedScrollView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CustomRecyclerView(@NotNull Context context,@Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
@@ -65,9 +61,14 @@ public class CustomNestedScrollView extends NestedScrollView {
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                if (startX == -1) {
+                    // Already determined to be horizontal scroll
+                    return false;
+                }
                 float deltaX = Math.abs(ev.getX() - startX);
                 // Prevent NestedScrollView from intercepting the touch event
                 if (deltaX > HORIZONTAL_THRESHOLD) {
+                    startX = -1; // flag to indicate horizontal scroll
                     return false;
                 }
                 break;
