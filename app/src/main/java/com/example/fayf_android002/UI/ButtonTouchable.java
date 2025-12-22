@@ -222,8 +222,17 @@ public class ButtonTouchable extends MaterialButton {
             Entries.setCurrentEntryKey(entryKey); // set topic to this entry
         } else if (entryKey.getFullPath().startsWith(Config.CONFIG_PATH)) {
             // Edit config -> toggle boolean or do nothing for others -> check text
-            Config config = Config.fromKey(entryKey.nodeId);
-            if (config.getDefaultValue() instanceof Boolean) {
+            Config config = Config.fromKeyOrNull(entryKey.nodeId);
+            if (null == config) {
+                // may browse value - so config is parent
+                config = Config.fromKeyOrNull(entryKey.topic);
+                if (null == config) {
+                    logger.error("Config entry {} not found!", entryKey.getFullPath());
+                    return true; // indicate the click was handled
+                } else {
+                    config.setValue(entryKey.nodeId); // nodeId is the config value - like Tenant-Id
+                }
+            } else if (config.getDefaultValue() instanceof Boolean) {
                 logger.info("Toggle config entry for {} ('{}').", entryKey.getFullPath(),getText());
                 config.toggleValue(); // nodeId is the config key
                 // TODO just update button text - merge with MainItemAdapter-Logic!

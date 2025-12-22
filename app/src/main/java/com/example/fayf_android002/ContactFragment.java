@@ -11,6 +11,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import com.example.fayf_android002.Entry.Entries;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -23,20 +24,7 @@ public class ContactFragment extends Fragment {
 
     Logger logger = Logger.getLogger(ContactFragment.class.getName());
 
-    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(
-            new ScanContract(), result -> {
-                if (result != null) {
-                    logger.info("QR Scan result: " + result.getContents());
-                    if (result.getContents() != null) {
-                        String scannedTenantId = result.getContents();
-                        setTenantId(scannedTenantId);
-                    } else {
-                        logger.warning("QR Scan result is empty.");
-                    }
-                } else {
-                    logger.warning("QR Scan result is null.");
-                }
-    });
+    private ActivityResultLauncher<ScanOptions> barcodeLauncher = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup view, Bundle savedInstanceState) {
@@ -50,6 +38,21 @@ public class ContactFragment extends Fragment {
 
         String tenantId = Config.TENANT.getValue();
         generateQRCode(tenantId, qrCodeImageView);
+
+        barcodeLauncher = registerForActivityResult(
+                new ScanContract(), result -> {
+                    if (result != null) {
+                        if (result.getContents() != null) {
+                            logger.info("QR Scan result: " + result.getContents());
+                            String scannedTenantId = result.getContents();
+                            setTenantId(scannedTenantId);
+                        } else {
+                            logger.warning("QR Scan result is empty.");
+                        }
+                    } else {
+                        logger.warning("QR Scan result is null.");
+                    }
+                });
 
         scanQrCodeButton.setOnClickListener(v -> scanQRCode());
         return rootView;
@@ -85,16 +88,23 @@ public class ContactFragment extends Fragment {
 
     private void scanQRCode() {
         logger.info("Starting QR Code scan...");
-        ScanOptions options = new ScanOptions();
-        options.setPrompt("Scan a QR Code");
-        options.setBeepEnabled(true);
-        options.setOrientationLocked(false);
-        barcodeLauncher.launch(options);
+        try {
+            ScanOptions options = new ScanOptions();
+            options.setPrompt("Scan a QR Code");
+            options.setBeepEnabled(true);
+            options.setOrientationLocked(false);
+            logger.info("Launching barcode scanner...");
+            barcodeLauncher.launch(options);
+        } catch (Exception e) {
+            logger.severe("Error launching QR scanner: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void setTenantId(String tenantId) {
         // Logic to set the tenant ID
+        logger.info("Tenant ID set to: " + tenantId + " (by QR Scan)");
+        MainActivity.getInstance().userInfo("Tenant ID set to: " + tenantId);
         Config.TENANT.setValue(tenantId);
-        logger.info("Tenant ID set to: " + tenantId);
     }
 }

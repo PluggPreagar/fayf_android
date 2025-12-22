@@ -15,13 +15,13 @@ public class RuntimeTest {
         // Placeholder for any initialization logic needed before running tests
         Config.TENANT.setValue("RuntimeTest");
         Entries.resetEntries();
-        Entries.setEntry("/", "t1", "c1");
-        Entries.setEntry("/", "t2", "c2 >");
-        Entries.setEntry("/", "t3", "c3");
-        Entries.setEntry("/t2", "t2.1", "c2.1");
-        Entries.setEntry("/t2", "t2.2", "c2.2");
-        Entries.setEntry("/_/config", "dark_mode_YN", "false");
-        Entries.setEntry("/_/config", "test_string", "default_value");
+        Entries.setEntryInternal("/", "t1", "c1");
+        Entries.setEntryInternal("/", "t2", "c2 >");
+        Entries.setEntryInternal("/", "t3", "c3");
+        Entries.setEntryInternal("/t2", "t2.1", "c2.1");
+        Entries.setEntryInternal("/t2", "t2.2", "c2.2");
+        Entries.setEntryInternal("/_/config", "dark_mode_YN", "false");
+        Entries.setEntryInternal("/_/config", "test_string", "default_value");
     }
 
 

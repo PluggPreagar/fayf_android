@@ -7,9 +7,7 @@ import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,7 +20,7 @@ public class Entries {
     private static Entries instance = new Entries();
     private static Map<String, OnTopicChanged> topicListener = new ConcurrentHashMap<>();
     private static Map<String, OnDataChanged> dataListener = new ConcurrentHashMap<>();
-    private static EntryTree entryTree = new EntryTree();
+    public static EntryTree entryTree = new EntryTree();
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /*
@@ -160,7 +158,7 @@ public class Entries {
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
-            entryTree.set(DataStorageLocal.loadEntries(context));
+            entryTree.set(DataStorageLocal.loadTenant(context));
         }
         if (tenant.endsWith(Config.TENANT_TEST_SUFFIX)) {
             // may have changed
@@ -170,7 +168,7 @@ public class Entries {
             //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             if (entryTree.entries.size() > 0) {
-                DataStorageLocal.saveEntries(entryTree, context);
+                DataStorageLocal.saveTenant(entryTree, context);
             }
         }
         // merge old votes and rankings
@@ -235,6 +233,30 @@ public class Entries {
                 checkDataIntegrity(entryKey, entry);
             } // for nodeEntry
         } // for topics
+        //
+         // check for wrong quoted topics -> merge with correct ones
+        List<String> wrongTopics = new ArrayList<>();
+        for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()){
+            String topic = topicEntry.getKey();
+            if (topic.startsWith("/\"")) {
+                String correctTopic = topic.substring(2);
+                wrongTopics.add(topic);
+                // might create Topic
+                SortedEntryMap correctSortedEntryMap = entryTree.entries.getOrDefault(correctTopic, new SortedEntryMap());
+                topicEntry.getValue().forEach( (nodeId, entry) -> {
+                            logger.info("Found entry '{}' in wrong quoted topic '{}'", nodeId, topic);
+                            correctSortedEntryMap.put(nodeId, entry);
+                        }
+                );
+            }
+        } // for topics
+        // remove wrong quoted topics
+        for (String wrongTopic : wrongTopics) {
+            entryTree.entries.remove(wrongTopic);
+            logger.info("Removed wrong quoted topic '{}'", wrongTopic);
+        }
+
+
     }
 
 
@@ -285,7 +307,7 @@ public class Entries {
             UtilDebug.logCompactCallStack("save entries async");
             executorService.execute(() -> {
                 try {
-                    DataStorageLocal.saveEntries(entryTree, context);
+                    DataStorageLocal.saveTenant(entryTree, context);
                     logger.info("Entries saved async ({} entries)", entryTree.entries.size());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -449,6 +471,10 @@ public class Entries {
             entryTree.remove(entryKey);
             return;
         }
+        if (entryKey.topic.startsWith("/\"")) {
+            logger.warn("FIX Invalid topic in EntryKey: {} ", entryKey);
+            entryKey.topic = entryKey.topic.substring(2);
+        }
         Entry entry = entryTree.set(entryKey, content);
         checkDataIntegrity(entryKey, entry);
         // check if first parent
@@ -471,7 +497,7 @@ public class Entries {
         }
     }
 
-    public static Entries setEntry(String topic, String nodeId, String content) {
+    public static Entries setEntryInternal(String topic, String nodeId, String content) {
         entryTree.set(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
         return Entries.getInstance();
     }

@@ -6,7 +6,6 @@ import com.example.fayf_android002.Entry.EntryKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,13 +68,26 @@ public enum Config {
         if (null == key || key.isEmpty()) {
             throw new IllegalArgumentException("Config key cannot be null or empty");
         }
-        key = stripConfigPath(key);
+        String shortKey = stripConfigPath(key);
         for (Config setting : values()) {
-            if (setting.getKey().equals(key)) {
+            if (setting.getKey().equals(shortKey)) {
                 return setting;
             }
         }
-        throw new IllegalArgumentException("Unknown setting key: " + key);
+        throw new IllegalArgumentException("Unknown setting key: " + key+ " (stripped: " + shortKey + ")");
+    }
+
+    public static Config fromKeyOrNull(String key) {
+        if (null == key || key.isEmpty()) {
+            return null;
+        }
+        String shortKey = stripConfigPath(key);
+        for (Config setting : values()) {
+            if (setting.getKey().equals(shortKey)) {
+                return setting;
+            }
+        }
+        return null;
     }
 
     /*
@@ -124,15 +136,38 @@ public enum Config {
             logger.debug("Config '{}' unchanged with value '{}'", key, value);
             return; // no change
         }
+        String oldValue = String.valueOf(configChanged.value);
         configChanged.value = value; // use instance method
-        Entries.setEntry(new EntryKey(CONFIG_PATH, key), value, null);
-        logger.info("Config set '{}' to value '{}'", key, value);
+        EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
+        Entries.setEntry(entryKey, value, null);
+        logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
         if (configChanged.is(TENANT)) {
             // reset Entries to apply new tenant, and reload all entries
             logger.warn("Config TENANT changed - reloading all entries for new tenant '{}'", value);
             Entries.resetEntries();
             Entries.load_async(MainActivity.getInstance());
+            MainActivity.getInstance().switchToFirstFragment(); // navigate to edit this entry
+            Entries.rootTopic();
+            // tricky ... add list of tenants? -> make tenant a topic to choose from?
+            // should have tenant id and name -> but where to store/share name?
+            // WO combine ... <tenant_id>:<tenant_name>
+            saveForSelection(entryKey, value);
+            saveForSelection(entryKey, oldValue); // make sure there is way back
         }
+    }
+
+
+    private static void saveForSelection(EntryKey parentEntryKey, String idAndValue) {
+        String name = idAndValue;
+        if (idAndValue.contains(":")) {
+            String[] split = idAndValue.split(":", 2);
+            String id = split[0];
+            name = split[1];
+            MainActivity.getInstance().userInfo("Tenant changed to: " + name + " (" + id + ")");
+        } else {
+            MainActivity.getInstance().userInfo("Tenant changed to: " + idAndValue);
+        }
+        Entries.setEntry(new EntryKey(parentEntryKey.getFullPath(), idAndValue), idAndValue, null);
     }
 
     public static String get(String key) {
@@ -210,4 +245,10 @@ public enum Config {
     public boolean is(Config config) {
         return null != config && this.name().equals(config.name());
     }
+
+
+    public void save(){
+
+    }
+
 }

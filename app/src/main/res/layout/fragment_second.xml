@@ -85,6 +85,7 @@
                 android:autofillHints="Enter text"
                 android:text="@string/lorem_ipsumShort"
                 android:inputType="textMultiLine"
+                android:textColor="@color/colorPrimaryDark"
                 android:minLines="5"
                 android:maxLines="10"
                 android:gravity="top|start"

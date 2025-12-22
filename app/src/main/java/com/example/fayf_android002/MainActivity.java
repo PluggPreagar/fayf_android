@@ -15,6 +15,7 @@ import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
+import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
@@ -52,6 +53,8 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        DataStorageLocal.loadGlobal( getApplicationContext() ); // load config before anything else
 
         instance = this;
 
@@ -176,10 +179,11 @@ public class MainActivity extends AppCompatActivity  {
     }
 
     @Override
-    public void onStop() {
-        logger.info("MainActivity onStop() called");
+    public void onPause() {
+        logger.info("MainActivity onPause() called");
+        DataStorageLocal.saveGlobal( getApplicationContext() ); // save config on pause
         Entries.save( getApplicationContext());
-        super.onStop();
+        super.onPause();
     }
 
     // which function is called on closing application
@@ -453,7 +457,7 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-
-
-
+    public void userInfo(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+    }
 }
