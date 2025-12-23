@@ -150,6 +150,10 @@ public class Entries {
 
 
     private static void load(EntryTree entryTree, Context context, boolean forceWeb) {
+        if (null == context) {
+            logger.error("Entries.load: context is null, cannot load entries");
+            return;
+        }
         String system = Config.SYSTEM.getValue();
         String tenant = Config.TENANT.getValue();
         // keep my rankings and votes ?
@@ -164,6 +168,7 @@ public class Entries {
             logger.info("SKIPP load entries async for tenant '{}'", tenant);
         } else if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
             entryTree.setPublic(new DataStorageWeb().readData( system, tenant ));
+            Entries.logEntries(entryTree, "Entries loaded from web");
             //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             if (entryTree.entries.size() > 0) {
@@ -178,6 +183,7 @@ public class Entries {
         checkDataIntegrity();
         // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(null);
+        Entries.logEntries(entryTree, "After load");
     }
 
     private static void mergeVotesAndRankings(SortedEntryTreeMap entryTreeOld, SortedEntryTreeMap entryTree) {
@@ -298,6 +304,10 @@ public class Entries {
 
 
     public static void loadConfig(Context context) {
+        if (null == context) {
+            logger.error("Entries.loadConfig: context is null, cannot load config entries");
+            return;
+        }
         // not async - must be available before anything else
         EntryTree entryTreeLoaded = DataStorageLocal.loadLocal(context);// load config before anything else
         entryTree.setPublic(entryTreeLoaded);
@@ -308,6 +318,10 @@ public class Entries {
 
 
     public static void save(Context context) {
+        if (null == context) {
+            logger.error("Entries.save: context is null, cannot save entries");
+            return;
+        }
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP save entries async (locale tenant '{}')", Config.TENANT.getValue());
         } else {
@@ -330,7 +344,8 @@ public class Entries {
      */
 
     public static EntryTree resetEntries() {
-         entryTree = new EntryTree(); // keep config ..
+        logger.warn("Resetting all entries");
+        entryTree = new EntryTree(); // keep config ..
         checkDataIntegrity(); // ensure config entries exist
         return entryTree;
     }
@@ -551,6 +566,20 @@ public class Entries {
         if (null != topicEntries) {
             topicEntries.sortByValue();
         }
+    }
+
+
+    /*
+
+     */
+    public static void logEntries(EntryTree entryTree, String msg) {
+        logger.info("{} - entries dump ({} topics,{} entries):", msg, entryTree.entries.size(), entryTree.size());
+        for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
+            logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry.getValue().size());
+            for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
+                logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry.getValue().getContent());
+            } // for nodeEntry
+        } // for topics
     }
 
 }

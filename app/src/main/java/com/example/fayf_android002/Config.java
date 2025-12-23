@@ -1,8 +1,7 @@
 package com.example.fayf_android002;
 
-import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.Entry;
-import com.example.fayf_android002.Entry.EntryKey;
+import android.content.Context;
+import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,8 +123,12 @@ public enum Config {
     // define enumeration of settings entries
 
 
-    public static void set(String key, String value) {
+    public static void set(String key, String valueOrig) {
         Config configChanged = Config.fromKey(key);// validate key
+        String value = valueOrig.trim();
+        if (!value.equals(valueOrig)) {
+            logger.warn("Config '{}' value trimmed from '{}' to '{}'", key, valueOrig, value);
+        }
         if (fixedValues.contains(key)) {
             if (configChanged.value.equals(value)) {
                 logger.debug("Config '{}' unchanged with fixed value '{}'", key, value);
@@ -157,21 +160,32 @@ public enum Config {
 
     private static void switchTenant(EntryKey entryKey, String value, String oldValue) {
         // reset Entries to apply new tenant, and reload all entries
-        logger.warn("Config TENANT changed '{}'", value);
+        logger.info("----------------------------------------------");
+        logger.info("Switching tenant to '{}' --------------", value);
+        logger.warn("Config TENANT changed - '{}'", value);
+        logger.warn("Config TENANT changed - save old config+data, reload data'{}'", value);
         // tricky ... add list of tenants? -> make tenant a topic to choose from?
         // should have tenant id and name -> but where to store/share name?
         // WO combine ... <tenant_id>:<tenant_name>
         Entries.setEntry(new EntryKey(entryKey.getFullPath(), value), value, null);
         Entries.setEntry(new EntryKey(entryKey.getFullPath(), oldValue), oldValue, null); // make sure there is way back
-        DataStorageLocal.saveLocal(MainActivity.getInstance()); // save current config first
-        // reset only non hidden
-        Set<String> collect = Entries.entryTree.entries.keySet().stream().filter(t -> !t.startsWith("/_/")).collect(Collectors.toSet());
-        for (String topic : collect) {
-            Entries.entryTree.entries.remove(topic);
+        // show available tenants
+        SortedEntryMap topic = Entries.entryTree.getTopic(entryKey);
+        logger.info("Tenants available '{}':", topic.size());
+        topic.forEach((k, v) -> logger.info("Tenant entry: {} => {}", k, v.getContent()));
+        //
+        EntryTree.filterConfig(Entries.entryTree); // keep only hidden entries
+        Context context = MainActivity.getContext();
+        if (null != context) {
+            // might be not possible at startup - if no local data for new tenant
+            DataStorageLocal.saveLocal(context); // save current config first
+            // reset only non hidden
+            Entries.loadAsync(context);
+            MainActivity.switchToFirstFragment(); // navigate to edit this entry - might fail if MainActivity not ready
+        } else {
+            logger.error("Context is null - cannot save and reload tenant data");
         }
-        Entries.loadAsync(MainActivity.getInstance());
-        MainActivity.getInstance().switchToFirstFragment(); // navigate to edit this entry
-        Entries.rootTopic();
+        // Entries.rootTopic(); -- leave it to time after reload
     }
 
 

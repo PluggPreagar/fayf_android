@@ -237,7 +237,7 @@ public class ButtonTouchable extends MaterialButton {
             } else if (Config.TENANT.is(config) || config.name().startsWith("TEST_") ) {
                 logger.warn("Edit Config {} by click.", entryKey.getFullPath());
                 Entries.setCurrentEntryKey(entryKey);
-                MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
+                MainActivity.switchToInputFragment(); // navigate to edit this entry
             } else {
                 logger.error("FAIL - Edit config entry {} not allowed!", entryKey.getFullPath());
                 MainActivity.userInfo("Your are not allowed to edit this config entry.");
@@ -263,7 +263,7 @@ public class ButtonTouchable extends MaterialButton {
         UtilDebug.logCompactCallStack();
         resetBackgroundAfterDelay();
         Entries.setCurrentEntryKey(entryKey);
-        MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
+        MainActivity.switchToInputFragment(); // navigate to edit this entry
         // Custom behavior can be added here
         return super.performLongClick();
     }

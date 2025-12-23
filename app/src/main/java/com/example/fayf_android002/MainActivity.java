@@ -1,5 +1,6 @@
 package com.example.fayf_android002;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.TextView;
@@ -41,21 +42,34 @@ public class MainActivity extends AppCompatActivity  {
     public static void userInfo(String s) {
         if (instance != null) {
              instance.runOnUiThread(() -> {
-                Toast.makeText(instance.getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+                Toast.makeText(instance.getContext(), s, Toast.LENGTH_SHORT).show();
             });
         } else {
             logger.warn("MainActivity instance is null - cannot show toast: {}", s);
         }
     }
 
+    public static Context getContext() {
+        if (null == instance) {
+            logger.error("MainActivity instance is null - cannot get context");
+            return null;
+        }
+        Context context =  instance.getApplicationContext();
+        if (null == context) {
+            logger.error("MainActivity getContext() - application context is null");
+        }
+        return null == context ? instance : context;
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        instance = this; // set instance early for Entries.loadConfig - needs context, but not UI yet
         super.onCreate(savedInstanceState);
 
         if (Entries.entryTree.isEmpty()) {
             logger.info("Entries are empty on MainActivity onCreate - loading from local storage");
-            Entries.loadConfig( getApplicationContext());
+            Entries.loadConfig( getContext());
         } else {
             logger.info("Entries already loaded before MainActivity onCreate");
         }
@@ -145,26 +159,44 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void loadFragment(Fragment fragment) {
+
+
+    private boolean loadFragment(Fragment fragment) {
         logger.info("Loading fragment: {}", fragment.getClass().getSimpleName());
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
+        return true;
     }
 
-    public void switchToFirstFragment() {
-        loadFragment(new FirstFragment());
+    public static boolean switchToFirstFragment() {
+        if (null == instance) {
+            logger.error("MainActivity instance is null - cannot switch to FirstFragment");
+            return false;
+        }
+        return instance.loadFragment(new FirstFragment());
     }
 
-    public void switchToInputFragment() {
-        loadFragment(new InputFragment());
+    public static boolean switchToInputFragment() {
+        if (null == instance) {
+            logger.error("MainActivity instance is null - cannot switch to InputFragment");
+            return false;
+        }
+        return instance.loadFragment(new InputFragment());
     }
 
-    public void switchToContactFragment() {
-        loadFragment(new ContactFragment());
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
+    public static boolean switchToContactFragment() {
+        if (null == instance) {
+            logger.error("MainActivity instance is null - cannot switch to ContactFragment");
+            return false;
+        }
+        boolean loaded = instance.loadFragment(new ContactFragment());
+        instance.getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
+        return loaded;
     }
+
+
 
     private void refresh(EntryKey currentTopicEntry){
         // called in runOnUiThread from onTopicChangedListener
@@ -185,7 +217,7 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     public void onPause() {
         logger.info("MainActivity onPause() called");
-        Entries.save( getApplicationContext());
+        Entries.save( getContext());
         super.onPause();
     }
 
@@ -336,8 +368,8 @@ public class MainActivity extends AppCompatActivity  {
             return true;
         } else if (id == R.id.action_load_from_web) {
             logger.info("action_load_from_web");
-            Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
-            Entries.loadAsync( getApplicationContext(), true);
+            Toast.makeText(getContext(), "download data", Toast.LENGTH_SHORT).show();
+            Entries.loadAsync( getContext(), true);
             return true;
         } else if (id == R.id.toggle_log) {
             Config.SHOW_LOGS.toggleValue();
@@ -373,7 +405,7 @@ public class MainActivity extends AppCompatActivity  {
                     + "Content: " + ( null == currentEntry ? "<null>" : currentEntry.content ) + "\n\n"
                     + "Please describe the issue here...\n";
             EntryKey bugEntryKey = new EntryKey( "/_/bug", "bug_" + randomId);
-            Entries.setEntry( bugEntryKey, bugReportContent, getApplicationContext());
+            Entries.setEntry( bugEntryKey, bugReportContent, getContext());
             Entries.setCurrentEntryKey(bugEntryKey);
             switchToInputFragment(); // reload InputFragment
         } else if ( id == R.id.action_contact){

@@ -142,9 +142,9 @@ public class EntryTree implements Serializable {
 
 
     public static EntryTree filter(EntryTree entryTree, boolean hiddenPart) {
-        Set<String> keys = new HashSet<>(entryTree.entries.keySet());
-        keys.removeIf(t ->  (t.startsWith(Config.CONFIG_PATH) || t.startsWith("/_/")) != hiddenPart );
-        keys.forEach( topic -> entryTree.entries.remove(topic) );
+        Set<String> keysToRemove = new HashSet<>(entryTree.entries.keySet());
+        keysToRemove.removeIf(t ->  (t.startsWith(Config.CONFIG_PATH) || t.startsWith("/_/")) == hiddenPart );
+        keysToRemove.forEach( topic -> entryTree.entries.remove(topic) );
         return entryTree;
     }
 

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -37,6 +38,7 @@ public class DataStorageLocal {
             logger.warn("Entries file does not exist, it will be created: {}", filePath);
         }
         logger.info("Saving {} entries to file: {} ...", entries.size(), filePath);
+        logger.debug(" " + (new File(context.getFilesDir(), filePath).getAbsolutePath()));
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
             oos.writeObject(entries.entries);
@@ -60,6 +62,7 @@ public class DataStorageLocal {
             return new EntryTree();
         }
         logger.info("Reading entries from file: {} ...", filePath);
+        logger.debug(" " + (new File(context.getFilesDir(), filePath).getAbsolutePath()));
         EntryTree entries = new EntryTree();
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream( context.openFileInput( filePath)))) {
@@ -89,7 +92,14 @@ public class DataStorageLocal {
             logger.warn("Config file does not exist: {}", filePath);
             return;
         }
+        if (Entries.entryTree.entries.isEmpty()) {
+            logger.warn("------------------------------");
+            logger.error("No entries in Entries.entryTree to save to local file: {}", filePath);
+            logger.warn("------------------------------");
+            return;
+        }
         logger.info("Saving local to file: {} ...", filePath);
+        logger.debug(" " + (new File(context.getFilesDir(), filePath).getAbsolutePath()));
         // save local-data - with rank
         // extract hidden area /_/ entries
         // make sure they match with Config values
@@ -99,15 +109,18 @@ public class DataStorageLocal {
                 localEntries.entries.put(key, entryMap);
             }
         });
+        assert localEntries.isEmpty() == false ; // there should be at least config entries
         // make sure config is up to date
-        SortedEntryMap localConfigEntries = localEntries.entries.getOrDefault(CONFIG_PATH, new SortedEntryMap());
-        for (Config value : Config.values()) {
-            assert localConfigEntries != null;
-            Entry entry = localConfigEntries.getOrDefault(value.getKey(), new Entry(value.getKey()));
-            assert entry != null;
-            entry.setContent(value.getValue());
+        SortedEntryMap localConfigEntries = localEntries.entries.computeIfAbsent(CONFIG_PATH, k -> new SortedEntryMap());
+        for (Config config : Config.values()) {
+            String configKey = config.getKey();
+            String configValue = config.getValue();
+            if (null != configValue && !configValue.isEmpty()) {
+                localConfigEntries.put(configKey, new Entry(configValue));
+            }
         }
         //
+        Entries.logEntries(localEntries, "Local config entries to save (" + filePath + ")");
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream(context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
             oos.writeObject(localEntries);
@@ -120,14 +133,17 @@ public class DataStorageLocal {
     // Load the configuration from a file
     public static EntryTree loadLocal(Context context) {
         String filePath = filePathLocal;
+        ArrayList<String> tenantIds = new ArrayList<>();
         if (!new File(context.getFilesDir(), filePath).exists()) {
             logger.warn("Local file does not exist: {}", filePath);
             return null;
         }
         logger.info("Reading local from file: {} ...", filePath);
+        logger.debug(" " + (new File(context.getFilesDir(), filePath).getAbsolutePath()));
         EntryTree localEntries = null;
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream(context.openFileInput(filePath)))) {
+            logger.info("Local read from file: {}", filePath);
             localEntries = (EntryTree) ois.readObject();
             // load config entries, make sure they are in Config
             SortedEntryMap configEntries = localEntries.entries.getOrDefault(CONFIG_PATH, new SortedEntryMap());
@@ -137,8 +153,13 @@ public class DataStorageLocal {
                 Config config = Config.fromKeyOrNull(eKey);
                 if (null != config) {
                     if (null != value && !value.isEmpty()) {
-                        config.setValue(value);
-                        logger.debug("Local config loaded: {} -> {}", eKey, value);
+                        if (config == Config.TENANT) {
+                            // postpone setting tenantId until all entries are loaded ... as it might trigger reload
+                            tenantIds.add(value); // need wrapper to modify from lambda
+                        } else {
+                            config.setValue(value);
+                            logger.debug("Local config loaded: {} -> {}", eKey, value);
+                        }
                     } else {
                         logger.error("Local config entry is empty, keep default: {} -> {}", eKey, config.getDefaultValue());
                     }
@@ -146,9 +167,17 @@ public class DataStorageLocal {
                     logger.warn("Local config key not found in Config enum: {} -> {}", eKey, value);
                 }
             });
-            logger.info("Local read from file: {}", filePath);
+            // show values below config for debug
+            Entries.logEntries(localEntries, "Local config entry loaded (" + filePath + ")");
         } catch (Exception e) {
             logger.error("Error loading local from file: {}", filePath, e);
+        }
+        if (!tenantIds.isEmpty()) {
+            String tenantId = tenantIds.get(0); // take first one
+            logger.info("Local tenant to load: {}", tenantId);
+            Config.TENANT.setValue(tenantId);
+        } else {
+            logger.warn("No tenantId found in local config");
         }
         // hidden "/_/" entries
         return null != localEntries ? localEntries : new EntryTree();
