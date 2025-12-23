@@ -42,7 +42,6 @@ public class Entries {
     }
 
 
-
     /*
         I N T E R F A C E S
     */
@@ -158,13 +157,13 @@ public class Entries {
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
-            entryTree.set(DataStorageLocal.loadTenant(context));
+            entryTree.setPublic(DataStorageLocal.loadTenant(context));
         }
         if (tenant.endsWith(Config.TENANT_TEST_SUFFIX)) {
             // may have changed
             logger.info("SKIPP load entries async for tenant '{}'", tenant);
         } else if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
-            entryTree.set(new DataStorageWeb().readData( system, tenant ));
+            entryTree.setPublic(new DataStorageWeb().readData( system, tenant ));
             //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             if (entryTree.entries.size() > 0) {
@@ -210,7 +209,7 @@ public class Entries {
             Entry configEntry = entryTree.get(configEntryKey);
             if (null == configEntry) {
                 // create entry with default value
-                entryTree.set(configEntryKey, String.valueOf(config.getValue()));
+                entryTree.setPublic(configEntryKey, String.valueOf(config.getValue()));
                 logger.info("Created missing config entry for {} with default value '{}'"
                         , configEntryKey.getFullPath(), config.getValue());
             } else if (!configEntry.getContent().equals(config.getValue())) {
@@ -277,7 +276,7 @@ public class Entries {
 
 
 
-    public static void load_async(Context context, boolean forceWeb) {
+    public static void loadAsync(Context context, boolean forceWeb) {
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
             logger.info("SKIPP load entries async for tenant '{}'", Config.TENANT.getValue());
         } else {
@@ -293,8 +292,16 @@ public class Entries {
         } // SKIPP for test tenant
     }
 
-    public static void load_async(Context context) {
-        load_async(context, false);
+    public static void loadAsync(Context context) {
+        loadAsync(context, false);
+    }
+
+
+    public static void loadConfig(Context context) {
+        // not async - must be available before anything else
+        EntryTree entryTreeLoaded = DataStorageLocal.loadLocal(context);// load config before anything else
+        entryTree.setPublic(entryTreeLoaded);
+        checkDataIntegrity();
     }
 
 
@@ -308,6 +315,7 @@ public class Entries {
             executorService.execute(() -> {
                 try {
                     DataStorageLocal.saveTenant(entryTree, context);
+                    DataStorageLocal.saveLocal(context);
                     logger.info("Entries saved async ({} entries)", entryTree.entries.size());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -322,7 +330,7 @@ public class Entries {
      */
 
     public static EntryTree resetEntries() {
-        entryTree = new EntryTree();
+         entryTree = new EntryTree(); // keep config ..
         checkDataIntegrity(); // ensure config entries exist
         return entryTree;
     }
@@ -387,7 +395,7 @@ public class Entries {
             if (!iterator.hasNext() && !searchQuery.isEmpty()) {
                 logger.debug("getEntriesIterator: no entries found for topic {} with offset {} and searchQuery '{}'"
                         , Entries.toString(currentEntryKey), offset, searchQuery);
-                MainActivity.notifyUser("No local matches, run global search.");
+                MainActivity.userInfo("No local matches, run global search.");
                 // search across all topics
                 iterator = entryTree.entries.values().stream()
                         .flatMap(m -> m.entrySet().stream())
@@ -475,7 +483,7 @@ public class Entries {
             logger.warn("FIX Invalid topic in EntryKey: {} ", entryKey);
             entryKey.topic = entryKey.topic.substring(2);
         }
-        Entry entry = entryTree.set(entryKey, content);
+        Entry entry = entryTree.setPublic(entryKey, content);
         checkDataIntegrity(entryKey, entry);
         // check if first parent
         EntryKey parentKey = Entries.upOneTopicLevel(entryKey);
@@ -498,7 +506,7 @@ public class Entries {
     }
 
     public static Entries setEntryInternal(String topic, String nodeId, String content) {
-        entryTree.set(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
+        entryTree.setPublic(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
         return Entries.getInstance();
     }
 

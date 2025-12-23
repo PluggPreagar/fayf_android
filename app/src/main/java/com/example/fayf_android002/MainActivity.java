@@ -15,7 +15,6 @@ import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
-import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.databinding.ActivityMainBinding;
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity  {
         return instance;
     }
 
-    public static void notifyUser(String s) {
+    public static void userInfo(String s) {
         if (instance != null) {
              instance.runOnUiThread(() -> {
                 Toast.makeText(instance.getApplicationContext(), s, Toast.LENGTH_SHORT).show();
@@ -54,7 +53,12 @@ public class MainActivity extends AppCompatActivity  {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        DataStorageLocal.loadGlobal( getApplicationContext() ); // load config before anything else
+        if (Entries.entryTree.isEmpty()) {
+            logger.info("Entries are empty on MainActivity onCreate - loading from local storage");
+            Entries.loadConfig( getApplicationContext());
+        } else {
+            logger.info("Entries already loaded before MainActivity onCreate");
+        }
 
         instance = this;
 
@@ -181,7 +185,6 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     public void onPause() {
         logger.info("MainActivity onPause() called");
-        DataStorageLocal.saveGlobal( getApplicationContext() ); // save config on pause
         Entries.save( getApplicationContext());
         super.onPause();
     }
@@ -334,7 +337,7 @@ public class MainActivity extends AppCompatActivity  {
         } else if (id == R.id.action_load_from_web) {
             logger.info("action_load_from_web");
             Toast.makeText(getApplicationContext(), "download data", Toast.LENGTH_SHORT).show();
-            Entries.load_async( getApplicationContext(), true);
+            Entries.loadAsync( getApplicationContext(), true);
             return true;
         } else if (id == R.id.toggle_log) {
             Config.SHOW_LOGS.toggleValue();
@@ -456,8 +459,4 @@ public class MainActivity extends AppCompatActivity  {
         getSupportActionBar().show();
     }
 
-
-    public void userInfo(String s) {
-        Toast.makeText(this, s, Toast.LENGTH_LONG).show();
-    }
 }

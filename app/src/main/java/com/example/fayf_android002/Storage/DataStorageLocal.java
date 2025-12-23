@@ -2,17 +2,12 @@ package com.example.fayf_android002.Storage;
 
 import android.content.Context;
 import com.example.fayf_android002.Config;
-import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.EntryKey;
-import com.example.fayf_android002.Entry.EntryTree;
-import com.example.fayf_android002.Entry.SortedEntryTreeMap;
+import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -23,7 +18,7 @@ public class DataStorageLocal {
 
     private static final Logger logger = LoggerFactory.getLogger(DataStorageLocal.class);
     private final static String filePath = "entries_TID.dat.gz";
-    private final static String filePathGlobal = "config.dat.gz";
+    private final static String filePathLocal = "config.dat.gz";
 
     // Serialize the EntryTree to a file
     public static void saveTenant(EntryTree entries, Context context)  {
@@ -56,6 +51,10 @@ public class DataStorageLocal {
     // Deserialize the EntryTree from a file
     public static EntryTree loadTenant(Context context)  {
         String filePath = DataStorageLocal.filePath.replace("TID", TENANT.getValue());
+        if (null == context) { // TODO do we need context?
+            logger.error("Context is null, cannot load entries from file: {}", filePath);
+            return new EntryTree();
+        }
         if (!new File(context.getFilesDir(), filePath).exists()) {
             logger.warn("Entries file does not exist: {}", filePath);
             return new EntryTree();
@@ -67,9 +66,6 @@ public class DataStorageLocal {
             entries.entries = (SortedEntryTreeMap) ois.readObject();
             int sizeBefore = entries.size();
             logger.info("Entries read from file: {} ({} entries)", filePath, entries.size());
-            // remove all entries with hidden-prefix /_/ (including config)
-            entries.entries.keySet().removeIf(topic -> topic.startsWith(CONFIG_PATH));
-            entries.entries.keySet().removeIf(topic -> topic.startsWith("/_/"));
             int sizeAfter = entries.size();
             if (sizeBefore != sizeAfter) {
                 logger.info("Removed {} hidden entries with prefix /_/ from loaded entries", (sizeBefore - sizeAfter));
@@ -83,68 +79,79 @@ public class DataStorageLocal {
 
 
     // Save the configuration to a file
-    public static void saveGlobal(Context context) {
-        String filePath = filePathGlobal;
+    public static void saveLocal(Context context) {
+        String filePath = filePathLocal;
+        if (null == context) { // TODO do we need context?
+            logger.error("Context is null, cannot save local config to file: {}", filePath);
+            return;
+        }
         if (!new File(context.getFilesDir(), filePath).exists()) {
             logger.warn("Config file does not exist: {}", filePath);
             return;
         }
-        logger.info("Saving global to file: {} ...", filePath);
-        Map<String, String> config =new HashMap<>();
-        for (Config c : Config.values()) {
-            config.put(c.getKey(), c.getValue());
-        }
-        // add other global values
+        logger.info("Saving local to file: {} ...", filePath);
+        // save local-data - with rank
+        // extract hidden area /_/ entries
+        // make sure they match with Config values
+        EntryTree localEntries = new EntryTree();
         Entries.entryTree.entries.forEach((key, entryMap) -> {
-            if (!key.equals(Config.CONFIG_PATH) && key.startsWith("/_/")) {
-                logger.debug("Saving hidden global entries for topic: {}", key);
-                entryMap.forEach((nodeId, entry) -> {
-                    config.put(key + "/" + nodeId, entry.getContent());
-                });
+            if (key.startsWith("/_/")) {
+                localEntries.entries.put(key, entryMap);
             }
         });
+        // make sure config is up to date
+        SortedEntryMap localConfigEntries = localEntries.entries.getOrDefault(CONFIG_PATH, new SortedEntryMap());
+        for (Config value : Config.values()) {
+            assert localConfigEntries != null;
+            Entry entry = localConfigEntries.getOrDefault(value.getKey(), new Entry(value.getKey()));
+            assert entry != null;
+            entry.setContent(value.getValue());
+        }
         //
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream(context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
-            oos.writeObject(config);
-            logger.info("Global saved to file: {}", filePath);
+            oos.writeObject(localEntries);
+            logger.info("Local saved to file: {}", filePath);
         } catch (Exception e) {
-            logger.error("Error saving global to file: {}", filePath, e);
+            logger.error("Error saving local to file: {}", filePath, e);
         }
     }
 
     // Load the configuration from a file
-    public static void loadGlobal(Context context) {
-        String filePath = filePathGlobal;
+    public static EntryTree loadLocal(Context context) {
+        String filePath = filePathLocal;
         if (!new File(context.getFilesDir(), filePath).exists()) {
-            logger.warn("Global file does not exist: {}", filePath);
-            return;
+            logger.warn("Local file does not exist: {}", filePath);
+            return null;
         }
-        logger.info("Reading global from file: {} ...", filePath);
+        logger.info("Reading local from file: {} ...", filePath);
+        EntryTree localEntries = null;
         try (ObjectInputStream ois = new ObjectInputStream(
                 new GZIPInputStream(context.openFileInput(filePath)))) {
-            Map<String, String> config = (Map<String, String>) ois.readObject();
-            for (Map.Entry<String, String> e : config.entrySet()) {
-                if (e.getKey().contains("/")) {
-                    // hidden "/_/" entries
-                    // allow loading config additional hidden entries like /_/config/tenant/[tst,tst5 ... ]
-                    EntryKey entryKey = new EntryKey(e.getKey());
-                    if (Config.CONFIG_PATH.equals(entryKey.topic)) {
-                        logger.debug("Skipping config-dupl: {} (set by config already)", e.getKey());
+            localEntries = (EntryTree) ois.readObject();
+            // load config entries, make sure they are in Config
+            SortedEntryMap configEntries = localEntries.entries.getOrDefault(CONFIG_PATH, new SortedEntryMap());
+            assert configEntries != null;
+            configEntries.forEach((eKey, entry) -> {
+                String value = entry.getContent();
+                Config config = Config.fromKeyOrNull(eKey);
+                if (null != config) {
+                    if (null != value && !value.isEmpty()) {
+                        config.setValue(value);
+                        logger.debug("Local config loaded: {} -> {}", eKey, value);
                     } else {
-                        Entries.setEntryInternal(entryKey.topic, entryKey.nodeId, e.getValue());
-                        logger.debug("Global hidden entry loaded: {} -> {}", entryKey, e.getValue());
+                        logger.error("Local config entry is empty, keep default: {} -> {}", eKey, config.getDefaultValue());
                     }
                 } else {
-                    Config.set(e.getKey(), e.getValue());
+                    logger.warn("Local config key not found in Config enum: {} -> {}", eKey, value);
                 }
-            }
-            logger.info("Global read from file: {}", filePath);
+            });
+            logger.info("Local read from file: {}", filePath);
         } catch (Exception e) {
-            logger.error("Error loading global from file: {}", filePath, e);
+            logger.error("Error loading local from file: {}", filePath, e);
         }
         // hidden "/_/" entries
-        Entries.setEntryInternal("/_","ToDo", "ToDo"); // ensure config path exists
+        return null != localEntries ? localEntries : new EntryTree();
     }
 
 }

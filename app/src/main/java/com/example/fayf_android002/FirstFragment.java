@@ -58,7 +58,7 @@ public class FirstFragment extends Fragment {
 
         // Navigating from SecondFragment to FirstFragment will not show the Topic Title
         if (Entries.size()<3) { // TODO ignore /_/config topic
-            Entries.load_async(requireContext()); // async load entries - will trigger callback to update buttons
+            Entries.loadAsync(requireContext()); // async load entries - will trigger callback to update buttons
         }
 
         Entries.setOnTopicChangedListener(FIRST_FRAGMENT, entry -> {

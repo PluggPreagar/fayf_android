@@ -3,11 +3,14 @@ package com.example.fayf_android002;
 import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
+import com.example.fayf_android002.Storage.DataStorageLocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public enum Config {
 
@@ -140,35 +143,37 @@ public enum Config {
         configChanged.value = value; // use instance method
         EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
         Entries.setEntry(entryKey, value, null);
-        logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
         if (configChanged.is(TENANT)) {
-            // reset Entries to apply new tenant, and reload all entries
-            logger.warn("Config TENANT changed - reloading all entries for new tenant '{}'", value);
-            Entries.resetEntries();
-            Entries.load_async(MainActivity.getInstance());
-            MainActivity.getInstance().switchToFirstFragment(); // navigate to edit this entry
-            Entries.rootTopic();
-            // tricky ... add list of tenants? -> make tenant a topic to choose from?
-            // should have tenant id and name -> but where to store/share name?
-            // WO combine ... <tenant_id>:<tenant_name>
-            saveForSelection(entryKey, value);
-            saveForSelection(entryKey, oldValue); // make sure there is way back
-        }
-    }
-
-
-    private static void saveForSelection(EntryKey parentEntryKey, String idAndValue) {
-        String name = idAndValue;
-        if (idAndValue.contains(":")) {
-            String[] split = idAndValue.split(":", 2);
-            String id = split[0];
-            name = split[1];
-            MainActivity.getInstance().userInfo("Tenant changed to: " + name + " (" + id + ")");
+            // asynchronous reload of all entries for new tenant
+            MainActivity.userInfo("Tenant changed " + value.replaceFirst(".*:", ""));
+            new Thread(() -> {
+                switchTenant(entryKey, value, oldValue);
+            }).start();
         } else {
-            MainActivity.getInstance().userInfo("Tenant changed to: " + idAndValue);
+            logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
         }
-        Entries.setEntry(new EntryKey(parentEntryKey.getFullPath(), idAndValue), idAndValue, null);
+
     }
+
+    private static void switchTenant(EntryKey entryKey, String value, String oldValue) {
+        // reset Entries to apply new tenant, and reload all entries
+        logger.warn("Config TENANT changed '{}'", value);
+        // tricky ... add list of tenants? -> make tenant a topic to choose from?
+        // should have tenant id and name -> but where to store/share name?
+        // WO combine ... <tenant_id>:<tenant_name>
+        Entries.setEntry(new EntryKey(entryKey.getFullPath(), value), value, null);
+        Entries.setEntry(new EntryKey(entryKey.getFullPath(), oldValue), oldValue, null); // make sure there is way back
+        DataStorageLocal.saveLocal(MainActivity.getInstance()); // save current config first
+        // reset only non hidden
+        Set<String> collect = Entries.entryTree.entries.keySet().stream().filter(t -> !t.startsWith("/_/")).collect(Collectors.toSet());
+        for (String topic : collect) {
+            Entries.entryTree.entries.remove(topic);
+        }
+        Entries.loadAsync(MainActivity.getInstance());
+        MainActivity.getInstance().switchToFirstFragment(); // navigate to edit this entry
+        Entries.rootTopic();
+    }
+
 
     public static String get(String key) {
         Config config = Config.fromKey(key);// validate key

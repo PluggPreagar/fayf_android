@@ -93,6 +93,9 @@ public class DataStorageWeb {
             } else if (content.endsWith(DELETE_SUFFIX)) { // Suffix to allow safe APPEND operation
                 data.remove(key);
             } else {
+                if (key.topic.startsWith("/_/")) {
+                    logger.warn("Skipping hidden entry from data load: {}", line);
+                }
                 data.load(key, content);
             }
         } else {

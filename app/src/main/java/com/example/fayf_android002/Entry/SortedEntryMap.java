@@ -6,7 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 
-public class SortedEntryMap extends LinkedHashMap<String, Entry> {
+public class SortedEntryMap extends LinkedHashMap<String, Entry> implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
+    public long lastModified = 0;
+
+    public void updateLastModified() {
+        this.lastModified = System.currentTimeMillis();
+    }
 
     public void sortByValue(){
         ArrayList<Entry<String, com.example.fayf_android002.Entry.Entry>> entryList = new ArrayList<>(this.entrySet());

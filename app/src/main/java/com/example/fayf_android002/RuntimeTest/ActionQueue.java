@@ -136,7 +136,7 @@ public class ActionQueue {
                         , this
                 );
             }
-            MainActivity.notifyUser("ActionQueue " + (actionExecutor.errorMsg.isEmpty() ? "PASSED" : "FAILED")
+            MainActivity.userInfo("ActionQueue " + (actionExecutor.errorMsg.isEmpty() ? "PASSED" : "FAILED")
                     + ": executed " + (initialSize - actionQueue.size() - actionExecutor.errorMsg.size() - skipped.get())
                     + " actions, " + actionExecutor.errorMsg.size() + " errors, "
                     + (actionQueue.size() + skipped.get()) + " skipped of " + initialSize + " total"

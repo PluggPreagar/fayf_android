@@ -11,7 +11,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import com.example.fayf_android002.Entry.Entries;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -104,7 +103,7 @@ public class ContactFragment extends Fragment {
     private void setTenantId(String tenantId) {
         // Logic to set the tenant ID
         logger.info("Tenant ID set to: " + tenantId + " (by QR Scan)");
-        MainActivity.getInstance().userInfo("Tenant ID set to: " + tenantId);
+        MainActivity.userInfo("Tenant ID set to: " + tenantId);
         Config.TENANT.setValue(tenantId);
     }
 }

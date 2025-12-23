@@ -2,15 +2,12 @@ package com.example.fayf_android002.UI;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.widget.Button;
 import androidx.core.content.ContextCompat;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.Entries;
@@ -243,7 +240,7 @@ public class ButtonTouchable extends MaterialButton {
                 MainActivity.getInstance().switchToInputFragment(); // navigate to edit this entry
             } else {
                 logger.error("FAIL - Edit config entry {} not allowed!", entryKey.getFullPath());
-                MainActivity.notifyUser("Your are not allowed to edit this config entry.");
+                MainActivity.userInfo("Your are not allowed to edit this config entry.");
             }
         } else {
             logger.info("Do not enter leaf node (no children for {}).", entryKey.getFullPath());

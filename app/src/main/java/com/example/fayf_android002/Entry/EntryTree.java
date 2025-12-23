@@ -4,10 +4,15 @@ import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.example.fayf_android002.Entry.EntryKey.VOTE_SEPARATOR;
 
-public class EntryTree {
+public class EntryTree implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final Logger log = LoggerFactory.getLogger(EntryTree.class);
     public static EntryKey ROOT_ENTRY_KEY = new EntryKey( EntryKey.PATH_SEPARATOR , "");
@@ -47,15 +52,15 @@ public class EntryTree {
     }
 
     public Entry load(EntryKey key, String content) {
-        return set(key, content, false);
+        return setPublic(key, content, false);
     }
 
-    public Entry set(EntryKey key, String content) {
-        return set(key, content, true);
+    public Entry setPublic(EntryKey key, String content) {
+        return setPublic(key, content, true);
     }
 
 
-    public Entry set(EntryKey key, String content, boolean initRank) {
+    public Entry setPublic(EntryKey key, String content, boolean initRank) {
         // entry: EntryKey(<topic>, <nodeId>)                     content: <content>
         // vote:  EntryKey(<topic>, <nodeId>"::Vote::"<voterId>)  content: <content>" | "<voteValue>
         SortedEntryMap stringEntryTreeMap = entries.computeIfAbsent(key.topic
@@ -131,7 +136,60 @@ public class EntryTree {
         return size;
     }
 
-    public void set(EntryTree entryTree) {
+    /*
+         MERGE REMOVE ...
+     */
+
+
+    public static EntryTree filter(EntryTree entryTree, boolean hiddenPart) {
+        Set<String> keys = new HashSet<>(entryTree.entries.keySet());
+        keys.removeIf(t ->  (t.startsWith(Config.CONFIG_PATH) || t.startsWith("/_/")) != hiddenPart );
+        keys.forEach( topic -> entryTree.entries.remove(topic) );
+        return entryTree;
+    }
+
+    public static EntryTree filterConfig(EntryTree entryTree){
+        return filter(entryTree, true);
+    }
+
+    public static EntryTree filterNonConfig(EntryTree entryTree){
+        return filter(entryTree, false);
+    }
+
+
+    public void setPublic(EntryTree entryTree) {
+        // remove hidden entries / config - must be set separately (from Config or local storage)
+        // clone to avoid ConcurrentModificationException
+        filterNonConfig(entryTree);
+        // remove all public entries and move over new ones
+        filterConfig(this);
+        merge(this, entryTree);
         this.entries = entryTree.entries;
     }
+
+    public void setPrivate(EntryTree entryTree) {
+        // remove all hidden entries / config - must be set separately (from Config or local storage)
+        filterConfig(entryTree);
+        // remove all private entries and move over new ones
+        filterNonConfig(this);
+        merge(this, entryTree);
+        this.entries = entryTree.entries;
+    }
+
+
+
+    public static void merge(EntryTree target, EntryTree source) {
+        source.entries.forEach( (topic, entryMap) -> {
+            SortedEntryMap targetEntryMap = target.entries.get(topic);
+            if (null == targetEntryMap) {
+                targetEntryMap = new SortedEntryMap();
+                target.entries.put(topic, targetEntryMap);
+            } else {
+                SortedEntryMap finalTargetEntryMap = targetEntryMap;
+                entryMap.forEach( (nodeId, entry) -> finalTargetEntryMap.put(nodeId, entry) );
+            }
+        });
+    }
+
+
 }

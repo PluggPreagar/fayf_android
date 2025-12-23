@@ -199,16 +199,13 @@ public class InputFragment extends Fragment {
         }
 
         EntryKey entryKey = Entries.getCurrentEntryKey();
-        Entries.setEntry(entryKey, newContent, getContext());
-        logger.info("Entry updated: {}", entryKey.getFullPath());
-        Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
-        // Tenant-Change forces reload in Entries.setEntry
-        if (!oldValue.equals(newContent)
-                && entryKey.topic.startsWith(Config.CONFIG_PATH)
-                && entryKey.nodeId.equals(Config.TENANT.name()) ) {
-            Toast.makeText(getActivity(), getString(R.string.tenant_changed_reload_toast), Toast.LENGTH_LONG).show();
-            Entries.rootTopic();
-            Entries.load_async(MainActivity.getInstance());
+        if (entryKey.topic.equals(Config.CONFIG_PATH)) {
+            logger.info("Updating config entry: {}", entryKey.getFullPath());
+            Config.fromKey(entryKey.nodeId).setValue(newContent); // allow Tenant-special handling
+        } else {
+            Entries.setEntry(entryKey, newContent, getContext());
+            logger.info("Entry updated: {}", entryKey.getFullPath());
+            Toast.makeText(getActivity(), getString(R.string.send_toast), Toast.LENGTH_SHORT).show();
         }
         backToFirstFragment();
     }
