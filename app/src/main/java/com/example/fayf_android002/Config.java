@@ -125,7 +125,8 @@ public enum Config {
 
     public static void set(String key, String valueOrig) {
         Config configChanged = Config.fromKey(key);// validate key
-        String value = valueOrig.trim();
+        //
+        String value = valueOrig.trim().replaceAll("\\s*>\\s*$",""); // KLUDGE to remove trailing > added by Entries-Topic
         if (!value.equals(valueOrig)) {
             logger.warn("Config '{}' value trimmed from '{}' to '{}'", key, valueOrig, value);
         }

@@ -57,4 +57,5 @@
     <string name="action_force_sort">sort current topic</string>
     <string name="action_report_bug">Bug Report</string>
     <string name="action_contact">Contact / Group-QR</string>
+    <string name="action_switch_tenant">Switch Tenant</string>
 </resources>

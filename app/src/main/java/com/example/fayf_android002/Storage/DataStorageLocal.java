@@ -4,6 +4,7 @@ import android.content.Context;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
+import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +22,12 @@ public class DataStorageLocal {
     private final static String filePath = "entries_TID.dat.gz";
     private final static String filePathLocal = "config.dat.gz";
 
+
+
     // Serialize the EntryTree to a file
     public static void saveTenant(EntryTree entries, Context context)  {
         // inject tenantId into file name
-        String filePath = DataStorageLocal.filePath.replace("TID", Config.TENANT.getValue());
+        String filePath = DataStorageLocal.filePath.replace("TID", Util.sanitizeFileNameWarn( Config.TENANT.getValue()));
         if (entries == null || entries.isEmpty()) {
             logger.warn("No entries to save to file: {}", filePath);
             return;
@@ -52,7 +55,7 @@ public class DataStorageLocal {
 
     // Deserialize the EntryTree from a file
     public static EntryTree loadTenant(Context context)  {
-        String filePath = DataStorageLocal.filePath.replace("TID", TENANT.getValue());
+        String filePath = DataStorageLocal.filePath.replace("TID", Util.sanitizeFileNameWarn( TENANT.getValue()));
         if (null == context) { // TODO do we need context?
             logger.error("Context is null, cannot load entries from file: {}", filePath);
             return new EntryTree();
@@ -74,8 +77,8 @@ public class DataStorageLocal {
                 logger.info("Removed {} hidden entries with prefix /_/ from loaded entries", (sizeBefore - sizeAfter));
             }
         } catch (Exception e) {
-            UtilDebug.logError("Error reading entries from file: " + filePath , e);
             logger.error("Error loading entries to file: {}", filePath, e);
+            UtilDebug.logError("Error reading entries from file: " + filePath , e);
         }
         return entries;
     }
@@ -86,10 +89,6 @@ public class DataStorageLocal {
         String filePath = filePathLocal;
         if (null == context) { // TODO do we need context?
             logger.error("Context is null, cannot save local config to file: {}", filePath);
-            return;
-        }
-        if (!new File(context.getFilesDir(), filePath).exists()) {
-            logger.warn("Config file does not exist: {}", filePath);
             return;
         }
         if (Entries.entryTree.entries.isEmpty()) {

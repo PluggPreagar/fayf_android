@@ -69,4 +69,9 @@
             android:title="@string/action_contact"
             android:orderInCategory="100"
             app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_switch_tenant"
+            android:title="@string/action_switch_tenant"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
 </menu>

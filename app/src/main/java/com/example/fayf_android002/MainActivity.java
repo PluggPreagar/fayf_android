@@ -412,6 +412,10 @@ public class MainActivity extends AppCompatActivity  {
             logger.info("Contact menu item selected");
             switchToContactFragment();
             return true;
+        } else if (id == R.id.action_switch_tenant) {
+            logger.info("Switch tenant menu item selected");
+            Entries.setCurrentEntryKey( new EntryKey(  Config.CONFIG_PATH + "/tenant") );
+            switchToFirstFragment();
         }
 
         return super.onOptionsItemSelected(item);

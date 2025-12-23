@@ -99,6 +99,13 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         if(topic.startsWith(Config.CONFIG_PATH)) {
             text = Config.DisplayName(e.getKey()) + ": " + entry.content;
         }
+        // remove suffix from button text for better readability - and uniq appearance
+        // text = text.replaceFirst("\\s*>\\s*$", ""); // remove trailing >
+        if (Entries.isTopic(entryKey)) {
+            if (!text.endsWith(">")) {
+                text = text.trim() + " >"; // ensure trailing >
+            }
+        }
         holder.button.setText(text);
         styleButton( (MaterialButton) holder.button, position, entryKey, e.getValue() );
     }

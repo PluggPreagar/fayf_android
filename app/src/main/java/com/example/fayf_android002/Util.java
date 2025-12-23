@@ -5,8 +5,11 @@ import com.example.fayf_android002.Entry.EntryStyle;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Logger;
 
 public class Util {
+
+    static Logger logger = Logger.getLogger(Util.class.getName());
 
     public static String shortenString(String str, int maxLength) {
         // shorten by keeping the beginning and end, insert "..." if too long
@@ -131,6 +134,16 @@ public class Util {
         } catch (Exception e) {
             return defaultValue;
         }
+    }
+
+
+    public static String sanitizeFileNameWarn(String value) {
+        // "tst5 >" -> "tst5"
+        String valueSafe = value.replaceAll("[\\\\/:*?\"<>| ]", "");
+        if (!value.equals(valueSafe)) {
+            logger.warning("Warning: sanitizeFileNameWarn changed '" + value + "' to '" + valueSafe + "'");
+        }
+        return valueSafe;
     }
 
 }

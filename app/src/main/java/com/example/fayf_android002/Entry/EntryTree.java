@@ -142,9 +142,11 @@ public class EntryTree implements Serializable {
 
 
     public static EntryTree filter(EntryTree entryTree, boolean hiddenPart) {
-        Set<String> keysToRemove = new HashSet<>(entryTree.entries.keySet());
-        keysToRemove.removeIf(t ->  (t.startsWith(Config.CONFIG_PATH) || t.startsWith("/_/")) == hiddenPart );
-        keysToRemove.forEach( topic -> entryTree.entries.remove(topic) );
+        if (null != entryTree && !entryTree.isEmpty() && entryTree.entries != null) {
+            Set<String> keysToRemove = new HashSet<>(entryTree.entries.keySet());
+            keysToRemove.removeIf(t ->  (t.startsWith(Config.CONFIG_PATH) || t.startsWith("/_/")) == hiddenPart );
+            keysToRemove.forEach( topic -> entryTree.entries.remove(topic) );
+        }
         return entryTree;
     }
 
@@ -164,7 +166,6 @@ public class EntryTree implements Serializable {
         // remove all public entries and move over new ones
         filterConfig(this);
         merge(this, entryTree);
-        this.entries = entryTree.entries;
     }
 
     public void setPrivate(EntryTree entryTree) {
@@ -179,6 +180,9 @@ public class EntryTree implements Serializable {
 
 
     public static void merge(EntryTree target, EntryTree source) {
+        if (null == target || null == source || source.isEmpty()) {
+            return;
+        }
         source.entries.forEach( (topic, entryMap) -> {
             SortedEntryMap targetEntryMap = target.entries.get(topic);
             if (null == targetEntryMap) {

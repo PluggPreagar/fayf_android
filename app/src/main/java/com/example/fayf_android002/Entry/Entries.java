@@ -271,7 +271,9 @@ public class Entries {
             boolean appearsTopic = entry.getContent().endsWith(">");
             if (isTopic != appearsTopic) {
                 if (isTopic) {
-                    entry.setContent(entry.getContent().trim() + " >");
+                    // do not add - will create issue with config entries
+                    // just add on display
+                    // entry.setContent(entry.getContent().trim() + " >");
                 } else {
                     entry.setContent(entry.getContent().substring(0, entry.getContent().length() - 1).trim());
                 }
@@ -315,8 +317,6 @@ public class Entries {
     }
 
 
-
-
     public static void save(Context context) {
         if (null == context) {
             logger.error("Entries.save: context is null, cannot save entries");
@@ -328,8 +328,8 @@ public class Entries {
             UtilDebug.logCompactCallStack("save entries async");
             executorService.execute(() -> {
                 try {
+                    DataStorageLocal.saveLocal(context); // save config first
                     DataStorageLocal.saveTenant(entryTree, context);
-                    DataStorageLocal.saveLocal(context);
                     logger.info("Entries saved async ({} entries)", entryTree.entries.size());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -575,9 +575,9 @@ public class Entries {
     public static void logEntries(EntryTree entryTree, String msg) {
         logger.info("{} - entries dump ({} topics,{} entries):", msg, entryTree.entries.size(), entryTree.size());
         for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
-            logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry.getValue().size());
+            logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry);
             for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
-                logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry.getValue().getContent());
+                logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry);
             } // for nodeEntry
         } // for topics
     }
