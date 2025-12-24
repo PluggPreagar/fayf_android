@@ -121,9 +121,13 @@ public enum Config {
 
     // TODO use Resource IDs instead of hardcoded strings
     // define enumeration of settings entries
-
-
     public static void set(String key, String valueOrig) {
+        setInternal(key, valueOrig);
+        EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
+        Entries.save(MainActivity.getContext(), entryKey); // save immediately / use by gui
+    }
+
+    public static void setInternal(String key, String valueOrig) {
         Config configChanged = Config.fromKey(key);// validate key
         //
         String value = valueOrig.trim().replaceAll("\\s*>\\s*$",""); // KLUDGE to remove trailing > added by Entries-Topic
@@ -156,7 +160,6 @@ public enum Config {
         } else {
             logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
         }
-
     }
 
     private static void switchTenant(EntryKey entryKey, String value, String oldValue) {
@@ -213,6 +216,7 @@ public enum Config {
         String newValue = toggle(key, null != entry ? entry.getContent() : null, config.getDefaultValue());
         Entries.setEntry(currentTopicEntry, newValue, null);
         logger.info("Config toggled '{}' to '{}'", key, newValue);
+        Entries.save(MainActivity.getContext(), currentTopicEntry); // save immediately
         return newValue;
     }
 
@@ -247,7 +251,6 @@ public enum Config {
 
 
     public static String DisplayName(String nodeId) {
-
         return stripConfigPath(nodeId)
                 .replaceFirst("_YN$", "")
                 .replaceFirst("_[0-9]+to[0-9]+$", "");

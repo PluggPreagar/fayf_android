@@ -42,6 +42,7 @@ public class DataStorageLocal {
         }
         logger.info("Saving {} entries to file: {} ...", entries.size(), filePath);
         logger.debug(" " + (new File(context.getFilesDir(), filePath).getAbsolutePath()));
+        Entries.logEntries(entries, "Entries to save (" + filePath + ")");
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new GZIPOutputStream( context.openFileOutput(filePath, Context.MODE_PRIVATE)))) {
             oos.writeObject(entries.entries);
@@ -76,6 +77,7 @@ public class DataStorageLocal {
             if (sizeBefore != sizeAfter) {
                 logger.info("Removed {} hidden entries with prefix /_/ from loaded entries", (sizeBefore - sizeAfter));
             }
+            Entries.logEntries(entries, "Entries loaded (" + filePath + ")");
         } catch (Exception e) {
             logger.error("Error loading entries to file: {}", filePath, e);
             UtilDebug.logError("Error reading entries from file: " + filePath , e);
@@ -115,7 +117,13 @@ public class DataStorageLocal {
             String configKey = config.getKey();
             String configValue = config.getValue();
             if (null != configValue && !configValue.isEmpty()) {
-                localConfigEntries.put(configKey, new Entry(configValue));
+                // keep existing rank if present ...
+                Entry existingEntry = localConfigEntries.get(configKey);
+                if (null != existingEntry) {
+                    existingEntry.setContent(configValue);
+                } else {
+                    localConfigEntries.put(configKey, new Entry(configValue));
+                }
             }
         }
         //
@@ -144,6 +152,7 @@ public class DataStorageLocal {
                 new GZIPInputStream(context.openFileInput(filePath)))) {
             logger.info("Local read from file: {}", filePath);
             localEntries = (EntryTree) ois.readObject();
+            Entries.logEntries(localEntries, "Local config entries loaded (" + filePath + ")");
             // load config entries, make sure they are in Config
             SortedEntryMap configEntries = localEntries.entries.getOrDefault(CONFIG_PATH, new SortedEntryMap());
             assert configEntries != null;
@@ -156,7 +165,7 @@ public class DataStorageLocal {
                             // postpone setting tenantId until all entries are loaded ... as it might trigger reload
                             tenantIds.add(value); // need wrapper to modify from lambda
                         } else {
-                            config.setValue(value);
+                            Config.setInternal(config.getKey(), value);
                             logger.debug("Local config loaded: {} -> {}", eKey, value);
                         }
                     } else {
@@ -167,7 +176,7 @@ public class DataStorageLocal {
                 }
             });
             // show values below config for debug
-            Entries.logEntries(localEntries, "Local config entry loaded (" + filePath + ")");
+            Entries.logEntries(localEntries, "Local config entry loaded and config-checked (" + filePath + ")");
         } catch (Exception e) {
             logger.error("Error loading local from file: {}", filePath, e);
         }

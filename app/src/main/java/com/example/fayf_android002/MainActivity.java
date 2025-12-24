@@ -221,6 +221,23 @@ public class MainActivity extends AppCompatActivity  {
         super.onPause();
     }
 
+    @Override
+    public void onStop() {
+        logger.info("MainActivity onStop() called");
+        // wait for storage to finish
+        while ( Entries.isSaveRunning()) {
+            try {
+                logger.info("Waiting for DataStorageLocal to finish saving...");
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while waiting for DataStorageLocal to finish saving", e);
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+            }
+        }
+        super.onStop();
+    }
+
+
     // which function is called on closing application
 
 
@@ -402,7 +419,7 @@ public class MainActivity extends AppCompatActivity  {
             int randomId = (int) (Math.random() * 100000);
             String bugReportContent = "Bug Report " + randomId +  "\n\n"
                     + "Topic: " + Entries.getCurrentEntryKey().getFullPath() + "\n"
-                    + "Content: " + ( null == currentEntry ? "<null>" : currentEntry.content ) + "\n\n"
+                    + "Content: " + ( null == currentEntry ? "<null>" : currentEntry.getContent() ) + "\n\n"
                     + "Please describe the issue here...\n";
             EntryKey bugEntryKey = new EntryKey( "/_/bug", "bug_" + randomId);
             Entries.setEntry( bugEntryKey, bugReportContent, getContext());
@@ -416,6 +433,9 @@ public class MainActivity extends AppCompatActivity  {
             logger.info("Switch tenant menu item selected");
             Entries.setCurrentEntryKey( new EntryKey(  Config.CONFIG_PATH + "/tenant") );
             switchToFirstFragment();
+        } else if (id == R.id.action_save) {
+            Entries.save( getContext());
+            Toast.makeText(this, "saving data", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -478,15 +498,15 @@ public class MainActivity extends AppCompatActivity  {
             boolean isRootTopic = EntryTree.isRootKey(currentTopicEntry);
             Entry entry = Entries.getEntry(currentTopicEntry);
             logger.info("Updating action bar title for topic: \"{}\" {}"
-                    , null == entry ? "" : entry.content
+                    , null == entry ? "" : entry.getContent()
                     , isRootTopic ? "(root topic)" : "(enable back button)");
-            if (isRootTopic ||  null == entry || !Util.isFilled(entry.content)) {
+            if (isRootTopic ||  null == entry || !Util.isFilled(entry.getContent())) {
                 String tenant = Config.TENANT.getValue();
                 if (Util.isFilled(tenant)) {
                     newTitle += " of " + Config.TENANT.getValue();
                 }
             } else {
-                newTitle = Util.shortenString(entry.content, 30);
+                newTitle = Util.shortenString(entry.getContent(), 30);
             }
             getSupportActionBar().setTitle(newTitle);
             // enable back button in action bar

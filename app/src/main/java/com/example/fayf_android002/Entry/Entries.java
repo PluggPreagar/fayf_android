@@ -32,6 +32,9 @@ public class Entries {
     private static int offset = 0;
     static final int PAGE_SIZE_MIN = 20;
     private static String searchQuery="";
+    private static long lastSaveTimeMs = 0;
+    private static boolean saveRunning = false;
+    private static long entryModified = 0 ; // update marker
 
     public static void setSearchQuery(String newText) {
         searchQuery = newText;
@@ -39,6 +42,12 @@ public class Entries {
 
     public static CharSequence getSearchQuery() {
         return searchQuery;
+    }
+
+    public static void entryModified() {
+        if ( entryModified <= 0) { // first time
+            entryModified = System.currentTimeMillis();
+        }
     }
 
 
@@ -316,8 +325,18 @@ public class Entries {
         checkDataIntegrity();
     }
 
-
     public static void save(Context context) {
+        save(context, null);
+    }
+
+
+    public static void save(Context context, EntryKey entryKey) {
+        if (lastSaveTimeMs + 2000 > System.currentTimeMillis()) {
+            logger.info("SKIPP save entries - last save was less than 2s ago");
+            return;
+        }
+        lastSaveTimeMs = System.currentTimeMillis(); //KLUDGE
+        saveRunning = true; // KLUDGE for testing - onStop-MainActivity
         if (null == context) {
             logger.error("Entries.save: context is null, cannot save entries");
             return;
@@ -328,8 +347,15 @@ public class Entries {
             UtilDebug.logCompactCallStack("save entries async");
             executorService.execute(() -> {
                 try {
-                    DataStorageLocal.saveLocal(context); // save config first
-                    DataStorageLocal.saveTenant(entryTree, context);
+                    if (null == entryKey ||entryKey.topic.startsWith("/_/")) {
+                        DataStorageLocal.saveLocal(context); // save config first
+                    }
+                    if (null == entryKey || !entryKey.topic.startsWith("/_/")) {
+                        DataStorageLocal.saveTenant(entryTree, context);
+                    }
+                    if (null == entryKey){
+                        entryModified = 0; // reset modification marker
+                    }
                     logger.info("Entries saved async ({} entries)", entryTree.entries.size());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -337,6 +363,11 @@ public class Entries {
                 }
             });
         }
+        saveRunning = false;
+    }
+
+    public static boolean isSaveRunning() {
+        return saveRunning;
     }
 
     /*
@@ -573,12 +604,20 @@ public class Entries {
 
      */
     public static void logEntries(EntryTree entryTree, String msg) {
+        HashMap<Integer, Integer> sizeDistribution = new HashMap<>();
         logger.info("{} - entries dump ({} topics,{} entries):", msg, entryTree.entries.size(), entryTree.size());
         for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
-            logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry);
-            for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
-                logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry);
-            } // for nodeEntry
+            String topic = topicEntry.getKey();
+            Integer key = topic.length()
+                    - topic.replace("/_/","").replace("/", "").length();
+            Integer count = sizeDistribution.getOrDefault(key, 0) + key;
+            sizeDistribution.put(key,count );
+            if (count < 20) {
+                logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry.getValue().size());
+                for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
+                    logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry);
+                } // for nodeEntry
+            }
         } // for topics
     }
 

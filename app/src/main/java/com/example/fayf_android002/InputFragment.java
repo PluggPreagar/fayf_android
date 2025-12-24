@@ -108,7 +108,7 @@ public class InputFragment extends Fragment {
         super.onResume();
         logger.info("InputFragment resumed");
         Entry entry = Entries.getCurrentEntry();
-        oldValue = null == entry ? "" : entry.content;
+        oldValue = null == entry ? "" : entry.getContent();
         EntryStyle entryStyle = EntryStyle.getByContent(oldValue);
         styleButtonMap.forEach(
                 (style, button) -> {
@@ -126,7 +126,7 @@ public class InputFragment extends Fragment {
 
         binding.editextSecond.setText(oldValue);
         binding.editextSecond.setSelection( binding.editextSecond.getText().length());
-        binding.editextSecond.setHint( entry == null || entry.content.isEmpty() ? "New entry content" : "" );
+        binding.editextSecond.setHint( entry == null || entry.getContent().isEmpty() ? "New entry content" : "" );
 
         if (binding != null) {
             binding.editextSecond.requestFocus();

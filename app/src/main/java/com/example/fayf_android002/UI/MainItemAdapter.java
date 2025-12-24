@@ -95,9 +95,9 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
             return;
         }
         //holder.button.setId( View.generateViewId() ); // unique ID for each button - helpful for testing
-        String text = entry.content;
+        String text = entry.getContent();
         if(topic.startsWith(Config.CONFIG_PATH)) {
-            text = Config.DisplayName(e.getKey()) + ": " + entry.content;
+            text = Config.DisplayName(e.getKey()) + ": " + entry.getContent();
         }
         // remove suffix from button text for better readability - and uniq appearance
         // text = text.replaceFirst("\\s*>\\s*$", ""); // remove trailing >
@@ -136,7 +136,7 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
 
     public static void styleButton(MaterialButton button, int position, EntryKey entryKey, Entry entry) {
         // TODO implement styleButton
-        String content = entry.content;
+        String content = entry.getContent();
         if (button instanceof ButtonTouchable) {
             ((ButtonTouchable) button).setEntry(entryKey, null);
         }

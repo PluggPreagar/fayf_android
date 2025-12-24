@@ -233,7 +233,7 @@ public class ButtonTouchable extends MaterialButton {
                 logger.info("Toggle config entry for {} ('{}').", entryKey.getFullPath(),getText());
                 config.toggleValue(); // nodeId is the config key
                 // TODO just update button text - merge with MainItemAdapter-Logic!
-                setText( Config.DisplayName(entryKey.nodeId) + ": " + Entries.getEntry(entryKey).content );
+                setText( Config.DisplayName(entryKey.nodeId) + ": " + Entries.getEntry(entryKey).getContent() );
             } else if (Config.TENANT.is(config) || config.name().startsWith("TEST_") ) {
                 logger.warn("Edit Config {} by click.", entryKey.getFullPath());
                 Entries.setCurrentEntryKey(entryKey);

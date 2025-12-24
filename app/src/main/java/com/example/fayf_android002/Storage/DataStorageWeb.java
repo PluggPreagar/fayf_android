@@ -82,11 +82,15 @@ public class DataStorageWeb {
         String[] parts = rawParts.length > 1 ? rawParts[1].split(" \\| ", 3) : new String[]{};
         if (!rawParts[0].isEmpty() && parts.length > 2 && parts.length < 5 ) {
             // valid entry
-            EntryKey key = new EntryKey(parts[0].trim(), parts[1].trim());
             // remove enclosing quotes if any
             if (parts[2].startsWith("\"") && parts[2].endsWith("\"")) {
                 parts[2] = parts[2].substring(1, parts[2].length() - 1);
             }
+            if (parts[0].startsWith("\"") && parts[2].endsWith("\"")) {
+                parts[0] = parts[0].substring(1);
+                parts[2] = parts[2].substring(0, parts[2].length() - 1);
+            }
+            EntryKey key = new EntryKey(parts[0].trim(), parts[1].trim());
             String content = parts[2].trim();
             if (key.topic.startsWith(Config.CONFIG_PATH)) {
                 logger.debug("Skipping config entry from data load: {}", line);
@@ -96,7 +100,11 @@ public class DataStorageWeb {
                 if (key.topic.startsWith("/_/")) {
                     logger.warn("Skipping hidden entry from data load: {}", line);
                 }
-                data.load(key, content);
+                if (key.topic.contains("\"") || content.endsWith("\"")) {
+                    logger.warn("Skipping - Topic contains invalid character '\"' : {}", line);
+                } else {
+                    data.load(key, content);
+                }
             }
         } else {
             logger.warn("Failed to build Entry from string: {}", line);
@@ -141,9 +149,9 @@ public class DataStorageWeb {
         if (entryKey.nodeId.contains(EntryKey.VOTE_SEPARATOR)) {
             // String voterId = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
             int votes = entryKey.nodeId.endsWith(EntryKey.VOTE_SEPARATOR) ? entry.otherVotes : entry.myVote ;
-            return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.content + " | " + votes;
+            return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.getContent() + " | " + votes;
         }
-        return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.content;
+        return entryKey.topic + " | " + entryKey.nodeId + " | " + entry.getContent();
     }
 
 

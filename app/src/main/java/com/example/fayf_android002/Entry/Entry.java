@@ -14,7 +14,7 @@ public class Entry implements java.io.Serializable {
     public static final Logger logger = LoggerFactory.getLogger(Entry.class);
 
     // Content
-    public String content;
+    private String content;
     public int rank = 0;
     public int myVote = 0; // -1 , 0 , +1
     public int otherVotes = 0;
@@ -31,6 +31,7 @@ public class Entry implements java.io.Serializable {
     }
 
     public void setContent(String content) {
+        Entries.entryModified();
         this.content = content;
     }
 
