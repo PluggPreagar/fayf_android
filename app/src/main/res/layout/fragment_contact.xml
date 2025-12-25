@@ -7,6 +7,17 @@
                 android:gravity="center"
         >
 
+    <TextView
+            android:id="@+id/qrCodeTitleTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your QR Code"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            />
+
     <ImageView
             android:id="@+id/qrCodeImageView"
             android:layout_width="300dp"
@@ -21,7 +32,16 @@
             android:id="@+id/scanQrCodeButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Scan QR Code "
+            android:text="@string/scan_qr_code"
+            android:layout_gravity="center"
+            />
+
+    <Button
+            style="@style/TopicButtonStyle"
+            android:id="@+id/scanQrCodeShareAppButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/scan_qr_code_share_app"
             android:layout_gravity="center"
             />
 

@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity  {
     private static MainActivity instance = null;
     public Menu menu = null;
     private boolean isSubmittingQuery   = false;
+    private boolean[] menuDefaultVisibilityStored = null;
 
     public static MainActivity getInstance() {
         return instance;
@@ -75,8 +76,6 @@ public class MainActivity extends AppCompatActivity  {
             logger.info("Entries already loaded before MainActivity onCreate");
         }
 
-        instance = this;
-
         // keep state on orientation change - use ViewModel
         entryViewModel = new ViewModelProvider(this).get(EntryViewModel.class);
 
@@ -98,7 +97,7 @@ public class MainActivity extends AppCompatActivity  {
         // keep current entry on orientation change
         // Entries.setCurrentEntryKey(EntryTree.ROOT_ENTRY_KEY); // clear current entry on app start - go to root
 
-        if (Config.SHOW_LOGS.asBoolean()) {
+        if (Config.SHOW_LOGS.getBooleanValue()) {
             binding.logScrollView.setVisibility(View.VISIBLE);
         } else {
             binding.logScrollView.setVisibility(View.GONE);
@@ -110,7 +109,7 @@ public class MainActivity extends AppCompatActivity  {
 
         // init self-test entries if started
         // prevent auto-load from storage
-        if (Config.RUN_SELF_TEST.asBoolean()) {
+        if (Config.RUN_SELF_TEST.getBooleanValue()) {
             logger.info("Config.RUN_SELF_TEST is enabled - initializing self-test entries");
             RuntimeTest.initSelfTest();
             // start self test in 2 seconds
@@ -135,8 +134,12 @@ public class MainActivity extends AppCompatActivity  {
                  */
                 // TODO KLUDGE check if in InputFragment is set
                 //
-                if (null != UtilDebug.getView(R.id.FirstFragment)) {
-                    logger.info("FAB clicked - switching to InputFragment");
+                Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (currentFragment instanceof FirstFragment && currentFragment.isVisible()){
+                    logger.info("FAB clicked - switching to InputFragment - add new entry to current topic");
+                    int randomId = (int) (Math.random() * 100000);
+                    EntryKey key = new EntryKey(Entries.getCurrentEntryKey().getFullPath(), String.valueOf(randomId));
+                    Entries.setCurrentEntryKey(key);
                     switchToInputFragment();
                 } else {
                     logger.info("FAB clicked - already in InputFragment - create child entry");
@@ -319,6 +322,18 @@ public class MainActivity extends AppCompatActivity  {
         logger.info("Search text changed: {}", newText);
         Entries.setSearchQuery(newText);
         Entries.setCurrentEntryKey( Entries.getCurrentEntryKey());
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // will be reseted each time Activity is resumed / menu is invalidated
+        if (Config.FULL_MENU_YN.getBooleanValue()){
+            for (int i = 0; i < menu.size(); i++) {
+                MenuItem item = menu.getItem(i);
+                item.setVisible(true); // Enable visibility
+            }
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override

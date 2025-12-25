@@ -202,6 +202,10 @@ public class InputFragment extends Fragment {
         if (entryKey.topic.equals(Config.CONFIG_PATH)) {
             logger.info("Updating config entry: {}", entryKey.getFullPath());
             Config.fromKey(entryKey.nodeId).setValue(newContent); // allow Tenant-special handling
+        } else if (entryKey.topic.startsWith(Config.CONFIG_PATH + "/")) {
+            logger.info("Updating hidden config entry: {}", entryKey.getFullPath());
+            // assume dropdown -> key == value ... /!\ FIXME or prevent adding entries here
+            entryKey.nodeId = EntryKey.sanitizeNodeId( newContent);
         } else {
             Entries.setEntry(entryKey, newContent, getContext());
             logger.info("Entry updated: {}", entryKey.getFullPath());

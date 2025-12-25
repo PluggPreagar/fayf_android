@@ -78,38 +78,38 @@ public class RuntimeTest {
                 .clickBack()
                 .clickBack()
         ;
-        /*
+
         queue.testBlock("start at root")
-                .isVisible(R.id.button1, "c1")
-                .isVisible(R.id.button2, "c2 >");
+                .waitForVisible( "c1")
+                .waitForVisible( "c2 >");
         queue.testBlock("stay - no child to t1")
-                .isVisible(R.id.button1, "c1")
-                .click(R.id.button1);
+                .waitForVisible("c1")
+                .click("c1");
         queue.testBlock("goto 't2' child")
-                .click(R.id.button2,500)
-                .waitForVisible(R.id.button1, "c2.1")
-                .isVisible(R.id.button2, "c2.2" )
+                .click("c2")
+                .waitForVisible("c2.1")
+                .waitForVisible("c2.2" )
                 .clickBack();
 
         String newContent = "c2_"+ Util.getCurrentTimestamp();
         queue.testBlock("edit t2")
-                .longClick(R.id.button2,1000).waitForVisible(R.id.editext_second)
+                .longClick("c2").waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, newContent)
                 .click(R.id.button_send)
                 .waitForVisible(newContent + " >")
                 ;
 
         queue.testBlock("add first child to t3 - by click on fab-button during edit")
-                .longClick(R.id.button3)
+                .longClick("c3")
                 .waitForVisible(R.id.editext_second)
                 .click(R.id.fab).delay(500).waitForVisible(R.id.editext_second)
                 .setText(R.id.editext_second, "c3.1")
                 .click(R.id.button_send)
-                .waitForVisible(R.id.button1, "c3.1").doc("show new child c3.1")
+                .waitForVisible("c3.1").doc("show new child c3.1")
                 .clickBack()
-                .waitForVisible(R.id.button3, "c3 >").doc("c3 is now a topic with child")
+                .waitForVisible( "c3 >").doc("c3 is now a topic with child")
                 ;
-        */
+
         queue.testBlock("done"); // check finish of last block
         queue.run();
     }

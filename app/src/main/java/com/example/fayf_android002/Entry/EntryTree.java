@@ -52,15 +52,15 @@ public class EntryTree implements Serializable {
     }
 
     public Entry load(EntryKey key, String content) {
-        return setPublic(key, content, false);
+        return setData(key, content, false);
     }
 
-    public Entry setPublic(EntryKey key, String content) {
-        return setPublic(key, content, true);
+    public Entry setData(EntryKey key, String content) {
+        return setData(key, content, true);
     }
 
 
-    public Entry setPublic(EntryKey key, String content, boolean initRank) {
+    public Entry setData(EntryKey key, String content, boolean initRank) {
         // entry: EntryKey(<topic>, <nodeId>)                     content: <content>
         // vote:  EntryKey(<topic>, <nodeId>"::Vote::"<voterId>)  content: <content>" | "<voteValue>
         SortedEntryMap stringEntryTreeMap = entries.computeIfAbsent(key.topic
@@ -154,25 +154,25 @@ public class EntryTree implements Serializable {
         return filter(entryTree, true);
     }
 
-    public static EntryTree filterNonConfig(EntryTree entryTree){
+    public static EntryTree filterData(EntryTree entryTree){
         return filter(entryTree, false);
     }
 
 
-    public void setPublic(EntryTree entryTree) {
+    public void setData(EntryTree entryTree) {
         // remove hidden entries / config - must be set separately (from Config or local storage)
         // clone to avoid ConcurrentModificationException
-        filterNonConfig(entryTree);
+        filterData(entryTree);
         // remove all public entries and move over new ones
         filterConfig(this);
         merge(this, entryTree);
     }
 
-    public void setPrivate(EntryTree entryTree) {
+    public void setConfig(EntryTree entryTree) {
         // remove all hidden entries / config - must be set separately (from Config or local storage)
         filterConfig(entryTree);
         // remove all private entries and move over new ones
-        filterNonConfig(this);
+        filterData(this);
         merge(this, entryTree);
         this.entries = entryTree.entries;
     }

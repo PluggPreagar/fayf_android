@@ -19,12 +19,16 @@
             android:id="@+id/action_test"
             android:title="@string/action_test"
             android:orderInCategory="100"
-            app:showAsAction="never"/>
+            app:showAsAction="never"
+            android:visible="false"
+            />
     <item
             android:id="@+id/action_check"
             android:title="@string/action_check"
             android:orderInCategory="100"
-            app:showAsAction="never"/>
+            app:showAsAction="never"
+            android:visible="false"
+            />
     <item
             android:id="@+id/action_about"
             android:title="@string/action_about"
@@ -34,7 +38,9 @@
             android:id="@+id/action_refresh"
             android:title="@string/action_refresh"
             android:orderInCategory="100"
-            app:showAsAction="never"/>
+            app:showAsAction="never"
+            android:visible="false"
+            />
     <item
             android:id="@+id/action_load_from_web"
             android:title="@string/action_load_from_web"
@@ -45,19 +51,24 @@
             android:title="@string/toggle_log"
             android:orderInCategory="100"
             app:showAsAction="never"
+            android:visible="false"
             />
     <!-- detail log entry -->
     <item
             android:id="@+id/action_log_details"
             android:title="@string/action_log_detail"
             android:orderInCategory="100"
-            app:showAsAction="never"/>
+            app:showAsAction="never"
+            android:visible="false"
+            />
     <!-- force sort -->
     <item
             android:id="@+id/action_force_sort"
             android:title="@string/action_force_sort"
             android:orderInCategory="100"
-            app:showAsAction="never"/>
+            app:showAsAction="never"
+            android:visible="false"
+            />
     <!-- report bug -->
     <item
             android:id="@+id/action_report_bug"

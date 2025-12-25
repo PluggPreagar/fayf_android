@@ -16,11 +16,19 @@ public class RuntimeChecker {
     private static String callStack = "";
 
     public static boolean checkStatus() {
-        Entry entry = Entries.getEntry(new EntryKey(Config.CONFIG_PATH, "tenant"));
+        boolean status = false;
+        EntryKey entryKey = new EntryKey(Config.CONFIG_PATH, "tenant");
+        Entry entry = Entries.getEntry(entryKey);
         if (entry == null) {
             log.warn("RuntimeChecker.checkStatus: tenant entry is null");
+        } else if (entry.getRank() < 1) {
+            log.debug("RuntimeChecker.checkStatus: tenant entry rank is " + entry.getRank());
+        } else if (!Entries.isTopic(entryKey)) {
+            log.debug("RuntimeChecker.checkStatus: tenant entry is not a topic");
+        } else {
+            status = true;
         }
-        return (entry != null && entry.getRank() > 0);
+        return status;
     }
 
     public static void check() {

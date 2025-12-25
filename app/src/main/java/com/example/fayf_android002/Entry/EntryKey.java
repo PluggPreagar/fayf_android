@@ -43,6 +43,16 @@ public class EntryKey {
         return topic;
     }
 
+    public static String sanitizeNodeId(String nodeId) {
+        // nodeId should not contain "/"
+        if (nodeId == null) {
+            nodeId = "";
+        } else {
+            nodeId = nodeId.replaceAll("[^a-zA-Z_0-9]", "_");
+        }
+        return nodeId;
+    }
+
 
     public String getFullPath() {
         return ( PATH_SEPARATOR.equals(topic) ? topic : topic + PATH_SEPARATOR ) + nodeId;

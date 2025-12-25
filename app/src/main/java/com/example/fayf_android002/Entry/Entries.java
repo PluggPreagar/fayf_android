@@ -5,8 +5,8 @@ import com.example.fayf_android002.Config;
 import com.example.fayf_android002.MainActivity;
 import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
-import com.example.fayf_android002.Storage.DataStorageLocal;
-import com.example.fayf_android002.Storage.DataStorageWeb;
+import com.example.fayf_android002.IO.IOLocal;
+import com.example.fayf_android002.IO.IOWeb;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -173,13 +173,13 @@ public class Entries {
         if (forceWeb) {
             logger.info("Forcing entries reload from web");
         } else {
-            entryTree.setPublic(DataStorageLocal.loadTenant(context));
+            entryTree.setData(IOLocal.loadConfig(context));
         }
         if (tenant.endsWith(Config.TENANT_TEST_SUFFIX)) {
             // may have changed
             logger.info("SKIPP load entries async for tenant '{}'", tenant);
-        } else if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
-            entryTree.setPublic(DataStorageWeb.readData( system, tenant ));
+        } else if (forceWeb || 0 == Entries.sizeTopic(EntryTree.ROOT_ENTRY_KEY) ) {
+            entryTree.setData(IOWeb.readData( system, tenant ));
             Entries.logEntries(entryTree, "Entries loaded from web");
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
             fromWeb = true;
@@ -189,9 +189,9 @@ public class Entries {
         offset = 0;
         checkDataIntegrity();
         callTopicChangedListeners(null);
-        Entries.logEntries(entryTree, "After load");
+        Entries.logEntries(entryTree, "finished loading and integrity check");
         if (fromWeb){
-            DataStorageLocal.saveTenant(entryTree, context);
+            IOLocal.saveData(entryTree, context);
         }
         RuntimeChecker.check();
     }
@@ -212,7 +212,7 @@ public class Entries {
             Entry configEntry = entryTree.get(configEntryKey);
             if (null == configEntry) {
                 // create entry with default value
-                entryTree.setPublic(configEntryKey, String.valueOf(config.getValue()), false);
+                entryTree.setData(configEntryKey, String.valueOf(config.getValue()), false);
                 logger.info("Created missing config entry for {} with default value '{}'"
                         , configEntryKey.getFullPath(), config.getValue());
             } else if (!configEntry.getContent().equals(config.getValue())) {
@@ -284,7 +284,8 @@ public class Entries {
 
     public static void loadAsync(Context context, boolean forceWeb) {
         if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
-            logger.info("SKIPP load entries async for tenant '{}'", Config.TENANT.getValue());
+            logger.info("SKIPP load entries async for tenant '{}'!", Config.TENANT.getValue());
+            logger.warn("SKIPP load entries async for tenant '{}'!", Config.TENANT.getValue());
         } else {
             executorService.execute(() -> {
                 try {
@@ -309,9 +310,9 @@ public class Entries {
             return;
         }
         // not async - must be available before anything else
-        EntryTree entryTreeLoaded = DataStorageLocal.loadLocal(context);// load config before anything else
+        EntryTree entryTreeLoaded = IOLocal.loadLocal(context);// load config before anything else
         RuntimeChecker.check();
-        entryTree.setPrivate(entryTreeLoaded);
+        entryTree.setConfig(entryTreeLoaded);
         RuntimeChecker.check();
         checkDataIntegrity();
     }
@@ -339,10 +340,10 @@ public class Entries {
             executorService.execute(() -> {
                 try {
                     if (null == entryKey ||entryKey.topic.startsWith("/_/")) {
-                        DataStorageLocal.saveLocal(context); // save config first
+                        IOLocal.saveConfig(context); // save config first
                     }
                     if (null == entryKey || !entryKey.topic.startsWith("/_/")) {
-                        DataStorageLocal.saveTenant(entryTree, context);
+                        IOLocal.saveData(entryTree, context);
                     }
                     if (null == entryKey){
                         entryModified = 0; // reset modification marker
@@ -366,12 +367,20 @@ public class Entries {
      */
 
     public static EntryTree resetEntries() {
-        logger.warn("Resetting all entries");
-        entryTree = new EntryTree(); // keep config ..
+        return resetEntries(false);
+    }
+
+    public static EntryTree resetEntries(boolean keepConfig) {
+        if (keepConfig) {
+            logger.warn("Resetting all entries but keeping config");
+            EntryTree.filterConfig(entryTree);
+        } else {
+            logger.warn("Resetting all entries");
+            entryTree = new EntryTree(); // keep config ..
+        }
         checkDataIntegrity(); // ensure config entries exist
         return entryTree;
     }
-
 
     /*
         HELPER
@@ -384,7 +393,7 @@ public class Entries {
     public static void upOneTopicLevel() {
         // get parent topic -> topic =  fullpath of parent
         EntryKey key = new EntryKey( currentEntryKey.topic);
-        if (!isTopic(key)) {
+        if (!isTopic(key) || sizeTopic(key) < 1) {
             logger.debug("upOneTopicLevel: current entry is not a topic, go to root");
             key = EntryTree.ROOT_ENTRY_KEY;
         }
@@ -423,6 +432,7 @@ public class Entries {
             Iterator<Map.Entry<String, Entry>> iterator = Collections.emptyIterator();
             if (!Entries.searchQuery.startsWith("!")) {
                 iterator = entry.entrySet().stream()
+                        .filter( e -> EntryStyle.getByContent(e.getValue().getContent()).isEnabled() )
                         .filter(e
                                 -> searchQuery.isEmpty() || e.getValue().getContent().toLowerCase().contains(searchQuery.toLowerCase()))
                         .skip(offset)
@@ -436,6 +446,7 @@ public class Entries {
                 // search across all topics
                 iterator = entryTree.entries.values().stream()
                         .flatMap(m -> m.entrySet().stream())
+                        .filter( e -> EntryStyle.getByContent(e.getValue().getContent()).isEnabled() )
                         .filter(e
                                 -> e.getValue().getContent().toLowerCase().contains(searchQuery.toLowerCase()))
                         .skip(offset)
@@ -520,7 +531,7 @@ public class Entries {
             logger.warn("FIX Invalid topic in EntryKey: {} ", entryKey);
             entryKey.topic = entryKey.topic.substring(2);
         }
-        Entry entry = entryTree.setPublic(entryKey, content);
+        Entry entry = entryTree.setData(entryKey, content);
         checkDataIntegrity(entryKey, entry);
         // check if first parent
         EntryKey parentKey = Entries.upOneTopicLevel(entryKey);
@@ -537,13 +548,14 @@ public class Entries {
         } else if (entryKey.topic.startsWith(Config.CONFIG_PATH)) {
             logger.debug("SKIPP upload Config Entry : {} with \"{}\" ", Entries.toString(entryKey), content);
         } else {
-            new DataStorageWeb().saveEntry(entryKey, entry);
+            save(MainActivity.getContext(), entryKey);
+            new IOWeb().saveEntry(entryKey, entry);
             logger.info("Uploaded Entry : {} with \"{}\" ", Entries.toString(entryKey), content);
         }
     }
 
     public static Entries setEntryInternal(String topic, String nodeId, String content) {
-        entryTree.setPublic(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
+        entryTree.setData(new EntryKey(topic, nodeId), content); // TODO cleanup different version of setEntry
         return Entries.getInstance();
     }
 
@@ -597,19 +609,28 @@ public class Entries {
     public static void logEntries(EntryTree entryTree, String msg) {
         HashMap<Integer, Integer> sizeDistribution = new HashMap<>();
         logger.info("{} - entries dump ({} topics,{} entries):", msg, entryTree.entries.size(), entryTree.size());
-        for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
-            String topic = topicEntry.getKey();
-            Integer key = topic.length()
-                    - topic.replace("/_/","").replace("/", "").length();
-            Integer count = sizeDistribution.getOrDefault(key, 0) + key;
-            sizeDistribution.put(key,count );
-            if (count < 20) {
-                logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry.getValue().size());
-                for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
-                    logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry);
-                } // for nodeEntry
-            }
-        } // for topics
+        try {
+            for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
+                String topic = topicEntry.getKey();
+                Integer key = topic.length()
+                        - topic.replace("/_/","").replace("/", "").length();
+                Integer count = sizeDistribution.getOrDefault(key, 0) + key;
+                sizeDistribution.put(key,count );
+                if (count < 10 || Config.CONFIG_PATH.equals(topic) ) {
+                    logger.info(" Topic: '{} ' ({} entries)", topicEntry.getKey(), topicEntry.getValue().size());
+                    count = Config.CONFIG_PATH.equals(topic) ? - 1000 : 0 ;
+                    for (Map.Entry<String, Entry> nodeEntry : topicEntry.getValue().entrySet()) {
+                        logger.info("   Entry: '{}' => '{}'", nodeEntry.getKey(), nodeEntry);
+                        if (count++ >= 10 )
+                            break;
+                    } // for nodeEntry
+                } else if (count == 10) {
+                    logger.info("   ... (skipp listing entries - at level {})", key);
+                }
+            } // for topics
+        } catch (Exception e) { // java.util.ConcurrentModificationException
+            logger.error("logEntries: error logging entries", e);
+        }
     }
 
 }

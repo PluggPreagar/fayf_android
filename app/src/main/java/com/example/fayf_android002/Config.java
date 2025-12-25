@@ -1,16 +1,12 @@
 package com.example.fayf_android002;
 
-import android.content.Context;
 import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
-import com.example.fayf_android002.Storage.DataStorageLocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public enum Config {
 
@@ -27,7 +23,15 @@ public enum Config {
     VERSION("version", BuildConfig.VERSION_NAME),
     BUILD_TIME("build_time", Util.convertTime(Long.parseLong(BuildConfig.BUILD_TIME))),
 
-    COMMIT_HASH("commit_hash", BuildConfig.GIT_COMMIT_HASH)
+    COMMIT_HASH("commit_hash", BuildConfig.GIT_COMMIT_HASH),
+
+    FULL_MENU_YN("extended_settings_YN", false),
+
+    SHOW_FACT_YN("show_fact_YN", true),
+    SHOW_FALSE_FACT_YN("show_false_fact_YN", false),
+    SHOW_QUESTION_YN("show_question_YN", false),
+    SHOW_COUNTER_QUESTION_YN("show_counter_question_YN", false),
+    SHOW_REFERENCE_YN("show_reference_YN", false)
 
     ;
 
@@ -42,12 +46,10 @@ public enum Config {
 
     private final String key;
     private final Object defaultValue;
-    private Object value;
 
     Config(String key, Object defaultValue) {
         this.key = key;
         this.defaultValue = defaultValue;
-        this.value = defaultValue;
     }
 
     private static List<String> getFixedValues() {
@@ -98,17 +100,24 @@ public enum Config {
     */
 
     public String getValue() {
-        return Config.get(this.key);
+        // separate handling for version and build_time
+        if (fixedValues.contains(key)) {
+            logger.info("Config '{}': '{}' (fix)", key, defaultValue);
+            return defaultValue.toString();
+        }
+        String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(defaultValue)); // validate key
+        if (content.isEmpty()) {
+            logger.warn("Config '{}': '{}' (is empty, using default value)", key, getDefaultValue());
+            content = String.valueOf(getDefaultValue());
+        } else {
+            logger.info("Config '{}': '{}'", key,content);
+        }
+        return content;
     }
 
-    public boolean asBoolean() {
-        return Util.asBoolean(Config.get(this.key));
+    public boolean getBooleanValue() {
+        return Util.asBoolean(getValue());
     }
-
-    public void setValue(String value) {
-        Config.set(this.key, value);
-    }
-
 
     public void toggleValue() {
         Config.toggle(this.key);
@@ -120,60 +129,41 @@ public enum Config {
     */
 
 
-    // TODO use Resource IDs instead of hardcoded strings
-    // define enumeration of settings entries
-    public static void set(String key, String value) {
-        String oldValue = TENANT.name().equals(key) ? Config.TENANT.getValue() : null;
-        EntryKey entryKey = setInternal(key, value);
-        if (null == entryKey) {
-            return; // no change
-        }
-        Entries.save(MainActivity.getContext(), entryKey); // save immediately / use by gui
-        if (TENANT.name().equals(key) && null != oldValue && !oldValue.equals(value)) {
-            // asynchronous reload of all entries for new tenant
-            MainActivity.userInfo("Tenant changed " + value.replaceFirst(".*:", ""));
-            new Thread(() -> {
-                switchTenant(entryKey, value, oldValue);
-            }).start();
-        }
-    }
 
-    public static EntryKey setInternal(String key, String valueOrig) {
+    public void setValue(String newValue) {
         RuntimeChecker.check();
-        Config configChanged = Config.fromKey(key);// validate key
+        String oldValue = getValue();
         //
-        String value = valueOrig.trim().replaceAll("\\s*>\\s*$",""); // KLUDGE to remove trailing > added by Entries-Topic
-        if (!value.equals(valueOrig)) {
-            logger.warn("Config '{}' value trimmed from '{}' to '{}'", key, valueOrig, value);
+        String value = newValue.trim().replaceAll("\\s*>\\s*$",""); // KLUDGE to remove trailing > added by Entries-Topic
+        if (!value.equals(newValue)) {
+            logger.warn("Config '{}' value trimmed from '{}' to '{}'", key, newValue, value);
         }
         if (fixedValues.contains(key)) {
-            if (configChanged.value.equals(value)) {
+            if (oldValue.equals(value)) {
                 logger.debug("Config '{}' unchanged with fixed value '{}'", key, value);
-                return null; // no change
+            } else {
+                logger.warn("Config '{}' is fixed (keep  '{}', ignore new value '{}')"
+                        , key, oldValue, value);
             }
-            logger.warn("Config '{}' is fixed (keep  '{}', ignore new value '{}')"
-                    , key, configChanged.value, value);
-            return null; // no change
-        }
-        if (configChanged.value.equals(value)) {
+        } else if (oldValue.equals(value)) {
             logger.debug("Config '{}' unchanged with value '{}'", key, value);
-            return null; // no change
-        }
-        String oldValue = String.valueOf(configChanged.value);
-        configChanged.value = value; // use instance method
-        EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
-        Entries.setEntry(entryKey, value, null);
-        logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
-        if (!TENANT.name().equals(key)) { // will be stored by switchTenant
-            Context context = MainActivity.getContext();
-            if (null != context) {
-                // asynchronous save of config
-                new Thread(() -> {
-                    DataStorageLocal.saveLocal(context); // save current config immediately
-                }).start();
+        } else {
+            // apply change
+            EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
+            Entries.setEntry(entryKey, value, null);
+            logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
+            if (name().equals(TENANT.name())) {
+                switchTenant(entryKey, value, oldValue);
             }
-        }
-        return entryKey;
+            // save config change immediately
+            Entries.save(MainActivity.getContext(), entryKey);
+            // Post-Action for specific configs
+            if (name().equals(TENANT.name())) {
+                // asynchronous reload of all entries for new tenant
+                MainActivity.userInfo("Tenant changed " + value.replaceFirst(".*:", ""));
+                MainActivity.switchToFirstFragment(); // will reload entries on becoming visible
+            }
+        } // change allowed ?
     }
 
     private static void switchTenant(EntryKey entryKey, String value, String oldValue) {
@@ -185,43 +175,19 @@ public enum Config {
         // tricky ... add list of tenants? -> make tenant a topic to choose from?
         // should have tenant id and name -> but where to store/share name?
         // WO combine ... <tenant_id>:<tenant_name>
-        Entries.setEntry(new EntryKey(entryKey.getFullPath(), value), value, null);
-        Entries.setEntry(new EntryKey(entryKey.getFullPath(), oldValue), oldValue, null); // make sure there is way back
+        Entries.setEntry(new EntryKey(entryKey.getFullPath(), value), value.replaceFirst(".*:", ""), null);
+        Entries.setEntry(new EntryKey(entryKey.getFullPath(), oldValue), oldValue.replaceFirst(".*:", ""), null); // make sure there is way back
         // show available tenants
         SortedEntryMap topic = Entries.entryTree.getTopic(entryKey);
         logger.info("Tenants available '{}':", topic.size());
-        topic.forEach((k, v) -> logger.info("Tenant entry: {} => {}", k, v.getContent()));
+        topic.forEach((k, v) -> logger.debug("    Tenant entry: {} => {}", k, v.getContent()));
         //
-        EntryTree.filterConfig(Entries.entryTree); // keep only hidden entries
-        Context context = MainActivity.getContext();
-        if (null != context) {
-            // might be not possible at startup - if no local data for new tenant
-            DataStorageLocal.saveLocal(context); // save current config first
-            // reset only non hidden
-            Entries.loadAsync(context);
-            MainActivity.switchToFirstFragment(); // navigate to edit this entry - might fail if MainActivity not ready
-        } else {
-            logger.error("Context is null - cannot save and reload tenant data");
-        }
-        // Entries.rootTopic(); -- leave it to time after reload
+        Entries.setCurrentEntryKey(null); // reset current entry
+        Entries.resetEntries(true);
     }
 
 
-    public static String get(String key) {
-        Config config = Config.fromKey(key);// validate key
-        // separate handling for version and build_time
-        if (fixedValues.contains(key)) {
-            logger.info("Config read '{}' with value '{}' (fix)", key, String.valueOf(config.value));
-            return String.valueOf(config.value);
-        }
-        String content = Entries.getContentOr(CONFIG_PATH, key, String.valueOf(config.value)); // validate key
-        if (content.isEmpty()) {
-            logger.warn("Config '{}' is empty, using default value '{}'", key, config.getDefaultValue());
-            content = String.valueOf(config.getDefaultValue());
-        }
-        logger.info("Config read '{}' with value '{}'", key,content);
-        return content;
-    }
+
 
     public static String toggle(String key) {
         Config config = Config.fromKey(key);// validate key
@@ -229,7 +195,7 @@ public enum Config {
         Entry entry = Entries.getEntry(currentTopicEntry); // validate key
         String newValue = toggle(key, null != entry ? entry.getContent() : null, config.getDefaultValue());
         Entries.setEntry(currentTopicEntry, newValue, null);
-        logger.info("Config toggled '{}' to '{}'", key, newValue);
+        logger.info("Config '{}': '{}' (toggled)", key, newValue);
         Entries.save(MainActivity.getContext(), currentTopicEntry); // save immediately
         return newValue;
     }
@@ -284,8 +250,6 @@ public enum Config {
     }
 
 
-    public void save(){
 
-    }
 
 }

@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -24,19 +25,18 @@ public class ContactFragment extends Fragment {
     Logger logger = Logger.getLogger(ContactFragment.class.getName());
 
     private ActivityResultLauncher<ScanOptions> barcodeLauncher = null;
+    private View rootView;
+    private boolean showTenant = true;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup view, Bundle savedInstanceState) {
 
         super.onViewCreated(view, savedInstanceState);
         logger.info("ContactFragment onViewCreated called");
-        View rootView = inflater.inflate(R.layout.fragment_contact, view, false);
+        rootView = inflater.inflate(R.layout.fragment_contact, view, false);
 
-        ImageView qrCodeImageView = rootView.findViewById(R.id.qrCodeImageView);
         Button scanQrCodeButton = rootView.findViewById(R.id.scanQrCodeButton);
-
-        String tenantId = Config.TENANT.getValue();
-        generateQRCode(tenantId, qrCodeImageView);
+        Button scanQrCodeShareAppButton = rootView.findViewById(R.id.scanQrCodeShareAppButton);
 
         barcodeLauncher = registerForActivityResult(
                 new ScanContract(), result -> {
@@ -54,10 +54,42 @@ public class ContactFragment extends Fragment {
                 });
 
         scanQrCodeButton.setOnClickListener(v -> scanQRCode());
+        scanQrCodeShareAppButton.setOnClickListener(v -> {
+            showTenant = !showTenant;
+            showQR();
+        });
+        showQR();
         return rootView;
     }
 
-    private void generateQRCode(String tenantId, ImageView qrCodeImageView) {
+    private void showQR() {
+        // Logic to toggle between different QR codes
+        logger.info("Toggling QR Codes.");
+
+        String tenantId = Config.TENANT.getValue(); // may be <id>:<name>
+        TextView title = (TextView) rootView.findViewById(R.id.qrCodeTitleTextView);
+        ImageView qrCodeImageView = rootView.findViewById(R.id.qrCodeImageView);
+
+        if (showTenant) {
+            // TODO proper split of tenant ID and name
+            title.setContentDescription("QR Code for Tenant ID: \n" + tenantId.replaceAll(".*:", " "));
+            title.setVisibility(View.VISIBLE);
+            title.setText("Tenant: " + tenantId.replaceAll(".*:", " "));
+            generateTenantQRCode(tenantId, qrCodeImageView);
+
+        } else {
+            logger.info("Share App button clicked.");
+            title.setText("Just share \n the app via QR!");
+            String randomSessionId = Util.generateRandomString(12);
+            generateDownloadLinkQR("https://fayf.info/fayf.apk?sid=" + randomSessionId
+                            + "&src=qr"
+                            + "&tenant=" + tenantId
+                    , qrCodeImageView);
+        }
+    }
+
+    private void generateTenantQRCode(String tenantId, ImageView qrCodeImageView) {
+        logger.info("Generating QR Code for tenant ID: " + tenantId);
         assert tenantId != null;
         assert qrCodeImageView != null;
 
@@ -70,6 +102,34 @@ public class ContactFragment extends Fragment {
         try {
             Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
             com.google.zxing.common.BitMatrix bitMatrix = writer.encode(tenantId, BarcodeFormat.QR_CODE, size, size);
+            // color of Primary and Background
+            int colorForeground =  ContextCompat.getColor(requireContext(), R.color.colorOnSecondary);
+            int colorBackground = ContextCompat.getColor(requireContext(), R.color.colorPrimaryVeryLight);
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
+                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? colorForeground : colorBackground);
+                }
+            }
+            qrCodeImageView.setImageBitmap(bitmap);
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void generateDownloadLinkQR(String downloadLink, ImageView qrCodeImageView) {
+        logger.info("Generating QR Code for download link: " + downloadLink);
+        assert downloadLink != null;
+        assert qrCodeImageView != null;
+
+        int width = qrCodeImageView.getWidth();
+        int height = qrCodeImageView.getHeight();
+        // Use default size if dimensions are not available
+        int size = Math.min(width > 0 ? width : 400, height > 0 ? height : 400);
+
+        QRCodeWriter writer = new QRCodeWriter();
+        try {
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
+            com.google.zxing.common.BitMatrix bitMatrix = writer.encode(downloadLink, BarcodeFormat.QR_CODE, size, size);
             // color of Primary and Background
             int colorForeground =  ContextCompat.getColor(requireContext(), R.color.colorOnSecondary);
             int colorBackground = ContextCompat.getColor(requireContext(), R.color.colorPrimaryVeryLight);

@@ -1,4 +1,4 @@
-package com.example.fayf_android002.Storage;
+package com.example.fayf_android002.IO;
 
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.Entry.Entry;
@@ -13,9 +13,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DataStorageWeb {
+public class IOWeb {
 
-    private final static Logger logger = LoggerFactory.getLogger(DataStorageWeb.class);
+    private final static Logger logger = LoggerFactory.getLogger(IOWeb.class);
 
 
     static String DELETE_SUFFIX = "--";

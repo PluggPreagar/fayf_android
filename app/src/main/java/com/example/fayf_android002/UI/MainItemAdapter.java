@@ -96,7 +96,7 @@ public class MainItemAdapter extends RecyclerView.Adapter<MainItemAdapter.MainIt
         }
         //holder.button.setId( View.generateViewId() ); // unique ID for each button - helpful for testing
         String text = entry.getContent();
-        if(topic.startsWith(Config.CONFIG_PATH)) {
+        if(topic.equals(Config.CONFIG_PATH)) {
             text = Config.DisplayName(e.getKey()) + ": " + entry.getContent();
         }
         // remove suffix from button text for better readability - and uniq appearance

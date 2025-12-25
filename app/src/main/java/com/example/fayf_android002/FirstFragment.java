@@ -57,11 +57,6 @@ public class FirstFragment extends Fragment {
 
         RuntimeTester.registerFragment(FIRST_FRAGMENT, this, R.id.FirstFragment, view);
 
-        // Navigating from SecondFragment to FirstFragment will not show the Topic Title
-        if (Entries.size()<3) { // TODO ignore /_/config topic
-            Entries.loadAsync(requireContext()); // async load entries - will trigger callback to update buttons
-        }
-
         Entries.setOnTopicChangedListener(FIRST_FRAGMENT, entry -> {
             if (!this.isVisible()) {
                 // somehow I removed the listener on onDestroyView
@@ -83,10 +78,15 @@ public class FirstFragment extends Fragment {
             adapter.updateData( Entries.getTopicEntries(), recyclerView , changeType);
         });
 
+        // Navigating from SecondFragment to FirstFragment will not show the Topic Title
+        if (0 == Entries.sizeTopic(EntryTree.ROOT_ENTRY_KEY)) { // TODO ignore /_/config topic
+            Entries.loadAsync(requireContext()); // async load entries - will trigger callback to update buttons
+        }
+
         // on overscroll the bottom of button list
         // then top entries are out of reach
 
-        // get ButtomList.onOverScrolledListener
+        // get BottomList.onOverScrolledListener
         RuntimeChecker.check();
         return view;
 

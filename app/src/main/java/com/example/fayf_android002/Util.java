@@ -102,6 +102,16 @@ public class Util {
         return sdf.format(date);
     }
 
+    public static String generateRandomString(int i) {
+        StringBuilder sb = new StringBuilder(i);
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        java.util.Random random = new java.util.Random();
+        for (int j = 0; j < i; j++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
     public String shortEventString(MotionEvent event) {
         if (null == event) {
             return "null";

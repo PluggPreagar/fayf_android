@@ -1,4 +1,4 @@
-package com.example.fayf_android002.Storage;
+package com.example.fayf_android002.IO;
 
 import android.content.Context;
 import com.example.fayf_android002.Config;
@@ -16,9 +16,9 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.example.fayf_android002.Config.TENANT;
 
-public class DataStorageLocal {
+public class IOLocal {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataStorageLocal.class);
+    private static final Logger logger = LoggerFactory.getLogger(IOLocal.class);
     private final static String filePath = "entries_TID.dat.gz";
     private final static String filePathLocal = "config.dat.gz";
 
@@ -35,16 +35,20 @@ public class DataStorageLocal {
         return false;
     }
 
-    public static void saveTenant(EntryTree entries, Context context)  {
+    public static void saveData(EntryTree entries, Context context)  {
         EntryTree dataEntries = EntryTree.getDataEntriesOnly(Entries.entryTree);
         save(dataEntries, filePath, context);
     }
 
-    public static EntryTree loadTenant(Context context)  {
+    public static EntryTree loadConfig(Context context)  {
         return EntryTree.getDataEntriesOnly( load( filePath, context));
     }
 
-    public static void saveLocal(Context context)  {
+    public static void saveConfig(Context context)  {
+        if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
+            logger.info("SKIPP save config entries for tenant '{}'", Config.TENANT.getValue());
+            logger.warn("SKIPP save config entries for tenant '{}'", Config.TENANT.getValue());
+        }
         EntryTree configEntries = EntryTree.getConfigEntriesOnly(Entries.entryTree);
         save(configEntries, filePathLocal, context);
     }
@@ -55,10 +59,10 @@ public class DataStorageLocal {
 
     // Serialize the EntryTree to a file
     public static void save(EntryTree entries, String filePathTmpl, Context context)  {
-        UtilDebug.logCompactCallStack("DataStorageLocal.save to " + filePathTmpl);
         // inject tenantId into file name
         String type = filePathTmpl.contains("config") ? "config" : "entries";
         String filePath = filePathTmpl.replace("TID", Util.sanitizeFileNameWarn( Config.TENANT.getValue()));
+        UtilDebug.logCompactCallStack("DataStorageLocal.save to " + filePath);
         if (entries == null || entries.isEmpty()) {
             logger.warn("No {} to save to file: {}", type, filePath);
             return;
@@ -89,9 +93,9 @@ public class DataStorageLocal {
 
     // Deserialize the EntryTree from a file
     public static EntryTree load(String filePathTmpl,  Context context)  {
-        UtilDebug.logCompactCallStack("DataStorageLocal.load from " + filePathTmpl);
         String type = filePathTmpl.contains("config") ? "config" : "entries";
         String filePath = filePathTmpl.replace("TID", Util.sanitizeFileNameWarn( TENANT.getValue()));
+        UtilDebug.logCompactCallStack("DataStorageLocal.load from " + filePath);
         if (null == context) {
             logger.error("Context is null, cannot load entries from file: {}", filePath);
             return new EntryTree();
@@ -118,6 +122,5 @@ public class DataStorageLocal {
         }
         return entries;
     }
-
 
 }

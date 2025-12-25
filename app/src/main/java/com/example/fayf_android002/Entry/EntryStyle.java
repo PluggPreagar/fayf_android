@@ -1,6 +1,9 @@
 package com.example.fayf_android002.Entry;
 
+import com.example.fayf_android002.Config;
 import com.example.fayf_android002.R;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public enum EntryStyle {
 
@@ -12,6 +15,7 @@ public enum EntryStyle {
     COUNTER_QUESTION("??", "Counter Question", R.mipmap.icons8_answer_100, false),
     REFERENCE ("@", "Reference", R.mipmap.icons8_book_100, true);
 
+    private static final Logger log = LoggerFactory.getLogger(EntryStyle.class);
     private final String suffix;
     private final String description;
     private final int iconResourceId;
@@ -58,5 +62,16 @@ public enum EntryStyle {
         return supportsVoting;
     }
 
-
+    public boolean isEnabled() {
+        if (this == NOTE || this == FOLDER) {
+            return true; // always enabled
+        }
+        String configKey = "show_" + this.name().toLowerCase().replace(" ", "_") + "_YN";
+        Config config = Config.fromKeyOrNull( configKey );
+        if (config == null) {
+            log.warn("EntryStyle.isEnabled: config not found for style (" + configKey+"), show style");
+            return true; // default to disabled if config not found
+        }
+        return config.getBooleanValue();
+    }
 }
