@@ -216,6 +216,10 @@ public class UtilDebug {
     }
 
     public static void logCompactCallStack(String prefix) {
+        Log.d(TAG, getCompactCallStack(prefix));
+    }
+
+    public static String getCompactCallStack(String prefix) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         String packageName = "com.example.fayf_android002";
 
@@ -227,9 +231,9 @@ public class UtilDebug {
                 compactStack.append("\tat ").append(element.toString()).append("\n");
             }
         }
-
-        Log.d(TAG, compactStack.toString());
+        return compactStack.toString();
     }
+
 
     public static String eventToStr(MotionEvent event) {
         if (event == null) {

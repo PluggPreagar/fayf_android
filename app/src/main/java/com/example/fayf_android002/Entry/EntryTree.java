@@ -179,21 +179,61 @@ public class EntryTree implements Serializable {
 
 
 
-    public static void merge(EntryTree target, EntryTree source) {
-        if (null == target || null == source || source.isEmpty()) {
+    public static void merge(EntryTree target, EntryTree input) {
+        if (null == target || null == input || input.isEmpty()) {
             return;
         }
-        source.entries.forEach( (topic, entryMap) -> {
+        // add new entries from input to target
+        // merge existing entries - rank, myVote, signedVotes
+        input.entries.forEach( (topic, inputEntryMap) -> {
             SortedEntryMap targetEntryMap = target.entries.get(topic);
             if (null == targetEntryMap) {
-                targetEntryMap = new SortedEntryMap();
-                target.entries.put(topic, targetEntryMap);
+                // new topic - add all entries
+                target.entries.put(topic, inputEntryMap);
             } else {
-                SortedEntryMap finalTargetEntryMap = targetEntryMap;
-                entryMap.forEach( (nodeId, entry) -> finalTargetEntryMap.put(nodeId, entry) );
+                // existing topic - merge entries
+                inputEntryMap.forEach( (nodeId, inputEntry) -> {
+                    Entry targetEntry = targetEntryMap.get(nodeId);
+                    if (null == targetEntry) {
+                        // new entry - add
+                        targetEntryMap.put(nodeId, inputEntry);
+                    } else {
+                        // existing entry - merge
+                        targetEntry.merge(inputEntry);
+                    }
+                });
             }
         });
     }
+
+
+
+    public static EntryTree getConfigEntriesOnly(EntryTree allEntries) {
+        EntryTree configEntries = new EntryTree();
+        if (null != allEntries && !allEntries.isEmpty()) {
+            allEntries.entries.forEach( (topic, entryMap) -> {
+                if (topic.startsWith(Config.CONFIG_PATH)) {
+                    configEntries.entries.put(topic, entryMap);
+                }
+            });
+        }
+        return configEntries;
+    }
+
+    public static EntryTree getDataEntriesOnly(EntryTree allEntries) {
+        EntryTree dataEntries = new EntryTree();
+        if (null != allEntries && !allEntries.isEmpty()) {
+            allEntries.entries.forEach( (topic, entryMap) -> {
+                if (!topic.startsWith(Config.CONFIG_PATH) && !topic.startsWith("/_/")) {
+                    dataEntries.entries.put(topic, entryMap);
+                }
+            });
+        }
+        return dataEntries;
+    }
+
+
+
 
 
 }

@@ -3,6 +3,7 @@ package com.example.fayf_android002.Entry;
 import android.content.Context;
 import com.example.fayf_android002.Config;
 import com.example.fayf_android002.MainActivity;
+import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import com.example.fayf_android002.Storage.DataStorageWeb;
@@ -163,8 +164,10 @@ public class Entries {
             logger.error("Entries.load: context is null, cannot load entries");
             return;
         }
+        RuntimeChecker.check();
         String system = Config.SYSTEM.getValue();
         String tenant = Config.TENANT.getValue();
+        boolean fromWeb = false;
         // keep my rankings and votes ?
         SortedEntryTreeMap entryTreeOld = Entries.entryTree.entries;
         if (forceWeb) {
@@ -176,40 +179,24 @@ public class Entries {
             // may have changed
             logger.info("SKIPP load entries async for tenant '{}'", tenant);
         } else if (forceWeb || null == entryTree.entries || entryTree.entries.isEmpty()) {
-            entryTree.setPublic(new DataStorageWeb().readData( system, tenant ));
+            entryTree.setPublic(DataStorageWeb.readData( system, tenant ));
             Entries.logEntries(entryTree, "Entries loaded from web");
-            //
             logger.info("Entries loaded from web ({} entries)", entryTree.entries.size());
-            if (entryTree.entries.size() > 0) {
-                DataStorageLocal.saveTenant(entryTree, context);
-            }
+            fromWeb = true;
         }
-        // merge old votes and rankings
-        mergeVotesAndRankings(entryTreeOld, Entries.entryTree.entries);
+        RuntimeChecker.check();
         searchQuery = "";
         offset = 0;
-        // check data integrity
         checkDataIntegrity();
-        // new DataStorageLocal().saveEntries(entries);
         callTopicChangedListeners(null);
         Entries.logEntries(entryTree, "After load");
+        if (fromWeb){
+            DataStorageLocal.saveTenant(entryTree, context);
+        }
+        RuntimeChecker.check();
     }
 
-    private static void mergeVotesAndRankings(SortedEntryTreeMap entryTreeOld, SortedEntryTreeMap entryTree) {
-        if (null != entryTreeOld && null != entryTree) {
-            for (Map.Entry<String, SortedEntryMap> topicEntryOld : entryTreeOld.entrySet()) {
-                for (Map.Entry<String, Entry> entryOld : topicEntryOld.getValue().entrySet()) {
-                    SortedEntryMap topicEntry = entryTree.get(topicEntryOld.getKey());
-                    if (null != topicEntry) {
-                        Entry entryNew = topicEntry.get(entryOld.getKey());
-                        if (null != entryNew) {
-                            entryNew.merge( entryOld.getValue() ); // keep private settings
-                        }
-                    } // if entry still exists
-                } // for nodeEntry
-            } // for topics
-        } // null checks
-    }
+
 
     public static void checkDataIntegrity() {
         EntryTree entryTree = Entries.entryTree;
@@ -219,12 +206,13 @@ public class Entries {
         }
         // ensure Config entries exist and are changeable
         Config[] configs = Config.values();
+        RuntimeChecker.check();
         for (Config config : configs) {
             EntryKey configEntryKey = new EntryKey(Config.CONFIG_PATH, config.getKey());
             Entry configEntry = entryTree.get(configEntryKey);
             if (null == configEntry) {
                 // create entry with default value
-                entryTree.setPublic(configEntryKey, String.valueOf(config.getValue()));
+                entryTree.setPublic(configEntryKey, String.valueOf(config.getValue()), false);
                 logger.info("Created missing config entry for {} with default value '{}'"
                         , configEntryKey.getFullPath(), config.getValue());
             } else if (!configEntry.getContent().equals(config.getValue())) {
@@ -234,6 +222,7 @@ public class Entries {
                         , configEntryKey.getFullPath(), config.getValue());
             }
         }
+        RuntimeChecker.check();
         // entry content should have ">"-suffix for topics
         for (Map.Entry<String, SortedEntryMap> topicEntry : entryTree.entries.entrySet()) {
             //  /
@@ -269,7 +258,7 @@ public class Entries {
             entryTree.entries.remove(wrongTopic);
             logger.info("Removed wrong quoted topic '{}'", wrongTopic);
         }
-
+        RuntimeChecker.check();
 
     }
 
@@ -321,7 +310,9 @@ public class Entries {
         }
         // not async - must be available before anything else
         EntryTree entryTreeLoaded = DataStorageLocal.loadLocal(context);// load config before anything else
-        entryTree.setPublic(entryTreeLoaded);
+        RuntimeChecker.check();
+        entryTree.setPrivate(entryTreeLoaded);
+        RuntimeChecker.check();
         checkDataIntegrity();
     }
 

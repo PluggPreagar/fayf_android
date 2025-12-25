@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.fayf_android002.Entry.*;
+import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.RuntimeTest.RuntimeTester;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.UI.MainItemAdapter;
@@ -45,8 +46,8 @@ public class FirstFragment extends Fragment {
             @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
-
         logger.info("FirstFragment onCreateView() called");
+        RuntimeChecker.check();
         view = inflater.inflate(R.layout.fragment_first, container, false);
 
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -86,7 +87,7 @@ public class FirstFragment extends Fragment {
         // then top entries are out of reach
 
         // get ButtomList.onOverScrolledListener
-
+        RuntimeChecker.check();
         return view;
 
     }
@@ -96,13 +97,14 @@ public class FirstFragment extends Fragment {
         logger.info("FirstFragment onViewCreated() called");
         super.onViewCreated(view, savedInstanceState);
         // this.view.ButtonScrollView.setOnScrollChangeListener(this);
+        RuntimeChecker.check();
         UtilDebug.inspectView();
-
     }
 
     private void onTopicChanged(EntryKey entryKey) {
         logger.info("FirstFragment onTopicChanged() called: {}", null == entryKey ? "NONE" : entryKey.getFullPath());
         adapter.updateData( Entries.getTopicEntries(), recyclerView, Entries.OnDataChanged.ChangeType.TOPIC_CHANGED);
+        RuntimeChecker.check();
     }
 
     public void onResume() {

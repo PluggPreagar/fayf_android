@@ -18,17 +18,17 @@ public class DataStorageWeb {
     private final static Logger logger = LoggerFactory.getLogger(DataStorageWeb.class);
 
 
-    String DELETE_SUFFIX = "--";
+    static String DELETE_SUFFIX = "--";
 
-    public EntryTree readData(String sid, String tid) {
+    public static EntryTree readData(String sid, String tid) {
         EntryTree data = new EntryTree();
         readData(data, "https://fayf.info/entries?sid=" + sid + "&tid=" + tid);
         readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid);
-        return data;
+        return EntryTree.getDataEntriesOnly(data);
     }
 
     // Fetch CSV data from a URL
-    public EntryTree readData(EntryTree data, String urlString) {
+    public static EntryTree readData(EntryTree data, String urlString) {
         logger.info("Fetching data from URL: {}", urlString);
 
         try {
@@ -74,7 +74,7 @@ public class DataStorageWeb {
     }
 
 
-    private void add(EntryTree data, String line) {
+    private static void add(EntryTree data, String line) {
         // entry:   2025-10-31 14:09:49,/ | 1761916190 | heute
         // entry:   2025-10-31 14:09:49,"/ | 1761916190 | heute, gestern oder morgen"
         // votes:   03/08/2025 10:52:30, | mig::Vote::97979 | Migration > | 1

@@ -2,6 +2,7 @@ package com.example.fayf_android002;
 
 import android.content.Context;
 import com.example.fayf_android002.Entry.*;
+import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.Storage.DataStorageLocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,13 +122,24 @@ public enum Config {
 
     // TODO use Resource IDs instead of hardcoded strings
     // define enumeration of settings entries
-    public static void set(String key, String valueOrig) {
-        setInternal(key, valueOrig);
-        EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
+    public static void set(String key, String value) {
+        String oldValue = TENANT.name().equals(key) ? Config.TENANT.getValue() : null;
+        EntryKey entryKey = setInternal(key, value);
+        if (null == entryKey) {
+            return; // no change
+        }
         Entries.save(MainActivity.getContext(), entryKey); // save immediately / use by gui
+        if (TENANT.name().equals(key) && null != oldValue && !oldValue.equals(value)) {
+            // asynchronous reload of all entries for new tenant
+            MainActivity.userInfo("Tenant changed " + value.replaceFirst(".*:", ""));
+            new Thread(() -> {
+                switchTenant(entryKey, value, oldValue);
+            }).start();
+        }
     }
 
-    public static void setInternal(String key, String valueOrig) {
+    public static EntryKey setInternal(String key, String valueOrig) {
+        RuntimeChecker.check();
         Config configChanged = Config.fromKey(key);// validate key
         //
         String value = valueOrig.trim().replaceAll("\\s*>\\s*$",""); // KLUDGE to remove trailing > added by Entries-Topic
@@ -137,29 +149,31 @@ public enum Config {
         if (fixedValues.contains(key)) {
             if (configChanged.value.equals(value)) {
                 logger.debug("Config '{}' unchanged with fixed value '{}'", key, value);
-                return; // no change
+                return null; // no change
             }
             logger.warn("Config '{}' is fixed (keep  '{}', ignore new value '{}')"
                     , key, configChanged.value, value);
-            return; // no change
+            return null; // no change
         }
         if (configChanged.value.equals(value)) {
             logger.debug("Config '{}' unchanged with value '{}'", key, value);
-            return; // no change
+            return null; // no change
         }
         String oldValue = String.valueOf(configChanged.value);
         configChanged.value = value; // use instance method
         EntryKey entryKey = new EntryKey(CONFIG_PATH, key);
         Entries.setEntry(entryKey, value, null);
-        if (configChanged.is(TENANT)) {
-            // asynchronous reload of all entries for new tenant
-            MainActivity.userInfo("Tenant changed " + value.replaceFirst(".*:", ""));
-            new Thread(() -> {
-                switchTenant(entryKey, value, oldValue);
-            }).start();
-        } else {
-            logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
+        logger.info("Config set '{}' to value '{}' (was '{}')", key, value, oldValue);
+        if (!TENANT.name().equals(key)) { // will be stored by switchTenant
+            Context context = MainActivity.getContext();
+            if (null != context) {
+                // asynchronous save of config
+                new Thread(() -> {
+                    DataStorageLocal.saveLocal(context); // save current config immediately
+                }).start();
+            }
         }
+        return entryKey;
     }
 
     private static void switchTenant(EntryKey entryKey, String value, String oldValue) {

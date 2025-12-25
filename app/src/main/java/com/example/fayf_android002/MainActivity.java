@@ -15,6 +15,7 @@ import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
+import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
 import com.example.fayf_android002.UI.TextViewAppender;
 import com.example.fayf_android002.RuntimeTest.UtilDebug;
@@ -154,6 +155,7 @@ public class MainActivity extends AppCompatActivity  {
         });
         refresh(Entries.getCurrentEntryKey());
 
+        RuntimeChecker.check();
         switchToFirstFragment();
 
     }
@@ -163,6 +165,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private boolean loadFragment(Fragment fragment) {
         logger.info("Loading fragment: {}", fragment.getClass().getSimpleName());
+        RuntimeChecker.check();
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -320,6 +323,7 @@ public class MainActivity extends AppCompatActivity  {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        RuntimeChecker.check();
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
@@ -437,7 +441,7 @@ public class MainActivity extends AppCompatActivity  {
             Entries.save( getContext());
             Toast.makeText(this, "saving data", Toast.LENGTH_SHORT).show();
         }
-
+        RuntimeChecker.check();
         return super.onOptionsItemSelected(item);
     }
 
