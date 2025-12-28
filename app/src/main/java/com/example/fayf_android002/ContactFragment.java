@@ -26,11 +26,11 @@ public class ContactFragment extends Fragment {
 
     private ActivityResultLauncher<ScanOptions> barcodeLauncher = null;
     private View rootView;
-    private QRMode showTenant = QRMode.TENANT_LINK;
+    private QRMode showTenant = QRMode.HOMEPAGE_LINK;
 
     enum QRMode {
-        TENANT_LINK ,
         HOMEPAGE_LINK,
+        TENANT_LINK ,
         DOWNLOAD_LINK;
 
         QRMode toggle() {
