@@ -26,7 +26,18 @@ public class ContactFragment extends Fragment {
 
     private ActivityResultLauncher<ScanOptions> barcodeLauncher = null;
     private View rootView;
-    private boolean showTenant = true;
+    private QRMode showTenant = QRMode.TENANT_LINK;
+
+    enum QRMode {
+        TENANT_LINK ,
+        HOMEPAGE_LINK,
+        DOWNLOAD_LINK;
+
+        QRMode toggle() {
+            QRMode[] values = QRMode.values();
+            return this.ordinal() + 1 < values.length ? values[this.ordinal() + 1] : values[0];
+        }
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup view, Bundle savedInstanceState) {
@@ -36,7 +47,7 @@ public class ContactFragment extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_contact, view, false);
 
         Button scanQrCodeButton = rootView.findViewById(R.id.scanQrCodeButton);
-        Button scanQrCodeShareAppButton = rootView.findViewById(R.id.scanQrCodeShareAppButton);
+        Button scanQrCodeShareAppButton = rootView.findViewById(R.id.qrCodeToggleButton);
 
         barcodeLauncher = registerForActivityResult(
                 new ScanContract(), result -> {
@@ -55,7 +66,7 @@ public class ContactFragment extends Fragment {
 
         scanQrCodeButton.setOnClickListener(v -> scanQRCode());
         scanQrCodeShareAppButton.setOnClickListener(v -> {
-            showTenant = !showTenant;
+            showTenant = showTenant.toggle();
             showQR();
         });
         showQR();
@@ -69,23 +80,48 @@ public class ContactFragment extends Fragment {
         String tenantId = Config.TENANT.getValue(); // may be <id>:<name>
         TextView title = (TextView) rootView.findViewById(R.id.qrCodeTitleTextView);
         ImageView qrCodeImageView = rootView.findViewById(R.id.qrCodeImageView);
+        TextView qrCodeUrlTextView = rootView.findViewById(R.id.qrCodeUrlTextView);
+        Button qrCodeToggleButton = rootView.findViewById(R.id.qrCodeToggleButton);
+        Button scanQrCodeButton = rootView.findViewById(R.id.scanQrCodeButton);
 
-        if (showTenant) {
+
+        if (showTenant.equals(QRMode.TENANT_LINK)) {
             // TODO proper split of tenant ID and name
             title.setContentDescription("QR Code for Tenant ID: \n" + tenantId.replaceAll(".*:", " "));
             title.setVisibility(View.VISIBLE);
             title.setText("Tenant: " + tenantId.replaceAll(".*:", " "));
+            qrCodeUrlTextView.setText(tenantId);
             generateTenantQRCode(tenantId, qrCodeImageView);
+            scanQrCodeButton.setText("Scan other Tenants QR Code.");
 
-        } else {
+        } else if (showTenant.equals(QRMode.DOWNLOAD_LINK)) {
             logger.info("Share App button clicked.");
             title.setText("Just share \n the app via QR!");
             String randomSessionId = Util.generateRandomString(12);
-            generateDownloadLinkQR("https://fayf.info/fayf.apk?sid=" + randomSessionId
-                            + "&src=qr"
-                            + "&tenant=" + tenantId
-                    , qrCodeImageView);
+            String downloadLink = "https://fayf.info/fayf.apk?sid=" + randomSessionId
+                    + "&src=qr"
+                    + "&tenant=" + tenantId;
+            qrCodeUrlTextView.setText(downloadLink);
+            generateDownloadLinkQR(downloadLink, qrCodeImageView);
+            scanQrCodeButton.setText(""); // TODO disable scan button for app download QR, w/o changing layout
+        } else if (showTenant.equals(QRMode.HOMEPAGE_LINK)) {
+            logger.info("Share Homepage button clicked.");
+            title.setText("Fayf Homepage");
+            String homepageLink = "https://fayf.info";
+            qrCodeUrlTextView.setText(homepageLink);
+            generateDownloadLinkQR(homepageLink , qrCodeImageView);
+            scanQrCodeButton.setText(""); // TODO disable scan button for homepage QR, w/o changing layout
         }
+        // simulate toggle button text change
+        QRMode toggle = showTenant.toggle();
+        if (toggle.equals(QRMode.TENANT_LINK)) {
+            qrCodeToggleButton.setText("Show Tenant QR");
+        }  else if (toggle.equals(QRMode.HOMEPAGE_LINK)) {
+            qrCodeToggleButton.setText("Show Homepage QR");
+        } else if (toggle.equals(QRMode.DOWNLOAD_LINK)) {
+            qrCodeToggleButton.setText("Show App Download QR");
+        }
+
     }
 
     private void generateTenantQRCode(String tenantId, ImageView qrCodeImageView) {

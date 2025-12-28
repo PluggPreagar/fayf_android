@@ -29,7 +29,7 @@
 
             <ImageButton
                     android:id="@+id/button_style_question"
-                    android:src="@mipmap/icons8_ask_question_100"
+                    android:src="@mipmap/ask_question_100"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -38,7 +38,7 @@
 
             <ImageButton
                     android:id="@+id/button_style_counter_question"
-                    android:src="@mipmap/icons8_answer_100"
+                    android:src="@mipmap/answer_100"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -47,7 +47,7 @@
 
             <ImageButton
                     android:id="@+id/button_style_fact"
-                    android:src="@mipmap/icons8_checked_100_2"
+                    android:src="@mipmap/checked_100_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -57,7 +57,7 @@
 
             <ImageButton
                     android:id="@+id/button_style_false_fact"
-                    android:src="@mipmap/icons8_radioactive_100"
+                    android:src="@mipmap/radioactive_100"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -66,7 +66,7 @@
 
             <ImageButton
                     android:id="@+id/button_style_reference"
-                    android:src="@mipmap/icons8_book_100"
+                    android:src="@mipmap/book_100"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"

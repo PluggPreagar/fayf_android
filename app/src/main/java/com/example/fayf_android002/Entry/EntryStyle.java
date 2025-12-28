@@ -9,11 +9,11 @@ public enum EntryStyle {
 
     NOTE(".", "Note", R.drawable.ic_baseline_note_24, false),
     FOLDER(">", "Folder", R.drawable.baseline_chevron_right_24, false),
-    FACT ("!", "Fact", R.mipmap.icons8_checked_100_2, true),
-    FALSE_FACT ("!-", "False Fact", R.mipmap.icons8_radioactive_100, false),
-    QUESTION ("?", "Question", R.mipmap.icons8_ask_question_100, true),
-    COUNTER_QUESTION("??", "Counter Question", R.mipmap.icons8_answer_100, false),
-    REFERENCE ("@", "Reference", R.mipmap.icons8_book_100, true);
+    FACT ("!", "Fact", R.mipmap.checked_100_2, true),
+    FALSE_FACT ("!-", "False Fact", R.mipmap.radioactive_100, false),
+    QUESTION ("?", "Question", R.mipmap.ask_question_100, true),
+    COUNTER_QUESTION("??", "Counter Question", R.mipmap.answer_100, false),
+    REFERENCE ("@", "Reference", R.mipmap.book_100, true);
 
     private static final Logger log = LoggerFactory.getLogger(EntryStyle.class);
     private final String suffix;
