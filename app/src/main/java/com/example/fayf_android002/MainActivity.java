@@ -513,21 +513,25 @@ public class MainActivity extends AppCompatActivity  {
         EntryKey currentTopicEntry = Entries.getCurrentEntryKey();
         // update title in action bar
         if (getSupportActionBar() != null) {
-            String newTitle = "FayF";
+            String newTitle = "";
             boolean isRootTopic = EntryTree.isRootKey(currentTopicEntry);
             Entry entry = Entries.getEntry(currentTopicEntry);
             logger.info("Updating action bar title for topic: \"{}\" {}"
                     , null == entry ? "" : entry.getContent()
                     , isRootTopic ? "(root topic)" : "(enable back button)");
-            if (isRootTopic ||  null == entry || !Util.isFilled(entry.getContent())) {
-                String tenant = Config.TENANT.getValue();
-                if (Util.isFilled(tenant)) {
-                    newTitle += " of " + Config.TENANT.getValue();
-                }
-            } else {
-                newTitle = Util.shortenString(entry.getContent(), 30);
+            String tenant = Config.TENANT.getValue();
+            newTitle = "";
+            if (Util.isFilled(tenant)) {
+                tenant = tenant.replaceAll("^.*:|__.*$", " "); // remove id if present
             }
-            getSupportActionBar().setTitle(newTitle);
+            if (isRootTopic ||  null == entry || !Util.isFilled(entry.getContent())) {
+                getSupportActionBar().setTitle("FayF of " + tenant);
+                getSupportActionBar().setSubtitle("");
+            } else {
+                getSupportActionBar().setTitle(tenant);
+                newTitle = Util.shortenString(entry.getContent(), 30);
+                getSupportActionBar().setSubtitle(newTitle); // show full title as subtitle
+            }
             // enable back button in action bar
             getSupportActionBar().setDisplayHomeAsUpEnabled(!isRootTopic); // show back button if not root
         }
