@@ -8,6 +8,9 @@ import com.example.fayf_android002.RuntimeTest.UtilDebug;
 import com.example.fayf_android002.IO.IOLocal;
 import com.example.fayf_android002.IO.IOWeb;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -196,6 +199,24 @@ public class Entries {
         RuntimeChecker.check();
     }
 
+
+    public static void loadDelta() {
+        EntryTree deltaTree = IOWeb.readDataDelta(
+                Config.SYSTEM.getValue()
+                , Config.TENANT.getValue()
+                , null);
+        boolean currentTopicUpdated = EntryTree.merge(entryTree, deltaTree);
+        checkDataIntegrity();
+        logger.info("Entries loaded delta up to {} ({} updates)", IOWeb.lastTimestamp, IOWeb.lastDeltaCount);
+        Config.LAST_DATA_TIMESTAMP.setValue( IOWeb.lastTimestamp );
+        // current TimeStamp
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String ts = formatter.format(new Date());
+        Config.LAST_SYNC_TIMESTAMP.setValue( ts );
+        if (currentTopicUpdated) {
+            callTopicChangedListeners(getCurrentEntryKey());
+        }
+    }
 
 
     public static void checkDataIntegrity() {

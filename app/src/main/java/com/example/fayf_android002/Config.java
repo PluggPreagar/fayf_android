@@ -31,7 +31,10 @@ public enum Config {
     SHOW_FALSE_FACT_YN("show_false_fact_YN", false),
     SHOW_QUESTION_YN("show_question_YN", false),
     SHOW_COUNTER_QUESTION_YN("show_counter_question_YN", false),
-    SHOW_REFERENCE_YN("show_reference_YN", false)
+    SHOW_REFERENCE_YN("show_reference_YN", false),
+
+    LAST_SYNC_TIMESTAMP("last_sync_timestamp", ""),
+    LAST_DATA_TIMESTAMP("last_data_timestamp", "")
 
     ;
 
@@ -156,7 +159,10 @@ public enum Config {
                 switchTenant(entryKey, value, oldValue);
             }
             // save config change immediately
-            Entries.save(MainActivity.getContext(), entryKey);
+            if (!name().startsWith("last_")) {
+                // skipp last_sync_timestamp and last_data_timestamp to reduce IO, without any other change
+                Entries.save(MainActivity.getContext(), entryKey);
+            }
             // Post-Action for specific configs
             if (name().equals(TENANT.name())) {
                 // asynchronous reload of all entries for new tenant

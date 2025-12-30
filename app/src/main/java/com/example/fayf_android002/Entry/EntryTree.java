@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.example.fayf_android002.Entry.EntryKey.VOTE_SEPARATOR;
 
@@ -179,14 +180,20 @@ public class EntryTree implements Serializable {
 
 
 
-    public static void merge(EntryTree target, EntryTree input) {
+    public static boolean merge(EntryTree target, EntryTree input) {
+        AtomicBoolean changedCurrentTopic = new AtomicBoolean(false);
         if (null == target || null == input || input.isEmpty()) {
-            return;
+            return changedCurrentTopic.get();
         }
         // add new entries from input to target
         // merge existing entries - rank, myVote, signedVotes
+        EntryKey currentEntryKey = Entries.getCurrentEntryKey();
+        String currentTopic = currentEntryKey.getFullPath();
         input.entries.forEach( (topic, inputEntryMap) -> {
             SortedEntryMap targetEntryMap = target.entries.get(topic);
+            if (topic.equals(currentTopic)){
+                changedCurrentTopic.set(true);
+            }
             if (null == targetEntryMap) {
                 // new topic - add all entries
                 target.entries.put(topic, inputEntryMap);
@@ -204,6 +211,7 @@ public class EntryTree implements Serializable {
                 });
             }
         });
+        return changedCurrentTopic.get();
     }
 
 
@@ -231,6 +239,7 @@ public class EntryTree implements Serializable {
         }
         return dataEntries;
     }
+
 
 
 

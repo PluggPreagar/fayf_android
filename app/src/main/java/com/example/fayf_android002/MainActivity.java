@@ -15,6 +15,7 @@ import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
+import com.example.fayf_android002.IO.IncrementalUpdateScheduler;
 import com.example.fayf_android002.RuntimeTest.RuntimeChecker;
 import com.example.fayf_android002.RuntimeTest.RuntimeTest;
 import com.example.fayf_android002.UI.TextViewAppender;
@@ -157,6 +158,8 @@ public class MainActivity extends AppCompatActivity  {
             runOnUiThread(() -> {refresh( currentTopicEntry );});
         });
         refresh(Entries.getCurrentEntryKey());
+
+        IncrementalUpdateScheduler.startPeriodicUpdates( );
 
         RuntimeChecker.check();
         switchToFirstFragment();

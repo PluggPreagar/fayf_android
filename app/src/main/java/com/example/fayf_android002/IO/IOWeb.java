@@ -1,6 +1,7 @@
 package com.example.fayf_android002.IO;
 
 import com.example.fayf_android002.Config;
+import com.example.fayf_android002.Entry.Entries;
 import com.example.fayf_android002.Entry.Entry;
 import com.example.fayf_android002.Entry.EntryKey;
 import com.example.fayf_android002.Entry.EntryTree;
@@ -17,8 +18,10 @@ public class IOWeb {
 
     private final static Logger logger = LoggerFactory.getLogger(IOWeb.class);
 
+    public static String lastTimestamp = "" ;
 
     static String DELETE_SUFFIX = "--";
+    public static int lastDeltaCount = 0 ;
 
     public static EntryTree readData(String sid, String tid) {
         EntryTree data = new EntryTree();
@@ -26,6 +29,20 @@ public class IOWeb {
         readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid);
         return EntryTree.getDataEntriesOnly(data);
     }
+
+    public static EntryTree readDataDelta(String sid, String tid, String timestamp) {
+        EntryTree data = new EntryTree();
+        timestamp = null == timestamp ? lastTimestamp : timestamp ; // use lastTimestamp if null
+        String urlEncodedTimestamp = Util.encodeToUrlParam(timestamp);
+        readData(data, "https://fayf.info/entries?sid=" + sid + "&tid=" + tid + "&ts=" + urlEncodedTimestamp);
+        readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid + "&ts=" + urlEncodedTimestamp);
+        lastDeltaCount = data.size();
+        if (lastDeltaCount < 10) {
+            Entries.logEntries(data, "Delta loaded entries:");
+        }
+        return EntryTree.getDataEntriesOnly(data);
+    }
+
 
     // Fetch CSV data from a URL
     public static EntryTree readData(EntryTree data, String urlString) {
@@ -105,6 +122,12 @@ public class IOWeb {
                 } else {
                     data.load(key, content);
                 }
+            }
+            // update lastTimestamp
+            // ensure correct timestamp format - convert DD/MM/YYYY HH:MM:SS to YYYY-MM-DD HH:MM:SS
+            String ts = rawParts[0].replaceAll("(\\d{2})/(\\d{2})/(\\d{4})", "$3-$2-$1");
+            if (ts.compareTo(lastTimestamp) > 0) {
+                lastTimestamp = ts;
             }
         } else {
             logger.warn("Failed to build Entry from string: {}", line);
