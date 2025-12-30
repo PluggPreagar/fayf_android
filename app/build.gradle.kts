@@ -28,7 +28,8 @@ android {
         targetSdk = 34
         this.versionCode = versionCode
         this.versionName = versionName
-
+        versionCode = 1  // needed for build bundles
+        versionName = versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

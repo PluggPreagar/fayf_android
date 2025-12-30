@@ -523,6 +523,8 @@ public class MainActivity extends AppCompatActivity  {
             newTitle = "";
             if (Util.isFilled(tenant)) {
                 tenant = tenant.replaceAll("^.*:|__.*$", " "); // remove id if present
+                // TODO KLUDGE .. remove trailing _<numbers>, but not years
+                tenant = tenant.replaceAll("_[0-9][0-9][0-9][0-9][0-9][0-9]*$", "");
             }
             if (isRootTopic ||  null == entry || !Util.isFilled(entry.getContent())) {
                 getSupportActionBar().setTitle("FayF of " + tenant);
