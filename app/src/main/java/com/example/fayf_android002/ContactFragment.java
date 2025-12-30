@@ -30,12 +30,15 @@ public class ContactFragment extends Fragment {
 
     enum QRMode {
         HOMEPAGE_LINK,
-        TENANT_LINK ,
+        TENANT_LINK_DISABLED,
         DOWNLOAD_LINK;
 
         QRMode toggle() {
             QRMode[] values = QRMode.values();
-            return this.ordinal() + 1 < values.length ? values[this.ordinal() + 1] : values[0];
+            //return this.ordinal() + 1 < values.length ? values[this.ordinal() + 1] : values[0];
+            // TODO we do not need multiple QR as we transfer same data in different formats
+            // TODO - check - is that a good idea? can we export systemID?
+            return HOMEPAGE_LINK.equals(this) ? DOWNLOAD_LINK : HOMEPAGE_LINK;
         }
     }
 
@@ -53,8 +56,11 @@ public class ContactFragment extends Fragment {
                 new ScanContract(), result -> {
                     if (result != null) {
                         if (result.getContents() != null) {
-                            logger.info("QR Scan result: " + result.getContents());
-                            String scannedTenantId = result.getContents();
+                            // extract tenant ID from scanned QR code - might be HomePage or Download link
+                            String content = result.getContents();
+                            content = content.replaceAll("https://fayf.info/.*&(tenant|tid)=|&.*$", "");
+                            logger.info("QR Scan result: " + content);
+                            String scannedTenantId = content;
                             setTenantId(scannedTenantId);
                         } else {
                             logger.warning("QR Scan result is empty.");
@@ -85,7 +91,7 @@ public class ContactFragment extends Fragment {
         Button scanQrCodeButton = rootView.findViewById(R.id.scanQrCodeButton);
 
 
-        if (showTenant.equals(QRMode.TENANT_LINK)) {
+        if (showTenant.equals(QRMode.TENANT_LINK_DISABLED)) {
             // TODO proper split of tenant ID and name
             title.setContentDescription("QR Code for Tenant ID: \n" + tenantId.replaceAll(".*:", " "));
             title.setVisibility(View.VISIBLE);
@@ -98,7 +104,8 @@ public class ContactFragment extends Fragment {
             logger.info("Share App button clicked.");
             title.setText("Just share \n the app via QR!");
             String randomSessionId = Util.generateRandomString(12);
-            String downloadLink = "https://fayf.info/fayf.apk?sid=" + randomSessionId
+            String downloadLink = "https://fayf.info/fayf.apk?"
+                    //+ "sid=" + randomSessionId
                     + "&src=qr"
                     + "&tenant=" + tenantId;
             qrCodeUrlTextView.setText(downloadLink);
@@ -108,13 +115,14 @@ public class ContactFragment extends Fragment {
             logger.info("Share Homepage button clicked.");
             title.setText("Fayf Homepage");
             String homepageLink = "https://fayf.info";
+            homepageLink += "?tid=" + tenantId;
             qrCodeUrlTextView.setText(homepageLink);
             generateDownloadLinkQR(homepageLink , qrCodeImageView);
             scanQrCodeButton.setText(""); // TODO disable scan button for homepage QR, w/o changing layout
         }
         // simulate toggle button text change
         QRMode toggle = showTenant.toggle();
-        if (toggle.equals(QRMode.TENANT_LINK)) {
+        if (toggle.equals(QRMode.TENANT_LINK_DISABLED)) {
             qrCodeToggleButton.setText("Show Tenant QR");
         }  else if (toggle.equals(QRMode.HOMEPAGE_LINK)) {
             qrCodeToggleButton.setText("Show Homepage QR");
