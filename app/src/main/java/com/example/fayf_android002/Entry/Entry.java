@@ -90,8 +90,13 @@ public class Entry implements java.io.Serializable {
                 this.userLastUpdateTime = previous.userLastUpdateTime;
             }
         } else {
-            this.rank = previous.rank;
-            this.myVote = previous.myVote;
+            if (!previous.content.isEmpty()) {
+                this.content = previous.content;
+            }
+            if (previous.rank != 0 || previous.myVote != 0) {
+                this.rank = previous.rank;
+                this.myVote = previous.myVote;
+            }
         }
         if (previous.otherLastUpdateTime > 0 && this.otherLastUpdateTime > 0) {
             if (previous.otherLastUpdateTime > this.otherLastUpdateTime) {

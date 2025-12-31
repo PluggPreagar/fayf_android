@@ -159,7 +159,7 @@ public enum Config {
                 switchTenant(entryKey, value, oldValue);
             }
             // save config change immediately
-            if (!name().startsWith("last_")) {
+            if (!name().startsWith("LAST_")) {
                 // skipp last_sync_timestamp and last_data_timestamp to reduce IO, without any other change
                 Entries.save(MainActivity.getContext(), entryKey);
             }

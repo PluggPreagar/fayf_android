@@ -206,7 +206,10 @@ public class Entries {
                 , Config.TENANT.getValue()
                 , null);
         boolean currentTopicUpdated = EntryTree.merge(entryTree, deltaTree);
-        checkDataIntegrity();
+        if (IOWeb.lastDeltaCount > 0) {
+            checkDataIntegrity();
+            MainActivity.userInfo("Loaded " + IOWeb.lastDeltaCount + " updates.");
+        }
         logger.info("Entries loaded delta up to {} ({} updates)", IOWeb.lastTimestamp, IOWeb.lastDeltaCount);
         Config.LAST_DATA_TIMESTAMP.setValue( IOWeb.lastTimestamp );
         // current TimeStamp
@@ -220,6 +223,7 @@ public class Entries {
 
 
     public static void checkDataIntegrity() {
+        UtilDebug.logCompactCallStack("checkDataIntegrity");
         EntryTree entryTree = Entries.entryTree;
         // check if current topic exists after load
         if (null == currentEntryKey ||  null == entryTree.get(currentEntryKey)) {

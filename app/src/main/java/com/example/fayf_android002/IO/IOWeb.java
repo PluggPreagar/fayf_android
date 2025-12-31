@@ -1,10 +1,7 @@
 package com.example.fayf_android002.IO;
 
 import com.example.fayf_android002.Config;
-import com.example.fayf_android002.Entry.Entries;
-import com.example.fayf_android002.Entry.Entry;
-import com.example.fayf_android002.Entry.EntryKey;
-import com.example.fayf_android002.Entry.EntryTree;
+import com.example.fayf_android002.Entry.*;
 import com.example.fayf_android002.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +10,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Stream;
 
 public class IOWeb {
 
@@ -22,6 +26,8 @@ public class IOWeb {
 
     static String DELETE_SUFFIX = "--";
     public static int lastDeltaCount = 0 ;
+
+    static ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
 
     public static EntryTree readData(String sid, String tid) {
         EntryTree data = new EntryTree();
@@ -36,6 +42,36 @@ public class IOWeb {
         String urlEncodedTimestamp = Util.encodeToUrlParam(timestamp);
         readData(data, "https://fayf.info/entries?sid=" + sid + "&tid=" + tid + "&ts=" + urlEncodedTimestamp);
         readData(data, "https://fayf.info/votes?sid=" + sid + "&tid=" + tid + "&ts=" + urlEncodedTimestamp);
+        // skipp own delta on entries/votes - they are handled locally
+        for (Map.Entry<String, SortedEntryMap> e : data.entries.entrySet()) {
+            Map<String, String> dupl = new HashMap<>();
+            for (Map.Entry<String, Entry> entry : e.getValue().entrySet()) {
+                String nodeId = entry.getKey().replaceAll("::.*", ""); // handle votes by nodeId only
+                String entryString = buildStringRepresentation(
+                        new EntryKey(e.getKey(), nodeId),
+                        entry.getValue()
+                );
+                if (queue.contains(entryString)) {
+                    dupl.put(entry.getKey(), entryString);
+                }
+            }
+            for (Map.Entry<String, String> key : dupl.entrySet()) {
+                e.getValue().remove(e.getKey());
+                queue.removeIf(s -> s.equals(key.getValue()) );
+                logger.info("Skipped own delta entry: {}", key.getValue() );
+            }
+        }
+        // FIXME
+        if (queue.size() > 100) {
+            logger.warn("Clearing queue - size exceeded limit: {}", queue.size());
+            queue.clear();
+        }
+        /*
+        data.entries.forEach((topic, map) -> {
+            map.entrySet().removeIf(entry -> queue.contains(entry.getValue()));
+        });
+        */
+
         lastDeltaCount = data.size();
         if (lastDeltaCount < 10) {
             Entries.logEntries(data, "Delta loaded entries:");
@@ -135,12 +171,14 @@ public class IOWeb {
     }
 
     public void saveEntry(EntryKey entryKey, Entry entry) {
+        String entryString = buildStringRepresentation(entryKey, entry);
+        queue.add( entryString );
         new Thread(() ->
-                saveEntry(entryKey, entry, Config.SYSTEM.getValue(), Config.TENANT.getValue())
+                saveEntry(entryKey, entryString, Config.SYSTEM.getValue(), Config.TENANT.getValue())
         ).start();
     }
 
-    public void saveEntry(EntryKey entryKey, Entry entry, String sid, String tid) {
+    public void saveEntry(EntryKey entryKey, String entryString, String sid, String tid) {
         assert sid != null ;
         assert tid != null ;
         assert !sid.isEmpty();
@@ -148,7 +186,7 @@ public class IOWeb {
         // TODO do not use params ... in URL - use POST body !!
         String urlString = "https://fayf.info/" + objectName + "/add?" +
                 "sid=" + sid + "&tid=" + tid +
-                "&entry=" +  Util.encodeToUrlParam( buildStringRepresentation(entryKey, entry) );
+                "&entry=" +  Util.encodeToUrlParam( entryString );
 
         logger.info("Saving entry to URL: {}", urlString);
         try {
@@ -158,7 +196,7 @@ public class IOWeb {
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                logger.info("Entry saved successfully: {}", buildStringRepresentation(entryKey, entry));
+                logger.info("Entry saved successfully: {}", entryString);
             } else {
                 logger.error("Failed to save entry. HTTP response code: {}", responseCode);
             }
@@ -168,7 +206,7 @@ public class IOWeb {
         }
     }
 
-    private String buildStringRepresentation(EntryKey entryKey, Entry entry) {
+    private static String buildStringRepresentation(EntryKey entryKey, Entry entry) {
         if (entryKey.nodeId.contains(EntryKey.VOTE_SEPARATOR)) {
             // String voterId = Config.SYSTEM.getValue(); // TODO PERFORMANCE - cache system id !!
             int votes = entryKey.nodeId.endsWith(EntryKey.VOTE_SEPARATOR) ? entry.otherVotes : entry.myVote ;
