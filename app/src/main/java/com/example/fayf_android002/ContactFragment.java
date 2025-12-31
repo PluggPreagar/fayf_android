@@ -109,6 +109,10 @@ public class ContactFragment extends Fragment {
                     + "&src=qr"
                     + "&tenant=" + tenantId;
             qrCodeUrlTextView.setText(downloadLink);
+            qrCodeUrlTextView.setClickable(true);
+            qrCodeUrlTextView.setFocusable(true);
+            qrCodeUrlTextView.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+            android.text.util.Linkify.addLinks(qrCodeUrlTextView, android.text.util.Linkify.WEB_URLS);
             generateDownloadLinkQR(downloadLink, qrCodeImageView);
             scanQrCodeButton.setText(""); // TODO disable scan button for app download QR, w/o changing layout
         } else if (showTenant.equals(QRMode.HOMEPAGE_LINK)) {
@@ -117,6 +121,10 @@ public class ContactFragment extends Fragment {
             String homepageLink = "https://fayf.info";
             homepageLink += "?tid=" + tenantId;
             qrCodeUrlTextView.setText(homepageLink);
+            qrCodeUrlTextView.setClickable(true);
+            qrCodeUrlTextView.setFocusable(true);
+            qrCodeUrlTextView.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+            android.text.util.Linkify.addLinks(qrCodeUrlTextView, android.text.util.Linkify.WEB_URLS);
             generateDownloadLinkQR(homepageLink , qrCodeImageView);
             if (QRMode.TENANT_LINK_DISABLED.name().contains("DISABLED")) {
                 scanQrCodeButton.setText("Scan Tenants QR to join.");
