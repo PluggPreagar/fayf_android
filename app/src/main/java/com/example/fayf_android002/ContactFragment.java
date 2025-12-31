@@ -118,7 +118,11 @@ public class ContactFragment extends Fragment {
             homepageLink += "?tid=" + tenantId;
             qrCodeUrlTextView.setText(homepageLink);
             generateDownloadLinkQR(homepageLink , qrCodeImageView);
-            scanQrCodeButton.setText(""); // TODO disable scan button for homepage QR, w/o changing layout
+            if (QRMode.TENANT_LINK_DISABLED.name().contains("DISABLED")) {
+                scanQrCodeButton.setText("Scan Tenants QR to join.");
+            } else {
+                scanQrCodeButton.setText(""); // TODO disable scan button for homepage QR, w/o changing layout
+            }
         }
         // simulate toggle button text change
         QRMode toggle = showTenant.toggle();

@@ -83,6 +83,7 @@ public class IOWeb {
     // Fetch CSV data from a URL
     public static EntryTree readData(EntryTree data, String urlString) {
         logger.info("Fetching data from URL: {}", urlString);
+        logger.debug("debug: {}", urlString + "&format=txt");
 
         try {
             URL url = new URL(urlString);
