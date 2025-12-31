@@ -162,7 +162,12 @@ public class MainActivity extends AppCompatActivity  {
         IncrementalUpdateScheduler.startPeriodicUpdates( );
 
         RuntimeChecker.check();
-        switchToFirstFragment();
+        // on first run load FirstFragment or if tenant is "tst"
+        if (((String)Config.TENANT.getDefaultValue()).equals(Config.TENANT.getValue())) {
+            switchToContactFragment();
+        } else {
+            switchToFirstFragment();
+        }
 
     }
 
