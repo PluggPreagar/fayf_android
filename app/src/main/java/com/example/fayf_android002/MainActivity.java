@@ -70,7 +70,11 @@ public class MainActivity extends AppCompatActivity  {
         instance = this; // set instance early for Entries.loadConfig - needs context, but not UI yet
         super.onCreate(savedInstanceState);
 
-        if (Entries.entryTree.isEmpty()) {
+        if (false || Config.RUN_SELF_TEST.getBooleanValue()) {
+            Config.TENANT.setValue( RuntimeTest.RuntimeTestTennant );
+            Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
+            Entries.setEntry( new EntryKey( EntryKey.PATH_SEPARATOR, "MODE"), "Test", getContext());
+        } else if (Entries.entryTree.isEmpty()) {
             logger.info("Entries are empty on MainActivity onCreate - loading from local storage");
             Entries.loadConfig( getContext());
         } else {
@@ -103,10 +107,7 @@ public class MainActivity extends AppCompatActivity  {
         } else {
             binding.logScrollView.setVisibility(View.GONE);
         }
-        if (false) {
-            Config.TENANT.setValue("tst5");
-            Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
-        }
+
 
         // init self-test entries if started
         // prevent auto-load from storage

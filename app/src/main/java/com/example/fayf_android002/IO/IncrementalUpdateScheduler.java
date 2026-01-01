@@ -21,6 +21,9 @@ public class IncrementalUpdateScheduler {
         if (isRunning) {
             logger.info("Incremental update scheduler is already running.");
             return;
+        } else if (Config.TENANT.getValue().endsWith(Config.TENANT_TEST_SUFFIX)) {
+            logger.info("Skipping incremental update scheduler for test tenant '" + Config.TENANT.getValue() + "'.");
+            return;
         } else if (Config.AUTO_SYNC_YN.getBooleanValue()){
             logger.info("Starting incremental update scheduler as AUTO_SYNC_YN is enabled.");
         } else {

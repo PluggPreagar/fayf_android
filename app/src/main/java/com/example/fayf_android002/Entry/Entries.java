@@ -391,9 +391,6 @@ public class Entries {
         FOR TEST
      */
 
-    public static EntryTree resetEntries() {
-        return resetEntries(false);
-    }
 
     public static EntryTree resetEntries(boolean keepConfig) {
         if (keepConfig) {
@@ -401,7 +398,7 @@ public class Entries {
             EntryTree.filterConfig(entryTree);
         } else {
             logger.warn("Resetting all entries");
-            entryTree = new EntryTree(); // keep config ..
+            entryTree = new EntryTree(); // keep config ...
         }
         checkDataIntegrity(); // ensure config entries exist
         return entryTree;

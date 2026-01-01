@@ -18,6 +18,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class ContactFragment extends Fragment {
@@ -42,6 +43,26 @@ public class ContactFragment extends Fragment {
         }
     }
 
+    public static String createLink(Map<String, String> params) {
+        StringBuilder linkBuilder = new StringBuilder("https://fayf.info/");
+        if (params != null && !params.isEmpty()) {
+            linkBuilder.append("?");
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                linkBuilder.append(entry.getKey())
+                        .append("=")
+                        .append(entry.getValue())
+                        .append("&");
+            }
+            // Remove the trailing '&'
+            linkBuilder.setLength(linkBuilder.length() - 1);
+        }
+        return linkBuilder.toString();
+    }
+
+    public static String extractTenantIdFromQrContent(String content) {
+        return content != null ? content.replaceAll("https://fayf.info(/.*)?[?&](tenant|tid)=|&.*$", "") : null;
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup view, Bundle savedInstanceState) {
 
@@ -57,10 +78,9 @@ public class ContactFragment extends Fragment {
                     if (result != null) {
                         if (result.getContents() != null) {
                             // extract tenant ID from scanned QR code - might be HomePage or Download link
-                            String content = result.getContents();
-                            content = content.replaceAll("https://fayf.info/.*&(tenant|tid)=|&.*$", "");
+                            String content =  result.getContents();
                             logger.info("QR Scan result: " + content);
-                            String scannedTenantId = content;
+                            String scannedTenantId = extractTenantIdFromQrContent(content);
                             setTenantId(scannedTenantId);
                         } else {
                             logger.warning("QR Scan result is empty.");
@@ -104,10 +124,11 @@ public class ContactFragment extends Fragment {
             logger.info("Share App button clicked.");
             title.setText("Just share \n the app via QR!");
             String randomSessionId = Util.generateRandomString(12);
-            String downloadLink = "https://fayf.info/fayf.apk?"
-                    //+ "sid=" + randomSessionId
-                    + "&src=qr"
-                    + "&tenant=" + tenantId;
+            String downloadLink = createLink(Map.of(
+                    //"sid", randomSessionId,
+                    "src", "qr",
+                    "tid", tenantId
+            ));
             qrCodeUrlTextView.setText(downloadLink);
             qrCodeUrlTextView.setClickable(true);
             qrCodeUrlTextView.setFocusable(true);
@@ -118,8 +139,9 @@ public class ContactFragment extends Fragment {
         } else if (showTenant.equals(QRMode.HOMEPAGE_LINK)) {
             logger.info("Share Homepage button clicked.");
             title.setText("Fayf Homepage");
-            String homepageLink = "https://fayf.info";
-            homepageLink += "?tid=" + tenantId;
+            String homepageLink = createLink(Map.of(
+                    "tid", tenantId
+            ));
             qrCodeUrlTextView.setText(homepageLink);
             qrCodeUrlTextView.setClickable(true);
             qrCodeUrlTextView.setFocusable(true);

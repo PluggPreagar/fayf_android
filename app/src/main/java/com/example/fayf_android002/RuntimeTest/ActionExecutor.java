@@ -218,11 +218,15 @@ public class ActionExecutor {
     }
 
 
+    public String logName(View view, ActionQueueEntry action) {
+        return null == view ? action.toString() : UtilDebug.logName(view);
+    }
+
 
     private void executeIsVisible(ActionQueueEntry action, ActionQueue actionQueue) {
-        View view = UtilDebug.getView(action.viewId);
+        View view = action.getViewOptional();
         boolean isVisible =  null != view && view.getVisibility() == View.VISIBLE;
-        assertTrue(isVisible, UtilDebug.logName(view) + " is visible.", null, null);
+        assertTrue(isVisible, logName(view, action) + " is visible.", null, null);
         if ( null != action.text ) {
             // also check text
             if (view instanceof android.widget.TextView) {

@@ -281,6 +281,8 @@ public class UtilDebug {
 
 
     public static String logName(View view) {
-        return "\""+ UtilDebug.getResourceName(view) + "\" (" + view.getClass().getSimpleName() + " " + view.getId() + " )";
+        return  null == view ? "unknown-view" :
+                "\""+ UtilDebug.getResourceName(view) + "\" ("
+                + view.getClass().getSimpleName() + " " + view.getId() + " )";
     }
 }

@@ -253,6 +253,12 @@ public class ActionQueue {
         return this;
     }
 
+    public ActionQueue hasTitle(String title) {
+        addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.IS_VISIBLE
+                , fragmentId, TO_BE_FOUND , title, 0, null));
+        return this;
+    }
+
 
     public ActionQueue waitForVisible( int viewId) {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
@@ -309,7 +315,7 @@ public class ActionQueue {
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
                 , fragmentId, -1, "", 2000, null));
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.WAIT_FOR_VISIBLE
-                , fragmentId, R.id.row_item_button, "c1", 2000, null));
+                , fragmentId, -1 , "c1", 2000, null));
         // wait a bit
         addAction(new ActionQueueEntry(ActionQueueEntry.ACTIONS.DELAY
                 , fragmentId, -1, "", 200, null));
