@@ -549,4 +549,13 @@ public class MainActivity extends AppCompatActivity  {
         getSupportActionBar().show();
     }
 
+    public void updateActionBarTitle(String newTitle) { // allow to handover already known currentTopicEntry
+        // update title in action bar
+        if (getSupportActionBar() != null) {
+            logger.info("Updating action bar title to: {}", newTitle);
+            getSupportActionBar().setTitle(newTitle);
+            getSupportActionBar().show();
+        }
+    }
+
 }

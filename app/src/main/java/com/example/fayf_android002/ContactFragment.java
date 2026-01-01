@@ -1,6 +1,7 @@
 package com.example.fayf_android002;
 
 import android.graphics.Bitmap;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,8 +44,14 @@ public class ContactFragment extends Fragment {
         }
     }
 
-    public static String createLink(Map<String, String> params) {
-        StringBuilder linkBuilder = new StringBuilder("https://fayf.info/");
+    public static String createLink(String path, Map<String, String> params) {
+        StringBuilder linkBuilder = new StringBuilder("https://fayf.info");
+        if (path != null && !path.isEmpty()) {
+            if (!path.startsWith("/")) {
+                linkBuilder.append("/");
+            }
+            linkBuilder.append(path);
+        }
         if (params != null && !params.isEmpty()) {
             linkBuilder.append("?");
             for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -119,12 +126,13 @@ public class ContactFragment extends Fragment {
             qrCodeUrlTextView.setText(tenantId);
             generateTenantQRCode(tenantId, qrCodeImageView);
             scanQrCodeButton.setText("Scan other Tenants QR Code.");
-
+            scanQrCodeButton.setVisibility(View.VISIBLE);
         } else if (showTenant.equals(QRMode.DOWNLOAD_LINK)) {
             logger.info("Share App button clicked.");
-            title.setText("Just share \n the app via QR!");
+            MainActivity.getInstance().updateActionBarTitle("Share App via QR");
+            //title.setText("Just share \n the app via QR!");
             String randomSessionId = Util.generateRandomString(12);
-            String downloadLink = createLink(Map.of(
+            String downloadLink = createLink("fayf.apk", Map.of(
                     //"sid", randomSessionId,
                     "src", "qr",
                     "tid", tenantId
@@ -134,12 +142,15 @@ public class ContactFragment extends Fragment {
             qrCodeUrlTextView.setFocusable(true);
             qrCodeUrlTextView.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
             android.text.util.Linkify.addLinks(qrCodeUrlTextView, android.text.util.Linkify.WEB_URLS);
+            qrCodeUrlTextView.setPaintFlags(qrCodeUrlTextView.getPaintFlags() & ~Paint.UNDERLINE_TEXT_FLAG);
             generateDownloadLinkQR(downloadLink, qrCodeImageView);
             scanQrCodeButton.setText(""); // TODO disable scan button for app download QR, w/o changing layout
+            scanQrCodeButton.setVisibility(View.INVISIBLE);
         } else if (showTenant.equals(QRMode.HOMEPAGE_LINK)) {
             logger.info("Share Homepage button clicked.");
-            title.setText("Fayf Homepage");
-            String homepageLink = createLink(Map.of(
+            //title.setText("Fayf Homepage");
+            MainActivity.getInstance().updateActionBarTitle("Fayf Homepage");
+            String homepageLink = createLink("", Map.of(
                     "tid", tenantId
             ));
             qrCodeUrlTextView.setText(homepageLink);
@@ -147,11 +158,14 @@ public class ContactFragment extends Fragment {
             qrCodeUrlTextView.setFocusable(true);
             qrCodeUrlTextView.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
             android.text.util.Linkify.addLinks(qrCodeUrlTextView, android.text.util.Linkify.WEB_URLS);
+            qrCodeUrlTextView.setPaintFlags(qrCodeUrlTextView.getPaintFlags() & ~Paint.UNDERLINE_TEXT_FLAG);
             generateDownloadLinkQR(homepageLink , qrCodeImageView);
             if (QRMode.TENANT_LINK_DISABLED.name().contains("DISABLED")) {
                 scanQrCodeButton.setText("Scan Tenants QR to join.");
+                scanQrCodeButton.setVisibility(View.VISIBLE);
             } else {
                 scanQrCodeButton.setText(""); // TODO disable scan button for homepage QR, w/o changing layout
+                scanQrCodeButton.setVisibility(View.INVISIBLE);
             }
         }
         // simulate toggle button text change
@@ -202,7 +216,8 @@ public class ContactFragment extends Fragment {
         int width = qrCodeImageView.getWidth();
         int height = qrCodeImageView.getHeight();
         // Use default size if dimensions are not available
-        int size = Math.min(width > 0 ? width : 400, height > 0 ? height : 400);
+        int defaultSize = Util.dpToPx(requireContext(), 300);
+        int size = Math.min(width > 0 ? width : defaultSize, height > 0 ? height : defaultSize);
 
         QRCodeWriter writer = new QRCodeWriter();
         try {

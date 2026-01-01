@@ -60,5 +60,5 @@
     <string name="action_switch_tenant">Switch Tenant</string>
     <string name="action_save">Force Save</string>
     <string name="scan_qr_code">Click to join by QR.</string>
-    <string name="scan_qr_code_share_app">Share App via QR-Link. (BETA)</string>
+    <string name="scan_qr_code_share_app">Share App via QR-Link.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.example.fayf_android002;
 
+import android.content.Context;
 import android.view.MotionEvent;
 import com.example.fayf_android002.Entry.EntryStyle;
 
@@ -156,4 +157,9 @@ public class Util {
         return valueSafe;
     }
 
+
+    public static int dpToPx(Context context, int dp) {
+        float density = context.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
 }
