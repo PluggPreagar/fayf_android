@@ -11,8 +11,8 @@
             app:showAsAction="ifRoom|collapseActionView"
             app:actionViewClass="androidx.appcompat.widget.SearchView"/>
     <item
-            android:id="@+id/action_settings"
-            android:title="@string/action_settings"
+            android:id="@+id/action_switch_tenant"
+            android:title="@string/action_switch_tenant"
             android:orderInCategory="100"
             app:showAsAction="never"/>
     <item
@@ -29,11 +29,7 @@
             app:showAsAction="never"
             android:visible="false"
             />
-    <item
-            android:id="@+id/action_about"
-            android:title="@string/action_about"
-            android:orderInCategory="100"
-            app:showAsAction="never"/>
+
     <item
             android:id="@+id/action_refresh"
             android:title="@string/action_refresh"
@@ -41,11 +37,7 @@
             app:showAsAction="never"
             android:visible="false"
             />
-    <item
-            android:id="@+id/action_load_from_web"
-            android:title="@string/action_load_from_web"
-            android:orderInCategory="100"
-            app:showAsAction="never"/>
+
     <item
             android:id="@+id/toggle_log"
             android:title="@string/toggle_log"
@@ -80,14 +72,26 @@
             android:title="@string/action_contact"
             android:orderInCategory="100"
             app:showAsAction="never"/>
-    <item
-            android:id="@+id/action_switch_tenant"
-            android:title="@string/action_switch_tenant"
-            android:orderInCategory="100"
-            app:showAsAction="never"/>
+
     <item
             android:id="@+id/action_save"
             android:title="@string/action_save"
             android:orderInCategory="100"
             app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_load_from_web"
+            android:title="@string/action_load_from_web"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_settings"
+            android:title="@string/action_settings"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_about"
+            android:title="@string/action_about"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
+
 </menu>

@@ -164,7 +164,9 @@ public class MainActivity extends AppCompatActivity  {
 
         RuntimeChecker.check();
         // on first run load FirstFragment or if tenant is "tst"
-        if (((String)Config.TENANT.getDefaultValue()).equals(Config.TENANT.getValue())) {
+        if (((String)Config.TENANT.getDefaultValue()).equals(Config.TENANT.getValue())
+              // && Config.LAST_SYNC_TIMESTAMP.getValue().isEmpty()  // TODO for testing
+        ) {
             switchToContactFragment();
         } else {
             switchToFirstFragment();
@@ -182,6 +184,12 @@ public class MainActivity extends AppCompatActivity  {
         fragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
+        if (fragment instanceof ContactFragment) {
+            binding.fab.hide();
+            instance.getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button -- needed on initial
+        } else {
+            binding.fab.show();
+        }
         return true;
     }
 
@@ -207,7 +215,6 @@ public class MainActivity extends AppCompatActivity  {
             return false;
         }
         boolean loaded = instance.loadFragment(new ContactFragment());
-        instance.getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
         return loaded;
     }
 

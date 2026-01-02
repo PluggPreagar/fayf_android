@@ -171,11 +171,11 @@ public class ContactFragment extends Fragment {
         // simulate toggle button text change
         QRMode toggle = showTenant.toggle();
         if (toggle.equals(QRMode.TENANT_LINK_DISABLED)) {
-            qrCodeToggleButton.setText("Show Tenant QR");
+            qrCodeToggleButton.setText("Show Tenant QR.");
         }  else if (toggle.equals(QRMode.HOMEPAGE_LINK)) {
-            qrCodeToggleButton.setText("Show Homepage QR");
+            qrCodeToggleButton.setText("Show Homepage QR.");
         } else if (toggle.equals(QRMode.DOWNLOAD_LINK)) {
-            qrCodeToggleButton.setText("Show App Download QR");
+            qrCodeToggleButton.setText("Show App Download QR.");
         }
 
     }

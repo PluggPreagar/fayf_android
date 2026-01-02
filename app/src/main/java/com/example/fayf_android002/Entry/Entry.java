@@ -82,34 +82,44 @@ public class Entry implements java.io.Serializable {
     }
 
 
-    public void merge(Entry previous) {
+    public void merge(Entry newEntry) {
         // on load - keep private settings
-        if (previous.userLastUpdateTime > 0 && this.userLastUpdateTime > 0) {
-            if (previous.userLastUpdateTime > this.userLastUpdateTime) {
-                this.content = previous.content;
-                this.userLastUpdateTime = previous.userLastUpdateTime;
+        logger.debug("Merging entry. Current:  {}", this.toString());
+        logger.debug("Merging entry. New:      {}", newEntry.toString());
+        if (newEntry.userLastUpdateTime > 0 && this.userLastUpdateTime > 0) {
+            if (newEntry.userLastUpdateTime > this.userLastUpdateTime) {
+                this.content = newEntry.content;
+                this.rank = newEntry.rank;
+                this.myVote = newEntry.myVote;
+                this.userLastUpdateTime = newEntry.userLastUpdateTime;
             }
         } else {
-            if (!previous.content.isEmpty()) {
-                this.content = previous.content;
+            if (newEntry.userLastUpdateTime > 0) {
+                this.userLastUpdateTime = newEntry.userLastUpdateTime;
             }
-            if (previous.rank != 0 || previous.myVote != 0) {
-                this.rank = previous.rank;
-                this.myVote = previous.myVote;
+            if (!newEntry.content.isEmpty()) {
+                this.content = newEntry.content;
+            }
+            if (newEntry.rank != 0 || newEntry.myVote != 0) {
+                this.rank = newEntry.rank;
+                this.myVote = newEntry.myVote;
             }
         }
-        if (previous.otherLastUpdateTime > 0 && this.otherLastUpdateTime > 0) {
-            if (previous.otherLastUpdateTime > this.otherLastUpdateTime) {
-                this.otherVotes = previous.otherVotes;
-                this.signedVotes = previous.signedVotes;
-                this.otherLastUpdateTime = previous.otherLastUpdateTime;
+        if (newEntry.otherLastUpdateTime > 0 && this.otherLastUpdateTime > 0) {
+            if (newEntry.otherLastUpdateTime > this.otherLastUpdateTime) {
+                this.otherVotes = newEntry.otherVotes;
+                this.signedVotes = newEntry.signedVotes;
+                this.otherLastUpdateTime = newEntry.otherLastUpdateTime;
             }
         } else {
-            this.otherVotes = previous.otherVotes != 0 ? previous.otherVotes : this.otherVotes;
-            this.signedVotes = !previous.signedVotes.isEmpty() ? previous.signedVotes : this.signedVotes;
+            if (newEntry.otherLastUpdateTime > 0) {
+                this.otherLastUpdateTime = newEntry.otherLastUpdateTime;
+            }
+            this.otherVotes = newEntry.otherVotes != 0 ? newEntry.otherVotes : this.otherVotes;
+            this.signedVotes = !newEntry.signedVotes.isEmpty() ? newEntry.signedVotes : this.signedVotes;
         }
+        logger.debug("Merged entry.  Result:   {}", this.toString());
         RuntimeChecker.check();
-        EntryTree.markSortingInvalid();
     }
 
     public int getMyVote() {

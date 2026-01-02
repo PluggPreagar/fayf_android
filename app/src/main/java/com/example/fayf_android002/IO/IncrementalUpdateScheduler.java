@@ -34,7 +34,7 @@ public class IncrementalUpdateScheduler {
             try {
                 Entries.loadDelta();
             } catch (Exception e) {
-                logger.info("Error during incremental update: " + e.getMessage());
+                logger.info("Error during incremental update scheduler: " + e.getMessage());
                 e.printStackTrace();
             }
         }, 0, 1, TimeUnit.MINUTES); // Adjust the interval as needed

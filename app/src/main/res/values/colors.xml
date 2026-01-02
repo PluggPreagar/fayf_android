@@ -22,6 +22,10 @@
     <color name="colorOnBackground">#FF000000</color>
     <color name="colorOnSurface">#FF000000</color>
 
+    <!-- default colors on energy saving mode are nasty -->
+    <color name="energySavingBackground">#FF000000</color> <!-- Black for low power -->
+    <color name="energySavingText">#FFFFFFFF</color> <!-- White for contrast -->
+
     <!-- Error color -->
     <color name="colorError">#FFB00020</color>
     <color name="colorOnError">#FFFFFFFF</color>

@@ -57,6 +57,7 @@ public class EntryTree implements Serializable {
     }
 
     public Entry setData(EntryKey key, String content) {
+        EntryTree.markSortingInvalid(key);
         return setData(key, content, true);
     }
 
@@ -64,6 +65,7 @@ public class EntryTree implements Serializable {
     public Entry setData(EntryKey key, String content, boolean initRank) {
         // entry: EntryKey(<topic>, <nodeId>)                     content: <content>
         // vote:  EntryKey(<topic>, <nodeId>"::Vote::"<voterId>)  content: <content>" | "<voteValue>
+        // FIXME  must not use entries-field directly here !!
         SortedEntryMap stringEntryTreeMap = entries.computeIfAbsent(key.topic
                 , k -> new SortedEntryMap());
         // TODO - check if all attributes go into separate Entries (or to be stored in Entry as Fields)
@@ -79,12 +81,21 @@ public class EntryTree implements Serializable {
                 log.error("Invalid vote content: {}", content);
             } else {
                 // valid
-                entry = stringEntryTreeMap.get(splitId[0]); // ohne vote suffix
+                entry = stringEntryTreeMap.get(splitId[0]); // w/o vote suffix
+                // TODO REFACTOR
+                if (null == entry) {
+                    // happens on loading vote-delta on dummy-tree (later to be merged)
+                    log.warn("vote for non-existing entry: {} ({})", splitId[0], content);
+                    entry = new Entry(splitContent[0]); // dummy entry
+                    stringEntryTreeMap.put(splitId[0], entry);
+                }
                 if (null != entry) {
                     String voterId = splitId.length < 2 ? "" : splitId[1]; // me or others
                     int voteValue = Util.parseIntOr(splitContent[1], 0);
                     entry.setVote(voteValue, voterId);
-                } // entry exists
+                } else {
+                    log.warn("SKIPP vote for non-existing entry: {} ({})", splitId[0], content);
+                }// entry exists
             } // valid split
 
         } else {
@@ -101,12 +112,24 @@ public class EntryTree implements Serializable {
             } // entry exists
 
         } // vote ?
-        isSortingInvalid = false; // do not sort on every set, but on demand
         return entry;
     }
 
+    public static void markSortingInvalid(EntryKey key) {
+        if (!isSortingInvalid){
+            EntryKey currentEntryKey = Entries.getCurrentEntryKey();
+            if (null == currentEntryKey || currentEntryKey.getFullPath().equals(key.topic)){
+                log.debug("Marking EntryTree sorting as INVALID (current topic affected: {})", key.topic);
+                isSortingInvalid = true;
+            }
+        }
+    }
+
     public static void markSortingInvalid() {
-        isSortingInvalid = true;
+        if (!isSortingInvalid){
+            log.debug("Marking EntryTree sorting as INVALID");
+            isSortingInvalid = true;
+        }
     }
 
     public static boolean isSortingInvalid() {
@@ -114,7 +137,10 @@ public class EntryTree implements Serializable {
     }
 
     public static void markSortingValid() {
-        isSortingInvalid = false;
+        if (isSortingInvalid){
+            log.debug("Marking EntryTree sorting as VALID");
+            isSortingInvalid = false;
+        }
     }
 
 

@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 
 public class SortedEntryMap extends LinkedHashMap<String, Entry> implements java.io.Serializable {
+
+    private final static Logger logger = Logger.getLogger(SortedEntryMap.class.getName());
 
     private static final long serialVersionUID = 1L;
     public long lastModified = 0;
@@ -16,6 +19,7 @@ public class SortedEntryMap extends LinkedHashMap<String, Entry> implements java
     }
 
     public void sortByValue(){
+        logger.info("Sorting entries...");
         ArrayList<Entry<String, com.example.fayf_android002.Entry.Entry>> entryList = new ArrayList<>(this.entrySet());
         entryList.sort((e1, e2) -> {
             // rank

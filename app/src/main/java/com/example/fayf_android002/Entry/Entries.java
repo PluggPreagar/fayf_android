@@ -217,6 +217,7 @@ public class Entries {
         String ts = formatter.format(new Date());
         Config.LAST_SYNC_TIMESTAMP.setValue( ts );
         if (currentTopicUpdated) {
+            Entries.sortCurrentTopic();
             callTopicChangedListeners(getCurrentEntryKey());
         }
     }

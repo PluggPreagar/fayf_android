@@ -102,7 +102,9 @@ public class IOWeb {
                                 ? line.length() - line.replace("\"", "").length()
                                 : 0 ;
                         quotes = quotes % 2 ;
-                        if (0 == quotes){ // even number of quotes - complete line
+                        if (data.isEmpty() && line.startsWith("Timestamp")) {
+                            // skip header line
+                        } else if (0 == quotes){ // even number of quotes - complete line
                             if (line_leftover.length() > 0) {
                                 line = line_leftover + line ;
                                 line_leftover.setLength(0);
@@ -113,6 +115,7 @@ public class IOWeb {
                         }
                     }
                 }
+                logger.info("Data fetched successfully from URL: {} ({} entries)", urlString, data.size());
             } else {
                 logger.error("Failed to fetch data. {} \n Url: {}"
                         , responseCode
@@ -163,7 +166,13 @@ public class IOWeb {
             // update lastTimestamp
             // ensure correct timestamp format - convert DD/MM/YYYY HH:MM:SS to YYYY-MM-DD HH:MM:SS
             String ts = rawParts[0].replaceAll("(\\d{2})/(\\d{2})/(\\d{4})", "$3-$2-$1");
-            if (ts.compareTo(lastTimestamp) > 0) {
+            // FIXME - KLUDGE - self healing timestamps
+            if (ts.startsWith("20") && !lastTimestamp.startsWith("20")) {
+                lastTimestamp = ts;
+                logger.info("Initialized lastTimestamp to {}", lastTimestamp);
+            } else if (!ts.startsWith("20") || ts.length() < 19 || !ts.matches("[0-9\\- :]+")) {
+                logger.warn("Skipped invalid timestamp '{}' (lastTimestamp is '{}')", ts, lastTimestamp);
+            } else if (ts.compareTo(lastTimestamp) > 0) {
                 lastTimestamp = ts;
             }
         } else {
