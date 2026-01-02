@@ -16,7 +16,7 @@ public enum Config {
     LANGUAGE("language", "en"),
     RUN_SELF_TEST("self_test", false),
     SHOW_LOGS("show_logs_0to3", 0),
-    SYSTEM("system", "sid_example"),
+    SYSTEM("system", ""),
     TEST_STRING("test_string", "default_value"),
     TENANT("tenant", "tst"),
 

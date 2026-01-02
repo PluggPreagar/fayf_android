@@ -71,7 +71,10 @@ public class MainActivity extends AppCompatActivity  {
         super.onCreate(savedInstanceState);
 
         if (false || Config.RUN_SELF_TEST.getBooleanValue()) {
-            Config.TENANT.setValue( RuntimeTest.RuntimeTestTennant );
+            Config.TENANT.setValue(RuntimeTest.RuntimeTestTennant);
+            if (Config.SYSTEM.getValue().isEmpty()) {
+                Config.SYSTEM.setValue("sid_example");
+            }
             Config.RUN_SELF_TEST.setValue("true"); // disable self-test auto-run for normal app start
             Entries.setEntry( new EntryKey( EntryKey.PATH_SEPARATOR, "MODE"), "Test", getContext());
         } else if (Entries.entryTree.isEmpty()) {
@@ -79,6 +82,12 @@ public class MainActivity extends AppCompatActivity  {
             Entries.loadConfig( getContext());
         } else {
             logger.info("Entries already loaded before MainActivity onCreate");
+        }
+
+        if (Config.SYSTEM.getValue().isEmpty()) {
+            // random 12-char string for system identification
+            String systemInfo = Util.generateRandomString(12);
+            Config.SYSTEM.setValue( systemInfo );
         }
 
         // keep state on orientation change - use ViewModel
@@ -165,7 +174,7 @@ public class MainActivity extends AppCompatActivity  {
         RuntimeChecker.check();
         // on first run load FirstFragment or if tenant is "tst"
         if (((String)Config.TENANT.getDefaultValue()).equals(Config.TENANT.getValue())
-              // && Config.LAST_SYNC_TIMESTAMP.getValue().isEmpty()  // TODO for testing
+              && !"sid_example".equals(Config.SYSTEM.getValue())
         ) {
             switchToContactFragment();
         } else {
